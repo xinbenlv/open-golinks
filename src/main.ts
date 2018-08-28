@@ -4,6 +4,7 @@ import * as mysql from "mysql";
 
 let app = express();
 app.set('view engine', 'pug');
+app.use(require('express-status-monitor')());
 
 let connection;
 
