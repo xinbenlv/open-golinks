@@ -18,9 +18,8 @@ if (process.env.OPEN_GOLINKS_GA_ID) {
 if (process.env.CLEARDB_DATABASE_URL) {
   console.log(`Using MySQL`);
   connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-  let handleDisconnect = function(connection) {
+  let handleDisconnect = () => {
     connection.on('error', function(err){
-
       console.log('Handling mysql err', err);
       if(!err.fatal)
       {
@@ -33,12 +32,12 @@ if (process.env.CLEARDB_DATABASE_URL) {
       console.log('\nRe-connecting lost connection: ' +err.stack);
 
       connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-      handleDisconnect(connection);
       connection.connect();
+      handleDisconnect();
     });
-  }
+  };
 
-  handleDisconnect(connection);
+  handleDisconnect();
 
   // connection.connect();
 
@@ -91,7 +90,8 @@ app.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
       req.visitor.event("Redirect", "Hit", "Forward", {p: req.originalPath}).send();
     } else {
       console.log('Not found', 'LINK_' + req.params.linkname);
-      res.redirect(`/edit/${linkname}`);
+
+      res.render('edit', {title: "Create New Link", linkname: linkname, old_dest: dest});
       req.visitor.event("Redirect", "Miss", "ToEdit", {p: req.originalPath}).send();
     }
   });
@@ -102,7 +102,7 @@ app.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
   let linkname = req.params.linkname;
   getLinkAsync(linkname, function (dest) {
     console.log('Edit golink:', linkname, dest);
-    res.render('edit', {linkname: linkname, old_dest: dest});
+    res.render('edit', {title: `Edit Existing Link`, linkname: linkname, old_dest: dest});
     req.visitor.event("Edit", "Render", "", {p: linkname}).send();
   });
 });
