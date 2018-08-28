@@ -5,12 +5,20 @@ var http = require("http");
 var app = express();
 var server = http.createServer(app);
 
-app.get('/example', function(req, res) {
-    console.log('hit url');
-	// Process the data received in req.body
-    res.redirect('https://example.url');
-    console.log('redirect');
-});
+
+
+
+if (process.env.OPEN_GOLINKS_GA_ID) {
+    console.log(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
+  // Get the module
+  var expressGoogleAnalytics = require('express-google-analytics');
+  // Insert your Google Analytics Id, Shoule be something like 'UA-12345678-9'
+  var analytics = expressGoogleAnalytics(process.env.OPEN_GOLINKS_GA_ID);
+
+  //Add to express before your routes
+  app.use(analytics);
+}
+
 
 app.get(/\/[A-Za-z0-9_]/, function(req, res) {
   console.log(`try to direct to`, req.path, ' ...');

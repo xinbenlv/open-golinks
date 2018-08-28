@@ -25,6 +25,7 @@
   "homepage": "https://github.com/xinbenlv/golink4np#readme",
   "dependencies": {
     "express": "^4.16.3",
+    "express-google-analytics": "^1.0.2",
     "http": "0.0.0",
     "jade": "^1.11.0"
   }
