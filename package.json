@@ -2,9 +2,9 @@
   "name": "golink4np",
   "version": "1.0.0",
   "description": "A short url app with MySQL",
-  "main": "main.js",
+  "main": "src/main.ts",
   "scripts": {
-    "start": "node main.js",
+    "start": "ts-node src/main.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -30,5 +30,8 @@
     "http": "0.0.0",
     "mysql": "^2.16.0",
     "pug": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^10.9.3"
   }
 }
