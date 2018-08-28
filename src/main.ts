@@ -5,6 +5,8 @@ import * as mysql from "mysql";
 let app = express();
 app.set('view engine', 'pug');
 app.use(require('express-status-monitor')());
+console.assert(process.env.OPEN_GOLINKS_GA_ID, `$OPEN_GOLINKS_GA_ID is not set`);
+console.assert(process.env.CLEARDB_DATABASE_URL, `$CLEARDB_DATABASE_URL is not set`);
 
 let connection;
 
@@ -16,9 +18,33 @@ if (process.env.OPEN_GOLINKS_GA_ID) {
 if (process.env.CLEARDB_DATABASE_URL) {
   console.log(`Using MySQL`);
   connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-  connection.connect();
+  let handleDisconnect = function(connection) {
+    connection.on('error', function(err){
+
+      console.log('Handling mysql err', err);
+      if(!err.fatal)
+      {
+        return;
+      }
+      if(err.code !== 'PROTOCOL_CONNECTION_LOST')
+      {
+        throw err;
+      }
+      console.log('\nRe-connecting lost connection: ' +err.stack);
+
+      connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
+      handleDisconnect(connection);
+      connection.connect();
+    });
+  }
+
+  handleDisconnect(connection);
+
+  // connection.connect();
+
+
 } else {
-  console.log(`No MySQL specified`);
+  console.log(`No MySQL specified, please set export CLEARDB_DATABASE_URL=<mysql url>`);
   process.exit(1);
 }
 
