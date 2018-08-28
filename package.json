@@ -1,0 +1,30 @@
+{
+  "name": "golink4np",
+  "version": "1.0.0",
+  "description": "A short url app with MySQL",
+  "main": "main.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xinbenlv/golink4np.git"
+  },
+  "keywords": [
+    "golink",
+    "go-link",
+    "short",
+    "url"
+  ],
+  "author": "Zainan Victor Zhou",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/xinbenlv/golink4np/issues"
+  },
+  "homepage": "https://github.com/xinbenlv/golink4np#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "http": "0.0.0",
+    "jade": "^1.11.0"
+  }
+}
