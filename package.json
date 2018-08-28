@@ -2,8 +2,9 @@
   "name": "golink4np",
   "version": "1.0.0",
   "description": "A short url app with MySQL",
-  "main": "main.ts",
+  "main": "main.js",
   "scripts": {
+    "start": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

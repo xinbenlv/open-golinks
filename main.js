@@ -26,6 +26,7 @@ app.get(/\/[A-Za-z0-9_]/, function(req, res) {
 
 });
 
-console.log('start listening');
-app.listen(3000);
+var PORT = process.env.PORT || 3000;
+console.log('Start listening on ', PORT);
+app.listen(PORT);
 
