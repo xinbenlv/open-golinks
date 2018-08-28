@@ -1,26 +1,15 @@
 import * as express from "express";
-import * as http from "http";
-import * as bodyParser from "body-parser";
+import * as ua from "universal-analytics";
 import * as mysql from "mysql";
 
 let app = express();
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'pug');
 
-let server = http.createServer(app);
-let connect, connection;
+let connection;
 
 if (process.env.OPEN_GOLINKS_GA_ID) {
   console.log(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
-  // Get the module
-  let expressGoogleAnalytics = require('express-google-analytics');
-  // Insert your Google Analytics Id, Shoule be something like 'UA-12345678-9'
-  let analytics = expressGoogleAnalytics(process.env.OPEN_GOLINKS_GA_ID);
-
-  //Add to express before your routes
-  app.use(analytics);
+  app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
 }
 
 if (process.env.CLEARDB_DATABASE_URL) {
@@ -63,14 +52,20 @@ function getLinkAsync(linkname, cb) {
 }
 
 app.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
+  if (req.visitor) {
+    console.log(`Set req.visitor`, req.visitor);
+    req.visitor.pageview(req.originalPath).send();
+  }
   let linkname = req.params.linkname;
   getLinkAsync(linkname, function (dest) {
     if (dest) {
       console.log('redirect to golink:', dest);
       res.redirect(dest);
+      req.visitor.event("Redirect", "Hit", "Forward", {p: req.originalPath}).send();
     } else {
       console.log('Not found', 'LINK_' + req.params.linkname);
       res.redirect(`/edit/${linkname}`);
+      req.visitor.event("Redirect", "Miss", "ToEdit", {p: req.originalPath}).send();
     }
   });
 });
@@ -80,7 +75,8 @@ app.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
   let linkname = req.params.linkname;
   getLinkAsync(linkname, function (dest) {
     console.log('Edit golink:', linkname, dest);
-    res.render('edit', {linkname: linkname, old_dest: dest})
+    res.render('edit', {linkname: linkname, old_dest: dest});
+    req.visitor.event("Edit", "Render", "", {p: linkname}).send();
   });
 });
 
@@ -90,6 +86,7 @@ app.post('/edit', function (req, res) {
   let dest = req.body.dest;
   upsertLinkAsync(linkname, dest, function (rows) {
     console.log(`Done`);
+    req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
     res.send('OK');
   });
 });
