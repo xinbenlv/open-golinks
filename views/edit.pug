@@ -1,0 +1,25 @@
+html
+    head
+        title= "Edit GoLink"
+    body
+    .main.container
+        .row
+            .col-md-6.col-md-offset-3
+                h1.display-4.m-b-2 Edit
+
+                form(method='POST' action='/edit')
+                    div.form-group
+                        label(for='linkname') Name:
+                        input#linkname.form-control(
+                            type='text',
+                            placeholder='linkname',
+                            name='linkname'
+                            value= linkname,
+                        )
+                    div.form-group
+                        label(for='dest') Destination:
+                        input#dest(
+                            value= old_dest,
+                            name= "dest"
+                        )
+                    input.btn.btn-primary(type='submit', value='Submit')
