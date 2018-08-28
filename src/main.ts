@@ -2,6 +2,7 @@ import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
 import * as mysql from "mysql";
+
 let app = express();
 
 app.use(bodyParser.json());
