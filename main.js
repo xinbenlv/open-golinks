@@ -12,6 +12,20 @@ app.get('/example', function(req, res) {
     console.log('redirect');
 });
 
+app.get(/\/[A-Za-z0-9_]/, function(req, res) {
+  console.log(`try to direct to`, req.path, ' ...');
+  let golink = process.env['LINK_' + req.path.slice(1)];
+  console.log(process.env);
+  if (golink) {
+    console.log('redirect to golink:', golink);
+    res.redirect(golink);
+  } else {
+    console.log('Not found', 'LINK_' + req.path.slice(1));
+    res.status(404).send("No link for " + req.path);
+  }
+
+});
+
 console.log('start listening');
 app.listen(3000);
 
