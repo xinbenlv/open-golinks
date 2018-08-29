@@ -26,7 +26,11 @@ router.get('/callback',function(req, res, next) {
       console.log(`XXX Callback!!! user`, user);
       console.log(`XXX Callback!!! info`, info);
       console.log(`XXX Callback!!! err`, err);
-      return res.redirect('/login');
+      console.log(`XXX Destroy session!!! err`, err);
+      req.session.destroy(function (err) {
+        console.log(`XXX Destroyed`);
+        res.redirect('/login');
+      });
     }
     req.logIn(user, function(err) {
       if (err) { return next(err); }
