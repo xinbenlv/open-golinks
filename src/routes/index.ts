@@ -107,6 +107,13 @@ let getAllLinks = async function () {
   });
 };
 
+router.get('/all-links', asyncHandler(async function (req, res) {
+  let links = await getAllLinks() as Array<any>;
+  res.render('links', {
+    links: links
+  });
+}));
+
 /* GET user profile. */
 router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
   let links = await getLinksByEmailAsync(req.user.emails.map(item => item.value));
@@ -200,10 +207,8 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
 }));
 
 router.get('/', asyncHandler(async function (req, res) {
-  let links = await getAllLinks() as Array<any>;
-  res.render('links', {
-    links: links
-  });
+  res.redirect('/edit');
 }));
+
 
 module.exports = router;
