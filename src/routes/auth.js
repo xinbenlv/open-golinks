@@ -14,15 +14,8 @@ router.get('/callback', passport.authenticate('auth0', { failureRedirect: '/logi
     }
     res.redirect("/user");
 });
-/* GET user profile. */
-router.get('/user', ensureLoggedIn, function (req, res, next) {
-    res.render('user', {
-        user: req.user,
-        userProfile: JSON.stringify(req.user, null, '  ')
-    });
-});
 // Perform session logout and redirect to homepage
-router.get('/logout', function (req, res) {
+router.get('/logout', (req, res) => {
     req.logout();
     res.redirect('/');
 });

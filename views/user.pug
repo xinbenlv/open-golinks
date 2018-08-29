@@ -2,8 +2,19 @@ extends layout
 
 block content
     br
-    img(src=user.picture)
-    p Welcome #{user.displayName}!
-    br
-    h2 User Profile
+    h2 MyLinks
     pre #{user.emails[0].value}
+    if (links.length)
+        table.table
+            thead
+                tr
+                    th Link Name
+                    th Destination
+            tbody
+                each link in links
+                    tr
+                        td #{link['linkname']}
+                        td #{link['dest']}
+    else
+        h1 You don't have any links
+    button.btn.btn-primary(href="/edit") Create

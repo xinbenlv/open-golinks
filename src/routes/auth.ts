@@ -24,14 +24,6 @@ router.get('/callback',
     }
 );
 
-/* GET user profile. */
-router.get('/user', ensureLoggedIn, function(req, res, next) {
-  res.render('user', {
-    user: req.user ,
-    userProfile: JSON.stringify(req.user, null, '  ')
-  });
-});
-
 // Perform session logout and redirect to homepage
 router.get('/logout', (req, res) => {
   req.logout();

@@ -7,6 +7,11 @@ import * as mysql from "mysql";
 
 let connection;
 
+const asyncHandler = fn => (req, res, next) =>
+    Promise
+        .resolve(fn(req, res, next))
+        .catch(next)
+
 if (process.env.CLEARDB_DATABASE_URL) {
   console.log(`Using MySQL`);
   connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
@@ -70,6 +75,66 @@ function getLinkAsync(linkname, cb) {
   })
 }
 
+let getLinksByEmailAsync = async function(emails) {
+  let emailsWhereClause = emails.map(v=>`'${v}'`).join(',');
+  let query = `SELECT linkname, dest, author from golinks WHERE author in (${emailsWhereClause});`;
+  return new Promise(function(resolve, reject) {
+    connection.query(query, (err, rows, fields) => {
+      if (err) throw err;
+      console.log('Result ', rows);
+      if (rows.length > 0) {
+        resolve(rows);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+};
+
+/* GET user profile. */
+router.get('/user', ensureLoggedIn, asyncHandler(async function(req, res) {
+  console.log(`111 Links!!!`, "End ofLINKs");
+  let links = await getLinksByEmailAsync(req.user.emails.map(item => item.value));
+  console.log(`222 Links!!!`, links, "End ofLINKs");
+  res.render('user', {
+    user: req.user,
+    links: links
+  });
+  return;
+}));
+
+router.get('/edit', (req, res) => {
+  res.render('edit', {
+    title: "Create New Link", linkname: '', old_dest: '',
+    author: req.user ? req.user.emails[0].value : "anonymous"
+  });
+});
+
+router.post('/edit', function (req, res) {
+  console.log(`Posting`, req);
+  let linkname = req.body.linkname;
+  let dest = req.body.dest;
+
+  upsertLinkAsync(linkname, dest, function (rows) {
+    console.log(`Done`);
+    req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
+    res.send('OK');
+  });
+});
+
+router.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
+  console.log(`Editing`);
+  let linkname = req.params.linkname;
+  getLinkAsync(linkname, function (dest) {
+    console.log('Edit golink:', linkname, dest);
+    res.render('edit', {
+      title: `Edit Existing Link`, linkname: linkname, old_dest: dest,
+      author: req.user ? req.user.emails[0].value : "anonymous"
+    });
+    req.visitor.event("Edit", "Render", "", {p: linkname}).send();
+  });
+});
+
 router.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
   if (req.visitor) {
     console.log(`Set req.visitor`, req.visitor);
@@ -84,31 +149,14 @@ router.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
     } else {
       console.log('Not found', 'LINK_' + req.params.linkname);
 
-      res.render('edit', {title: "Create New Link", linkname: linkname, old_dest: dest});
+      res.render('edit', {
+        title: "Create New Link",
+        linkname: linkname,
+        old_dest: dest,
+        author: req.user ? req.user.emails[0].value : "anonymous"
+      });
       req.visitor.event("Redirect", "Miss", "ToEdit", {p: req.originalPath}).send();
     }
-  });
-});
-
-router.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
-  console.log(`Editing`);
-  let linkname = req.params.linkname;
-  getLinkAsync(linkname, function (dest) {
-    console.log('Edit golink:', linkname, dest);
-    res.render('edit', {title: `Edit Existing Link`, linkname: linkname, old_dest: dest});
-    req.visitor.event("Edit", "Render", "", {p: linkname}).send();
-  });
-});
-
-router.post('/edit', function (req, res) {
-  console.log(`Posting`, req);
-  let linkname = req.body.linkname;
-  let dest = req.body.dest;
-
-  upsertLinkAsync(linkname, dest, function (rows) {
-    console.log(`Done`);
-    req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
-    res.send('OK');
   });
 });
 

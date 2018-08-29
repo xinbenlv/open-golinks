@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
-import * as indexRouter from './routes/index';
+const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
 const cookieParser = require('cookie-parser');
 
@@ -82,13 +82,8 @@ app.use(function(req, res, next) {
   console.log(`Result:`, res.locals.loggedIn);
   next();
 });
-
-
-// app.use('/', indexRouter);
-//..
 app.use('/', authRouter);
 app.use('/', indexRouter);
-//..
 
 let PORT = process.env.PORT || 3000;
 console.log('Start listening on ', PORT);

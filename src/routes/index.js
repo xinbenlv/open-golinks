@@ -4,12 +4,15 @@ var express = require('express');
 var router = express.Router();
 var Auth0Strategy = require('passport-auth0'), passport = require('passport');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
-var mysql = require("mysql");
-var connection;
+const mysql = require("mysql");
+let connection;
+const asyncHandler = fn => (req, res, next) => Promise
+    .resolve(fn(req, res, next))
+    .catch(next);
 if (process.env.CLEARDB_DATABASE_URL) {
-    console.log("Using MySQL");
+    console.log(`Using MySQL`);
     connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-    var handleDisconnect_1 = function () {
+    let handleDisconnect = () => {
         connection.on('error', function (err) {
             console.log('Handling mysql err', err);
             if (!err.fatal) {
@@ -21,18 +24,24 @@ if (process.env.CLEARDB_DATABASE_URL) {
             console.log('\nRe-connecting lost connection: ' + err.stack);
             connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
             connection.connect();
-            handleDisconnect_1();
+            handleDisconnect();
         });
     };
-    handleDisconnect_1();
+    handleDisconnect();
     // connection.connect();
 }
 else {
-    console.log("No MySQL specified, please set export CLEARDB_DATABASE_URL=<mysql url>");
+    console.log(`No MySQL specified, please set export CLEARDB_DATABASE_URL=<mysql url>`);
     process.exit(1);
 }
 function upsertLinkAsync(linkname, dest, cb) {
-    var query = "\nINSERT INTO golinks (linkname, dest, author)\nVALUES ('" + linkname + "', '" + dest + "', 'system')\nON DUPLICATE KEY UPDATE\n    dest = '" + dest + "',\n    author = 'system';\n    ";
+    let query = `
+INSERT INTO golinks (linkname, dest, author)
+VALUES ('${linkname}', '${dest}', 'system')
+ON DUPLICATE KEY UPDATE
+    dest = '${dest}',
+    author = 'system';
+    `;
     connection.query(query, function (err, rows, fields) {
         if (err)
             throw err;
@@ -41,7 +50,7 @@ function upsertLinkAsync(linkname, dest, cb) {
     });
 }
 function getLinkAsync(linkname, cb) {
-    var query = "SELECT linkname, dest, author from golinks WHERE linkname='" + linkname + "';";
+    let query = `SELECT linkname, dest, author from golinks WHERE linkname='${linkname}';`;
     connection.query(query, function (err, rows, fields) {
         if (err)
             throw err;
@@ -54,12 +63,68 @@ function getLinkAsync(linkname, cb) {
         }
     });
 }
+let getLinksByEmailAsync = async function (emails) {
+    let emailsWhereClause = emails.map(v => `'${v}'`).join(',');
+    let query = `SELECT linkname, dest, author from golinks WHERE author in (${emailsWhereClause});`;
+    return new Promise(function (resolve, reject) {
+        connection.query(query, (err, rows, fields) => {
+            if (err)
+                throw err;
+            console.log('Result ', rows);
+            if (rows.length > 0) {
+                resolve(rows);
+            }
+            else {
+                resolve(null);
+            }
+        });
+    });
+};
+/* GET user profile. */
+router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
+    console.log(`111 Links!!!`, "End ofLINKs");
+    let links = await getLinksByEmailAsync(req.user.emails.map(item => item.value));
+    console.log(`222 Links!!!`, links, "End ofLINKs");
+    res.render('user', {
+        user: req.user,
+        links: links
+    });
+    return;
+}));
+router.get('/edit', (req, res) => {
+    res.render('edit', {
+        title: "Create New Link", linkname: '', old_dest: '',
+        author: req.user ? req.user.emails[0].value : "anonymous"
+    });
+});
+router.post('/edit', function (req, res) {
+    console.log(`Posting`, req);
+    let linkname = req.body.linkname;
+    let dest = req.body.dest;
+    upsertLinkAsync(linkname, dest, function (rows) {
+        console.log(`Done`);
+        req.visitor.event("Edit", "Submit", "OK", { p: linkname }).send();
+        res.send('OK');
+    });
+});
+router.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
+    console.log(`Editing`);
+    let linkname = req.params.linkname;
+    getLinkAsync(linkname, function (dest) {
+        console.log('Edit golink:', linkname, dest);
+        res.render('edit', {
+            title: `Edit Existing Link`, linkname: linkname, old_dest: dest,
+            author: req.user ? req.user.emails[0].value : "anonymous"
+        });
+        req.visitor.event("Edit", "Render", "", { p: linkname }).send();
+    });
+});
 router.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
     if (req.visitor) {
-        console.log("Set req.visitor", req.visitor);
+        console.log(`Set req.visitor`, req.visitor);
         req.visitor.pageview(req.originalPath).send();
     }
-    var linkname = req.params.linkname;
+    let linkname = req.params.linkname;
     getLinkAsync(linkname, function (dest) {
         if (dest) {
             console.log('redirect to golink:', dest);
@@ -68,28 +133,14 @@ router.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
         }
         else {
             console.log('Not found', 'LINK_' + req.params.linkname);
-            res.render('edit', { title: "Create New Link", linkname: linkname, old_dest: dest });
+            res.render('edit', {
+                title: "Create New Link",
+                linkname: linkname,
+                old_dest: dest,
+                author: req.user ? req.user.emails[0].value : "anonymous"
+            });
             req.visitor.event("Redirect", "Miss", "ToEdit", { p: req.originalPath }).send();
         }
-    });
-});
-router.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
-    console.log("Editing");
-    var linkname = req.params.linkname;
-    getLinkAsync(linkname, function (dest) {
-        console.log('Edit golink:', linkname, dest);
-        res.render('edit', { title: "Edit Existing Link", linkname: linkname, old_dest: dest });
-        req.visitor.event("Edit", "Render", "", { p: linkname }).send();
-    });
-});
-router.post('/edit', function (req, res) {
-    console.log("Posting", req);
-    var linkname = req.body.linkname;
-    var dest = req.body.dest;
-    upsertLinkAsync(linkname, dest, function (rows) {
-        console.log("Done");
-        req.visitor.event("Edit", "Submit", "OK", { p: linkname }).send();
-        res.send('OK');
     });
 });
 module.exports = router;
