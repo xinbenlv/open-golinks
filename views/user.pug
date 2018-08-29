@@ -1,0 +1,9 @@
+extends layout
+
+block content
+    br
+    img(src=user.picture)
+    p Welcome #{user.displayName}!
+    br
+    h2 User Profile
+    pre #{user.emails[0].value}
