@@ -10,11 +10,18 @@ block content
                 tr
                     th Link Name
                     th Destination
+                    th Owner Email
+                    th Action
             tbody
                 each link in links
                     tr
-                        td #{link['linkname']}
+                        td
+                            a(href=link['linkname']) #{link['linkname']}
                         td #{link['dest']}
+                        td #{link['author']}
+                        td
+                            a.btn.btn-primary(href="/edit/" + link['linkname']) Edit
+
     else
         h1 You don't have any links
-    button.btn.btn-primary(href="/edit") Create
+    a.btn.btn-primary(href="/edit") Create More

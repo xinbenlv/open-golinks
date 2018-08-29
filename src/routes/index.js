@@ -34,35 +34,43 @@ else {
     console.log(`No MySQL specified, please set export CLEARDB_DATABASE_URL=<mysql url>`);
     process.exit(1);
 }
-function upsertLinkAsync(linkname, dest, cb) {
+let editable = function (author, user) {
+    console.log(`Author: ${author}`, 'user', user);
+    if (author === 'anonymous')
+        return true;
+    else if (user && user.emails.map(i => i.value).indexOf(author) >= 0) {
+        return true;
+    }
+    return false;
+};
+let upsertLinkAsync = async function (linkname, dest, author) {
     let query = `
 INSERT INTO golinks (linkname, dest, author)
-VALUES ('${linkname}', '${dest}', 'system')
+VALUES ('${linkname}', '${dest}', '${author}')
 ON DUPLICATE KEY UPDATE
     dest = '${dest}',
-    author = 'system';
+    author = '${author}';
     `;
-    connection.query(query, function (err, rows, fields) {
-        if (err)
-            throw err;
-        console.log('Result ', rows);
-        cb(rows);
+    return new Promise((resolve, reject) => {
+        connection.query(query, function (err, rows, fields) {
+            if (err)
+                reject(err);
+            else
+                resolve(rows);
+        });
     });
-}
-function getLinkAsync(linkname, cb) {
+};
+let getLinkAsync = async function (linkname) {
     let query = `SELECT linkname, dest, author from golinks WHERE linkname='${linkname}';`;
-    connection.query(query, function (err, rows, fields) {
-        if (err)
-            throw err;
-        console.log('Result ', rows);
-        if (rows.length > 0) {
-            cb(rows[0].dest);
-        }
-        else {
-            cb(null);
-        }
+    return new Promise((resolve, reject) => {
+        connection.query(query, function (err, rows, fields) {
+            if (err)
+                reject(err);
+            else
+                resolve(rows);
+        });
     });
-}
+};
 let getLinksByEmailAsync = async function (emails) {
     let emailsWhereClause = emails.map(v => `'${v}'`).join(',');
     let query = `SELECT linkname, dest, author from golinks WHERE author in (${emailsWhereClause});`;
@@ -97,50 +105,69 @@ router.get('/edit', (req, res) => {
         author: req.user ? req.user.emails[0].value : "anonymous"
     });
 });
-router.post('/edit', function (req, res) {
+router.post('/edit', asyncHandler(async function (req, res) {
     console.log(`Posting`, req);
     let linkname = req.body.linkname;
     let dest = req.body.dest;
-    upsertLinkAsync(linkname, dest, function (rows) {
+    // Check if links can be updated. // also need to worry about trace
+    let links = await getLinkAsync(linkname);
+    if (links.length && links[0].author != "anonymous" && req.user && req.user.emails.map(i => i.value).indexOf(links[0].author) < 0) {
+        res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
+    }
+    else {
+        await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
         console.log(`Done`);
         req.visitor.event("Edit", "Submit", "OK", { p: linkname }).send();
         res.send('OK');
-    });
-});
-router.get('/edit/:linkname([A-Za-z0-9-_]+)', function (req, res) {
+    }
+}));
+router.get('/edit/:linkname([A-Za-z0-9-_]+)', async function (req, res) {
     console.log(`Editing`);
     let linkname = req.params.linkname;
-    getLinkAsync(linkname, function (dest) {
-        console.log('Edit golink:', linkname, dest);
+    let links = await getLinkAsync(linkname); // must be lenght = 1 or 0 because linkname is primary key
+    if (links.length == 0) {
         res.render('edit', {
-            title: `Edit Existing Link`, linkname: linkname, old_dest: dest,
+            title: "Create New Link",
+            linkname: linkname,
+            old_dest: "",
             author: req.user ? req.user.emails[0].value : "anonymous"
         });
+    }
+    else {
+        let link = links[0];
+        res.render('edit', {
+            title: `Edit Existing Link`,
+            linkname: link['linkname'], old_dest: link['dest'],
+            author: link['author'],
+            user: req.user,
+            editable: editable(link['author'], req.user)
+        });
         req.visitor.event("Edit", "Render", "", { p: linkname }).send();
-    });
+    }
 });
-router.get('/:linkname([A-Za-z0-9-_]+)', function (req, res) {
+router.get('/:linkname([A-Za-z0-9-_]+)', asyncHandler(async function (req, res) {
     if (req.visitor) {
         console.log(`Set req.visitor`, req.visitor);
         req.visitor.pageview(req.originalPath).send();
     }
     let linkname = req.params.linkname;
-    getLinkAsync(linkname, function (dest) {
-        if (dest) {
-            console.log('redirect to golink:', dest);
-            res.redirect(dest);
-            req.visitor.event("Redirect", "Hit", "Forward", { p: req.originalPath }).send();
-        }
-        else {
-            console.log('Not found', 'LINK_' + req.params.linkname);
-            res.render('edit', {
-                title: "Create New Link",
-                linkname: linkname,
-                old_dest: dest,
-                author: req.user ? req.user.emails[0].value : "anonymous"
-            });
-            req.visitor.event("Redirect", "Miss", "ToEdit", { p: req.originalPath }).send();
-        }
-    });
-});
+    let links = await getLinkAsync(linkname);
+    if (links.length) {
+        let link = links[0];
+        console.log('redirect to golink:', link.dest);
+        res.redirect(link.dest);
+        req.visitor.event("Redirect", "Hit", "Forward", { p: req.originalPath, dest: link.dest }).send();
+    }
+    else {
+        console.log('Not found', 'LINK_' + req.params.linkname);
+        res.render('edit', {
+            title: "Create New Link",
+            linkname: linkname,
+            old_dest: '',
+            author: req.user ? req.user.emails[0].value : "anonymous",
+            editable: true
+        });
+        req.visitor.event("Redirect", "Miss", "ToEdit", { p: req.originalPath }).send();
+    }
+}));
 module.exports = router;

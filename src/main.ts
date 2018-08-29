@@ -1,6 +1,7 @@
 import * as express from "express";
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
+
 const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
 const cookieParser = require('cookie-parser');
@@ -29,7 +30,7 @@ var strategy = new Auth0Strategy({
       clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
       callbackURL: 'http://localhost:3000/callback'
     },
-    function(accessToken, refreshToken, extraParams, profile, done) {
+    function (accessToken, refreshToken, extraParams, profile, done) {
       // accessToken is the token to call Auth0 API (not needed in the most cases)
       // extraParams.id_token has the JSON Web Token
       // profile has all the information from the user
@@ -47,7 +48,7 @@ import * as session from 'express-session';
 var sess = {
   secret: 'some cool secret', // TODO use another one
   cookie: {},
-  resave: true,
+  resave: false,
   saveUninitialized: true
 };
 
@@ -64,16 +65,16 @@ app.use(session(sess));
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.serializeUser(function(user, done) {
+passport.serializeUser(function (user, done) {
   done(null, user);
 });
 
-passport.deserializeUser(function(user, done) {
+passport.deserializeUser(function (user, done) {
   done(null, user);
 });
 
 // Look up session to know if user is logged in
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   console.log(`Query if it's logged in`, req.session);
   res.locals.loggedIn = false;
   if (req.session.passport && typeof req.session.passport.user != 'undefined') {
