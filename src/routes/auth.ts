@@ -18,8 +18,7 @@ router.get('/login',
 // Perform the final stage of authentication and redirect to '/user'
 router.get('/callback',
     passport.authenticate('auth0', {
-      failureRedirect: '/login',
-      failureFlash : true
+      failureRedirect: '/login'
     }),
     function(req, res) {
       if (!req.user) {
