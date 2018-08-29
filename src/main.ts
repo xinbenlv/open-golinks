@@ -56,8 +56,9 @@ var sess = {
   saveUninitialized: true
 };
 
+// If enable, it will fail and login again and again
 // if (app.get('env') === 'production') {
-//   sess.cookie['secure'] = false; // serve secure cookies, requires https
+//   sess.cookie['secure'] = true; // serve secure cookies, requires https
 // }
 
 // app.js
