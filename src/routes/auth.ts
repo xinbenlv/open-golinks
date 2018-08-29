@@ -6,6 +6,8 @@ var Auth0Strategy = require('passport-auth0'),
     passport = require('passport');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
 
+var log4js = require('log4js');
+var logger = log4js.getLogger();
 
 // Perform the login, after login Auth0 will redirect to callback
 router.get('/login',
@@ -14,14 +16,27 @@ router.get('/login',
     });
 
 // Perform the final stage of authentication and redirect to '/user'
-router.get('/callback',
-    passport.authenticate('auth0', {failureRedirect: '/login'}),
-    function (req, res) {
-      if (!req.user) {
-        throw new Error('user null');
-      }
-      res.redirect("/user");
+router.get('/callback',function(req, res, next) {
+  passport.authenticate('auth0', function(err, user, info) {
+    if (err) {
+      logger.error(err);
+      return next(err);
     }
+    if (!user) {
+      console.log(`XXX Callback!!!`, user);
+      return res.redirect('/login');
+    }
+    req.logIn(user, function(err) {
+      if (err) { return next(err); }
+      return res.redirect('/user');
+    });
+  })(req, res, next);
+}
+    // passport.authenticate('auth0', {
+    //   successRedirect : '/user',
+    //   failureRedirect : '/login',
+    //   failureFlash : true
+    // })
 );
 
 // Perform session logout and redirect to homepage
