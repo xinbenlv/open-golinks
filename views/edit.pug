@@ -29,7 +29,7 @@ block content
                         name="author",
                         disabled="true")
                     if editable
-                        input.btn.btn-primary(type='submit', value='Submit')
+                        button.btn.btn-primary(type='submit', value='Submit') Submit
                     if !loggedIn && !editable && author == 'anonymous'
                         a.btn.btn-primary(href='/login') Log In to Edit
 

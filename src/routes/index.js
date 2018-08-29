@@ -4,7 +4,9 @@ var express = require('express');
 var router = express.Router();
 var Auth0Strategy = require('passport-auth0'), passport = require('passport');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
+const SqlString = require('sqlstring');
 const mysql = require("mysql");
+const LINKNAME_PATTERN = '[A-Za-z0-9-_]+';
 let connection;
 const asyncHandler = fn => (req, res, next) => Promise
     .resolve(fn(req, res, next))
@@ -46,13 +48,13 @@ let editable = function (author, user) {
 let upsertLinkAsync = async function (linkname, dest, author) {
     let query = `
 INSERT INTO golinks (linkname, dest, author)
-VALUES ('${linkname}', '${dest}', '${author}')
+VALUES (${SqlString.escape(linkname)}, ${SqlString.escape(dest)}, ${SqlString.escape(author)})
 ON DUPLICATE KEY UPDATE
-    dest = '${dest}',
-    author = '${author}';
+    dest = ${SqlString.escape(dest)},
+    author = ${SqlString.escape(author)};
     `;
     return new Promise((resolve, reject) => {
-        connection.query(query, function (err, rows, fields) {
+        connection.query(query, function (err, rows) {
             if (err)
                 reject(err);
             else
@@ -61,7 +63,7 @@ ON DUPLICATE KEY UPDATE
     });
 };
 let getLinkAsync = async function (linkname) {
-    let query = `SELECT linkname, dest, author from golinks WHERE linkname='${linkname}';`;
+    let query = `SELECT linkname, dest, author from golinks WHERE linkname=${SqlString.escape(linkname)};`;
     return new Promise((resolve, reject) => {
         connection.query(query, function (err, rows, fields) {
             if (err)
@@ -72,27 +74,21 @@ let getLinkAsync = async function (linkname) {
     });
 };
 let getLinksByEmailAsync = async function (emails) {
-    let emailsWhereClause = emails.map(v => `'${v}'`).join(',');
+    let emailsWhereClause = emails.map(v => `${SqlString.escape(v)}`).join(',');
     let query = `SELECT linkname, dest, author from golinks WHERE author in (${emailsWhereClause});`;
     return new Promise(function (resolve, reject) {
-        connection.query(query, (err, rows, fields) => {
+        connection.query(query, (err, rows) => {
             if (err)
-                throw err;
-            console.log('Result ', rows);
-            if (rows.length > 0) {
-                resolve(rows);
-            }
+                reject(err);
             else {
-                resolve(null);
+                resolve(rows);
             }
         });
     });
 };
 /* GET user profile. */
 router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
-    console.log(`111 Links!!!`, "End ofLINKs");
     let links = await getLinksByEmailAsync(req.user.emails.map(item => item.value));
-    console.log(`222 Links!!!`, links, "End ofLINKs");
     res.render('user', {
         user: req.user,
         links: links
@@ -101,8 +97,11 @@ router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
 }));
 router.get('/edit', (req, res) => {
     res.render('edit', {
-        title: "Create New Link", linkname: '', old_dest: '',
-        author: req.user ? req.user.emails[0].value : "anonymous"
+        title: "Create New Link",
+        linkname: '',
+        old_dest: '',
+        author: req.user ? req.user.emails[0].value : "anonymous",
+        editable: true
     });
 });
 router.post('/edit', asyncHandler(async function (req, res) {
@@ -121,7 +120,7 @@ router.post('/edit', asyncHandler(async function (req, res) {
         res.send('OK');
     }
 }));
-router.get('/edit/:linkname([A-Za-z0-9-_]+)', async function (req, res) {
+router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
     console.log(`Editing`);
     let linkname = req.params.linkname;
     let links = await getLinkAsync(linkname); // must be lenght = 1 or 0 because linkname is primary key
@@ -130,7 +129,8 @@ router.get('/edit/:linkname([A-Za-z0-9-_]+)', async function (req, res) {
             title: "Create New Link",
             linkname: linkname,
             old_dest: "",
-            author: req.user ? req.user.emails[0].value : "anonymous"
+            author: req.user ? req.user.emails[0].value : "anonymous",
+            editable: true
         });
     }
     else {
@@ -145,7 +145,7 @@ router.get('/edit/:linkname([A-Za-z0-9-_]+)', async function (req, res) {
         req.visitor.event("Edit", "Render", "", { p: linkname }).send();
     }
 });
-router.get('/:linkname([A-Za-z0-9-_]+)', asyncHandler(async function (req, res) {
+router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
     if (req.visitor) {
         console.log(`Set req.visitor`, req.visitor);
         req.visitor.pageview(req.originalPath).send();
