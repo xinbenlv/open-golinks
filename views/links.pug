@@ -1,16 +1,14 @@
 extends layout
 
 block content
-    br
-    h2 MyLinks
-    pre #{user.emails[0].value}
     if (links.length)
         table.table
             thead
                 tr
                     th Link Name
                     th Destination
-                    th Owner Email
+                    if isUser
+                        th Owner Email
                     th Action
             tbody
                 each link in links
@@ -18,7 +16,8 @@ block content
                         td
                             a(href=link['linkname']) #{link['linkname']}
                         td #{link['dest']}
-                        td #{link['author']}
+                        if isUser
+                            td #{link['author']}
                         td
                             a.btn.btn-primary(href="/edit/" + link['linkname']) Edit
 

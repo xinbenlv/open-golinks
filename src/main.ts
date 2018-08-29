@@ -6,6 +6,10 @@ const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
 const cookieParser = require('cookie-parser');
 
+var log4js = require('log4js');
+var logger = log4js.getLogger();
+logger.level = 'debug';
+
 let app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -17,7 +21,7 @@ console.assert(process.env.AUTH0_DOMAIN, `$AUTH0_DOMAIN is not set`);
 console.assert(process.env.AUTH0_CLIENT_ID, `$AUTH0_CLIENT_ID is not set`);
 console.assert(process.env.AUTH0_CLIENT_SECRET, `AUTH0_CLIENT_SECRET is not set`);
 
-console.log(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
+logger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
 app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
 
 var Auth0Strategy = require('passport-auth0'),
@@ -52,9 +56,9 @@ var sess = {
   saveUninitialized: true
 };
 
-// if (app.get('env') === 'production') {
-//   sess.cookie['secure'] = true; // serve secure cookies, requires https
-// }
+if (app.get('env') === 'production') {
+  sess.cookie['secure'] = true; // serve secure cookies, requires https
+}
 
 // app.js
 
@@ -75,18 +79,18 @@ passport.deserializeUser(function (user, done) {
 
 // Look up session to know if user is logged in
 app.use(function (req, res, next) {
-  console.log(`Query if it's logged in`, req.session);
+  logger.debug(`Query if it's logged in`, req.session);
   res.locals.loggedIn = false;
   if (req.session.passport && typeof req.session.passport.user != 'undefined') {
     res.locals.loggedIn = true;
   }
-  console.log(`Result:`, res.locals.loggedIn);
+  logger.debug(`Result:`, res.locals.loggedIn);
   next();
 });
 app.use('/', authRouter);
 app.use('/', indexRouter);
 
 let PORT = process.env.PORT || 3000;
-console.log('Start listening on ', PORT);
+logger.debug('Start listening on ', PORT);
 app.listen(PORT);
 

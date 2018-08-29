@@ -30,6 +30,7 @@
     "express": "^4.16.3",
     "express-session": "^1.15.6",
     "express-status-monitor": "^1.1.5",
+    "log4js": "^3.0.5",
     "mysql": "^2.16.0",
     "passport": "^0.4.0",
     "passport-auth0": "^1.0.0",
@@ -37,7 +38,8 @@
     "sqlstring": "^2.3.1",
     "ts-node": "^7.0.1",
     "typescript": "^3.0.1",
-    "universal-analytics": "^0.4.17"
+    "universal-analytics": "^0.4.17",
+    "validator": "^10.7.0"
   },
   "devDependencies": {
     "@types/node": "^10.9.3"
