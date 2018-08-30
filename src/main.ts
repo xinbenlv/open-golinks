@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
-
+require('dotenv').config();
 const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
 const cookieParser = require('cookie-parser');
