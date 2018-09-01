@@ -15,6 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'pug');
 app.use(require('express-status-monitor')());
+
 console.assert(process.env.OPEN_GOLINKS_GA_ID, `$OPEN_GOLINKS_GA_ID is not set`);
 console.assert(process.env.CLEARDB_DATABASE_URL, `$CLEARDB_DATABASE_URL is not set`);
 console.assert(process.env.AUTH0_DOMAIN, `$AUTH0_DOMAIN is not set`);
@@ -23,6 +24,8 @@ console.assert(process.env.AUTH0_CLIENT_SECRET, `AUTH0_CLIENT_SECRET is not set`
 
 logger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
 app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
+app.locals.siteName = process.env.OPEN_GOLINKS_SITE_NAME || `Open GoLinks`;
+app.locals.siteHost = process.env.OPEN_GOLINKS_SITE_HOST || `http://localhost:3000`;
 
 var Auth0Strategy = require('passport-auth0'),
     passport = require('passport');
@@ -32,7 +35,7 @@ var strategy = new Auth0Strategy({
       domain: process.env.AUTH0_DOMAIN,
       clientID: process.env.AUTH0_CLIENT_ID,
       clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-      callbackURL: process.env.AUTH0_CALLBACK_URL || 'http://localhost:3000/callback',
+      callbackURL: `${process.env.OPEN_GOLINKS_HOST}/callback` || 'http://localhost:3000/callback',
     },
     function (accessToken, refreshToken, extraParams, profile, done) {
       // accessToken is the token to call Auth0 API (not needed in the most cases)

@@ -1,29 +1,31 @@
 doctype html
 html.h-100(lang='en')
     head
-        title= title
+        title= siteName
         meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
         link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', integrity='sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO', crossorigin='anonymous')
-    body.h-100.d-flex.flex-column
+    body.h-100.d-flex.flex-column.bg-dark
         header.container
-            nav.navbar.navbar-expand-lg.navbar-light.bg-light
-                a.navbar-brand(href='/') Open-GoLinks
+            nav.navbar.navbar-expand-lg.navbar-light.bg-dark
+                a.navbar-brand.text-white(href='/')= siteName
                 button.navbar-toggler(type='button', data-toggle='collapse', data-target='#navbarNav', aria-controls='navbarNav', aria-expanded='false', aria-label='Toggle navigation')
                     span.navbar-toggler-icon
                 #navbarNav.collapse.navbar-collapse
                     ul.navbar-nav
                         li.nav-item.active
-                            a.nav-link(href='#')
+                            a.nav-link.text-white(href='#')
                                 | #{title}
                                 span.sr-only (current)
                         if loggedIn
                             li.nav-item
-                                a.nav-link(href="/user") My Links
+                                a.nav-link.text-white(href="/user") My Links
                             li.nav-item
-                                a.nav-link(href="/logout") Log Out
+                                a.nav-link.text-white(href="/all-links") All Links
+                            li.nav-item
+                                a.nav-link.text-white(href="/logout") Log Out
                         else
                             li.nav-item
-                                a.nav-link(href="/login") Log In
+                                a.nav-link.text-white(href="/login") Log In
 
         main.container.d-flex.flex-column.justify-content-center.h-100
                 block content
