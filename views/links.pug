@@ -14,8 +14,8 @@ block content
                     tr
                         td
                             a(href=link['linkname']) #{link['linkname']}
-                        td(style="word-break:break-all") #{link['dest']}
-                            // a(href=link['dest'] style="word-break") #{link['dest']}
+                        td(style="word-break:break-all")
+                            a(href=link['dest'] style="word-break") #{link['dest']}
                         td
                             a.btn.btn-primary.btn-outline(href="/edit/" + link['linkname']) Edit
 

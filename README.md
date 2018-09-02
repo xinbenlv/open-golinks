@@ -11,3 +11,14 @@ Due to the auto-keep alive, the instance will keep be wakenup every 60(default l
 
 ## Contributions
 We welcome contributions. Send us Pull Request.
+
+
+## TODO
+
+### Feature
+ - [ ] Able to delete link
+ - [ ] Stats
+ 
+### Productionization
+ - [ ] Cache Mechanism
+ - [ ] DDoS Prevention (reCAPTCHA)?
