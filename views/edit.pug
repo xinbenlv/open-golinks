@@ -10,11 +10,11 @@ block content
                     div.card-body
                         form(method='POST' action='/edit')
                             div.form-group
-                                label(for='linkname') Short Url
+                                label(for='linkname') Short Url (#{siteHost}/[ShortUrl])
                                 input#linkname.form-control(
                                 type='text',
                                 name='linkname'
-                                placeholder= siteHost + "/[ShortUrl]"
+                                placeholder= "ShortUrl"
                                 value= linkname,
                                 )
                             div.form-group
