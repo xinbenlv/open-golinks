@@ -1,25 +1,23 @@
 extends layout
 
 block content
+
     if (links.length)
-        table.table
+        table.table.table-light(style="width: 100%")
             thead
                 tr
                     th Link Name
                     th Destination
-                    if isUser
-                        th Owner Email
                     th Action
             tbody
                 each link in links
                     tr
                         td
                             a(href=link['linkname']) #{link['linkname']}
-                        td #{link['dest']}
-                        if isUser
-                            td #{link['author']}
+                        td(style="word-break:break-all") #{link['dest']}
+                            // a(href=link['dest'] style="word-break") #{link['dest']}
                         td
-                            a.btn.btn-primary(href="/edit/" + link['linkname']) Edit
+                            a.btn.btn-primary.btn-outline(href="/edit/" + link['linkname']) Edit
 
     else
         h1 You don't have any links
