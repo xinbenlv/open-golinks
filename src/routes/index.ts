@@ -7,6 +7,7 @@ const validator = require('validator');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
 const SqlString = require('sqlstring');
 import * as mysql from "mysql";
+
 const LINKNAME_PATTERN = '[A-Za-z0-9-_]+';
 let connection;
 var log4js = require('log4js');
@@ -15,34 +16,35 @@ var logger = log4js.getLogger();
 const asyncHandler = fn => (req, res, next) =>
     Promise
         .resolve(fn(req, res, next))
-        .catch(next)
+        .catch(next);
+
+const reconnect = () => {
+  let  _connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
+  _connection.connect();
+  logger.info('\nRe-connected lost mysql connection');
+  return _connection;
+};
+
+const handleDisconnect = () => {
+  connection.on('error', function (err) {
+    logger.warn('Handling mysql err', err);
+    if (!err.fatal) {
+      return;
+    }
+    if (err.code !== 'PROTOCOL_CONNECTION_LOST') {
+      throw err;
+    }
+
+    logger.info('\nRe-connecting lost connection: ' + err.stack);
+    connection = reconnect();
+    handleDisconnect();
+  });
+};
 
 if (process.env.CLEARDB_DATABASE_URL) {
   logger.debug(`Using MySQL`);
   connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-  let handleDisconnect = () => {
-    connection.on('error', function (err) {
-      logger.debug('Handling mysql err', err);
-      if (!err.fatal) {
-        return;
-      }
-      if (err.code !== 'PROTOCOL_CONNECTION_LOST') {
-        throw err;
-      }
-      logger.debug('\nRe-connecting lost connection: ' + err.stack);
-
-      connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-      connection.connect();
-      logger.debug('\nRe-connecting lost mysql connection');
-      handleDisconnect();
-    });
-  };
-
   handleDisconnect();
-
-  // connection.connect();
-
-
 } else {
   logger.warn(`No MySQL specified, please set export CLEARDB_DATABASE_URL=<mysql url>`);
   process.exit(1);
@@ -72,14 +74,30 @@ ON DUPLICATE KEY UPDATE
   });
 };
 
-let getLinkAsync = async function (linkname) {
+let getLinkAsync = async (linkname) => {
   let query = `SELECT linkname, dest, author from golinks WHERE linkname=${SqlString.escape(linkname)};`;
+
   return new Promise((resolve, reject) => {
     connection.query(query, function (err, rows, fields) {
-      if (err) reject(err);
+      if (err) {
+        logger.warn(err.message);
+        if (/after fatal error/.test(err.message)) {
+          // retry connection
+          // TODO(xinbenlv): consider apply similar case
+          connection = reconnect();
+          connection.query(query, function (err, rows, fields) {
+            if (err)  reject (err);
+            else resolve(rows);
+          });
+          // if failed again, we will let it fail and report.
+        } else {
+          reject(err);
+        }
+      }
       else resolve(rows);
     })
   });
+
 };
 
 let getLinksByEmailAsync = async function (emails) {
@@ -188,6 +206,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
   }
   let linkname = req.params.linkname;
   let links = await getLinkAsync(linkname) as Array<object>;
+
   if (links.length) {
     let link = links[0] as any;
     logger.info('redirect to golink:', link.dest);
