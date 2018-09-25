@@ -222,8 +222,8 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
 
 router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
   if (req.visitor) {
-    logger.debug(`Set req.visitor`, req.visitor);
-    req.visitor.pageview(req.originalPath).send();
+    logger.debug(`req.visitor is set to `, req.visitor, 'now logging pageview to ', req.originalUrl);
+    req.visitor.pageview(req.originalUrl).send();
   }
   let linkname = req.params.linkname;
   let links = await getLinksWithCache(linkname) as Array<object>;
@@ -232,7 +232,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
     let link = links[0] as any;
     logger.info('redirect to golink:', link.dest);
     res.redirect(link.dest);
-    req.visitor.event("Redirect", "Hit", "Forward", {p: req.originalPath, dest: link.dest}).send();
+    req.visitor.event("Redirect", "Hit", "Forward", {p: req.originalUrl, dest: link.dest}).send();
   } else {
     logger.info('Not found', 'LINK_' + req.params.linkname);
     res.render('edit', {
@@ -242,7 +242,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
       author: req.user ? req.user.emails[0].value : "anonymous",
       editable: true
     });
-    req.visitor.event("Redirect", "Miss", "ToEdit", {p: req.originalPath}).send();
+    req.visitor.event("Redirect", "Miss", "ToEdit", {p: req.originalUrl}).send();
   }
 }));
 
