@@ -33,6 +33,7 @@
     "express-status-monitor": "^1.1.5",
     "log4js": "^3.0.5",
     "mysql": "^2.16.0",
+    "node-cache": "^4.2.0",
     "passport": "^0.4.0",
     "passport-auth0": "^1.0.0",
     "pug": "^2.0.3",

@@ -13,6 +13,9 @@ let connection;
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache();
+
 const asyncHandler = fn => (req, res, next) =>
     Promise
         .resolve(fn(req, res, next))
@@ -59,6 +62,9 @@ let editable = function (author, user) {
   return false;
 };
 let upsertLinkAsync = async function (linkname, dest, author) {
+  logger.debug(`Updating linkname`);
+  myCache.del( linkname );
+  logger.debug(`Removed cahce for linkname`);
   let query = `
 INSERT INTO golinks (linkname, dest, author)
 VALUES (${SqlString.escape(linkname)}, ${SqlString.escape(dest)}, ${SqlString.escape(author)})
@@ -74,7 +80,22 @@ ON DUPLICATE KEY UPDATE
   });
 };
 
-let getLinkAsync = async (linkname) => {
+let getLinksWithCache = async (linkname) => {
+  let value = myCache.get( linkname);
+  if ( value !== undefined ) {
+    logger.debug(`cache hit for ${linkname}`);
+    return value;
+  } else {
+    logger.debug(`cache missed for ${linkname}`);
+    // handle miss!
+    let originalValue = getLinksAsync(linkname);
+    myCache.set(linkname, originalValue);
+    logger.debug(`cache set for ${linkname}`);
+    return originalValue;
+  }
+};
+
+let getLinksAsync = async (linkname) => {
   let query = `SELECT linkname, dest, author from golinks WHERE linkname=${SqlString.escape(linkname)};`;
 
   return new Promise((resolve, reject) => {
@@ -162,7 +183,7 @@ router.post('/edit', asyncHandler(async function (req, res) {
     let linkname = req.body.linkname;
     let dest = req.body.dest;
     // Check if links can be updated. // also need to worry about trace
-    let links = await getLinkAsync(linkname) as Array<any>;
+    let links = await getLinksWithCache(linkname) as Array<any>;
     if (links.length && links[0].author != "anonymous" && req.user && req.user.emails.map(i => i.value).indexOf(links[0].author) < 0) {
       res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
     } else {
@@ -177,7 +198,7 @@ router.post('/edit', asyncHandler(async function (req, res) {
 
 router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
   let linkname = req.params.linkname;
-  let links = await getLinkAsync(linkname) as Array<object>; // must be lenght = 1 or 0 because linkname is primary key
+  let links = await getLinksWithCache(linkname) as Array<object>; // must be lenght = 1 or 0 because linkname is primary key
   if (links.length == 0) {
     res.render('edit', {
       title: "Create New Link",
@@ -205,7 +226,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
     req.visitor.pageview(req.originalPath).send();
   }
   let linkname = req.params.linkname;
-  let links = await getLinkAsync(linkname) as Array<object>;
+  let links = await getLinksWithCache(linkname) as Array<object>;
 
   if (links.length) {
     let link = links[0] as any;
