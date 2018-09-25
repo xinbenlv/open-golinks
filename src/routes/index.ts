@@ -146,6 +146,9 @@ let getAllLinks = async function () {
   });
 };
 
+router.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler( async (req, res) => {
+  res.send(`loaderio-0d9781efd2af91d08df854c1d6d90e7d`);
+}));
 router.get('/all-links', asyncHandler(async function (req, res) {
   let links = await getAllLinks() as Array<any>;
   res.render('links', {
@@ -254,6 +257,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
 router.get('/', asyncHandler(async function (req, res) {
   res.redirect('/edit');
 }));
+
 
 
 module.exports = router;
