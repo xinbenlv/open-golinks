@@ -222,11 +222,16 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
 
 router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
   if (req.visitor) {
-    logger.debug(`req.visitor is set to `, req.visitor, 'now logging pageview to ', req.originalUrl);
+    logger.debug(`req.visitor is set to `, req.visitor, 'now logging pageview to ', req.originalUrl, req.query.nocache);
     req.visitor.pageview(req.originalUrl).send();
   }
   let linkname = req.params.linkname;
-  let links = await getLinksWithCache(linkname) as Array<object>;
+  let links;
+  if (req.query.nocache) {
+    links = await getLinksAsync(linkname) as Array<object>;
+  } else {
+    links = await getLinksWithCache(linkname) as Array<object>;
+  }
 
   if (links.length) {
     let link = links[0] as any;
