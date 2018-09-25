@@ -231,6 +231,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
   let linkname = req.params.linkname;
   let links;
   if (req.query.nocache) {
+    logger.info(`Forced nocache for ${linkname}`);
     links = await getLinksAsync(linkname) as Array<object>;
   } else {
     links = await getLinksWithCache(linkname) as Array<object>;
