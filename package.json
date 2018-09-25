@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/xinbenlv/golink4np#readme",
   "dependencies": {
+    "@types/node": "^10.9.3",
     "body-parser": "^1.18.3",
     "connect-ensure-login": "^0.1.1",
     "cookie-parser": "^1.4.3",
@@ -43,7 +44,8 @@
     "universal-analytics": "^0.4.17",
     "validator": "^10.7.0"
   },
-  "devDependencies": {
-    "@types/node": "^10.9.3"
+  "engines": {
+    "node": "9.3.0",
+    "npm": "6.1.0"
   }
 }
