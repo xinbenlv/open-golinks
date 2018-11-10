@@ -16,8 +16,8 @@ We welcome contributions. Send us Pull Request.
 ## TODO
 
 ### Feature
- - [ ] Able to delete link
- - [ ] Stats
+ - [ ] Ability to delete link
+ - [ ] Show stats direcly along with links (from Google Analytics)
  
 ### Productionization
  - [ ] Cache Mechanism
