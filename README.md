@@ -20,5 +20,5 @@ We welcome contributions. Send us Pull Request.
  - [ ] Show stats direcly along with links (from Google Analytics)
  
 ### Productionization
- - [ ] Cache Mechanism
+ - [X] Cache Mechanism
  - [ ] DDoS Prevention (reCAPTCHA)?
