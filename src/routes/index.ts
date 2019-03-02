@@ -55,7 +55,7 @@ if (process.env.CLEARDB_DATABASE_URL) {
 
 let editable = function (existingLinkAuthor, reqeustingUser) {
   logger.debug(`Author: ${existingLinkAuthor}`, 'user', reqeustingUser);
-  if (existingLinkAuthor === 'anonymous' && process.env.ALLOW_OVERRIDE_ANONYMOUS === 'true') return true;
+  if (existingLinkAuthor === 'anonymous' && reqeustingUser && process.env.ALLOW_OVERRIDE_ANONYMOUS === 'true') return true;
   else if (reqeustingUser && reqeustingUser.emails.map(i => i.value).indexOf(existingLinkAuthor) >= 0) {
     return true;
   }
@@ -194,9 +194,9 @@ router.post('/edit', asyncHandler(async function (req, res) {
       await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
       logger.info(`Done`);
       req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
-      res.send(`OK, updated Link ${linkname} to url = ${dest}`);
+      res.send(`Edit/Update succeeded, updated Link ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} to url = ${dest}`);
     } else {
-      res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
+      res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} which belongs to user:${links[0].author}.`);
 
     }
   }
