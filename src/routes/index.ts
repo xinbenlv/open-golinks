@@ -177,6 +177,14 @@ router.get('/edit', (req, res) => {
   });
 });
 
+router.get('/dashboard', (req, res) => {
+  res.render('dashboard', {
+    title: "Usage Dashboard",
+    viewId: process.env.GA_VIEW_ID,
+    accessToken: process.env.GA_ACCESS_TOKEN
+  });
+});
+
 router.post('/edit', asyncHandler(async function (req, res) {
   var regexPattern = RegExp(`^${LINKNAME_PATTERN}$`);
   if (!validator.isURL(req.body.dest)) {

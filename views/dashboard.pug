@@ -1,0 +1,89 @@
+extends layout
+
+block content
+    script.
+        (function (w, d, s, g, js, fs) {
+            g = w.gapi || (w.gapi = {});
+            g.analytics = {
+                q: [], ready: function (f) {
+                    this.q.push(f);
+                }
+            };
+            js = d.createElement(s);
+            fs = d.getElementsByTagName(s)[0];
+            js.src = 'https://apis.google.com/js/platform.js';
+            fs.parentNode.insertBefore(js, fs);
+            js.onload = function () {
+                g.load('analytics');
+            };
+        }(window, document, 'script'));
+    div#chart-1-container
+    div#table-chart-container
+
+    script.
+        gapi.analytics.ready(function() {
+            const viewId = '#{viewId}';
+            /**
+             * Authorize the user immediately if the user has already granted access.
+             * If no access has been created, render an authorize button inside the
+             * element with the ID "embed-api-auth-container".
+             */
+            gapi.analytics.auth.authorize({
+                container: 'embed-api-auth-container',
+                serverAuth: {
+                    access_token: '#{accessToken}'
+                }
+            });
+
+            /**
+             * Create a new DataChart instance with the given query parameters
+             * and Google chart options. It will be rendered inside an element
+             * with the id "chart-container".
+             */
+            var dataChart = new gapi.analytics.googleCharts.DataChart({
+                query: {
+                    'ids': viewId,
+                    'start-date': '2005-01-01',
+                    'end-date': '2019-03-03',
+                    'metrics': 'ga:pageviews',
+                    'dimensions': 'ga:pagePathLevel1',
+                    'sort': '-ga:pageviews',
+                    'filters': 'ga:pagePathLevel1!=/',
+                    'max-results': 7
+                },
+                chart: {
+                    'container': 'chart-1-container',
+                    'type': 'PIE',
+                    'options': {
+                        'width': '100%',
+                        'pieHole': 4 / 9,
+                    }
+                }
+            });
+            dataChart.execute();
+
+            /**
+             * Create a table chart showing top browsers for users to interact with.
+             * Clicking on a row in the table will update a second timeline chart with
+             * data from the selected browser.
+             */
+            var tableChart = new gapi.analytics.googleCharts.DataChart({
+                query: {
+                    'ids': viewId, // <-- Replace with the ids value for your view.
+                    'dimensions': 'ga:pagePathLevel1',
+                    'start-date': '2005-01-01',
+                    'end-date': '2019-03-03',
+                    'metrics': 'ga:sessions',
+                    'sort': '-ga:sessions',
+                    'max-results': '30'
+                },
+                chart: {
+                    type: 'TABLE',
+                    container: 'table-chart-container',
+                    options: {
+                        width: '100%'
+                    }
+                }
+            });
+            tableChart.execute();
+        });
