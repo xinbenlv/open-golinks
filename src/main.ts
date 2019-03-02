@@ -11,6 +11,7 @@ var logger = log4js.getLogger();
 logger.level = 'debug';
 
 let app = express();
+app.use('/static', express.static('static'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'pug');
@@ -26,6 +27,7 @@ logger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GO
 app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
 app.locals.siteName = process.env.OPEN_GOLINKS_SITE_NAME || `Open GoLinks`;
 app.locals.siteHost = process.env.OPEN_GOLINKS_SITE_HOST || `http://localhost:3000`;
+
 
 var Auth0Strategy = require('passport-auth0'),
     passport = require('passport');
