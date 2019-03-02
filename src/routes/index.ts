@@ -163,7 +163,7 @@ router.get('/all-links', asyncHandler(async function (req, res) {
 
 let getJWTClientAccessToekn = async function() {
   const {JWT} = require('google-auth-library');
-  const keys = require('./oauth2.key.json');
+  const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
 
   const client = new JWT(
       keys.client_email,
@@ -263,11 +263,11 @@ router.get('/edit', (req, res) => {
   });
 });
 
-router.get('/dashboard', (req, res) => {
+router.get('/dashboard', async (req, res) => {
   res.render('dashboard', {
     title: "Usage Dashboard",
     viewId: process.env.GA_VIEW_ID,
-    accessToken: process.env.GA_ACCESS_TOKEN
+    accessToken: await getJWTClientAccessToekn()
   });
 });
 
