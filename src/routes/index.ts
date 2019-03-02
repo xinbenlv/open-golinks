@@ -191,13 +191,12 @@ router.post('/edit', asyncHandler(async function (req, res) {
     if (links.length && links[0].author != "anonymous" && req.user && req.user.emails.map(i => i.value).indexOf(links[0].author) < 0) {
       res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
     } else {
-      console.log(`edit XXX Links good: 
-      links.length=${links.length}, 
-      links[0].author != "anonymous"=${links[0].author != "anonymous"}
-      req.user = ${req.user}
-      req.user.emails.map(i => i.value).indexOf(links[0].author) < 0 = ${req.user.emails.map(i => i.value).indexOf(links[0].author) < 0}
-      links = ${links}
-      `);
+      console.log(`edit XXX Links good:`);
+      console.log(`links.length=${links.length}`);
+      if (links && links.length > 0) console.log(`links[0].author != "anonymous"=${links[0].author != "anonymous"}`);
+      console.log(`req.user = ${req.user}`);
+      if (req.user && req.user.emails.length > 0) console.log(`req.user.emails.map(i => i.value).indexOf(links[0].author) < 0 = ${req.user.emails.map(i => i.value).indexOf(links[0].author) < 0}`);
+      console.log(`links = ${links}`);
       await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
       logger.info(`Done`);
       req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
