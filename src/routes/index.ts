@@ -164,7 +164,7 @@ router.get('/all-links', asyncHandler(async function (req, res) {
 let getJWTClientAccessToekn = async function() {
   const {JWT} = require('google-auth-library');
   const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
-
+  console.log(`KEY FILE=`, process.env.GOOGLE_JSON_KEY);
   const client = new JWT(
       keys.client_email,
       null,
