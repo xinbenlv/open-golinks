@@ -3,6 +3,8 @@ var router = express.Router();
 const Auth0Strategy = require('passport-auth0');
 const passport = require('passport');
 
+const queryString = require('query-string');
+const rp = require('request-promise');
 const validator = require('validator');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
 const SqlString = require('sqlstring');
@@ -13,7 +15,7 @@ let connection;
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 
-const NodeCache = require( "node-cache" );
+const NodeCache = require("node-cache");
 const myCache = new NodeCache();
 
 const asyncHandler = fn => (req, res, next) =>
@@ -22,7 +24,7 @@ const asyncHandler = fn => (req, res, next) =>
         .catch(next);
 
 const reconnect = () => {
-  let  _connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
+  let _connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
   _connection.connect();
   logger.info('\nRe-connected lost mysql connection');
   return _connection;
@@ -64,7 +66,7 @@ let editable = function (existingLinkAuthor, reqeustingUser) {
 
 let upsertLinkAsync = async function (linkname, dest, author) {
   logger.debug(`Updating linkname`);
-  myCache.del( linkname );
+  myCache.del(linkname);
   logger.debug(`Removed cahce for linkname`);
   let query = `
 INSERT INTO golinks (linkname, dest, author)
@@ -82,8 +84,8 @@ ON DUPLICATE KEY UPDATE
 };
 
 let getLinksWithCache = async (linkname) => {
-  let value = myCache.get( linkname);
-  if ( value !== undefined ) {
+  let value = myCache.get(linkname);
+  if (value !== undefined) {
     logger.debug(`cache hit for ${linkname}`);
     return value;
   } else {
@@ -108,15 +110,14 @@ let getLinksAsync = async (linkname) => {
           // TODO(xinbenlv): consider apply similar case
           connection = reconnect();
           connection.query(query, function (err, rows, fields) {
-            if (err)  reject (err);
+            if (err) reject(err);
             else resolve(rows);
           });
           // if failed again, we will let it fail and report.
         } else {
           reject(err);
         }
-      }
-      else resolve(rows);
+      } else resolve(rows);
     })
   });
 
@@ -147,19 +148,104 @@ let getAllLinks = async function () {
   });
 };
 
-router.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler( async (req, res) => {
+router.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler(async (req, res) => {
   res.send(`loaderio-0d9781efd2af91d08df854c1d6d90e7d`);
 }));
 router.get('/all-links', asyncHandler(async function (req, res) {
-  let links = await getAllLinks() as Array<any>;
+  let links: Array<any> = await getAllLinks() as Array<any>;
+  links = await getLinksWithMetrics(links);
   res.render('links', {
     links: links
   });
 }));
 
+
+
+let getJWTClientAccessToekn = async function() {
+  const {JWT} = require('google-auth-library');
+  const keys = require('./oauth2.key.json');
+
+  const client = new JWT(
+      keys.client_email,
+      null,
+      keys.private_key,
+      [
+          `https://www.googleapis.com/auth/analytics.readonly`
+      ],
+  );
+  return new Promise((resolve, reject) => {
+    client.authorize((err, result) => {
+      if (err) {
+        reject(err);
+      } else
+        resolve(result.access_token);
+
+    });
+  });
+};
+let getLinksWithMetrics = async function (links) {
+  let access_token = await getJWTClientAccessToekn();
+  const baseUrlV4 = `https://analyticsreporting.googleapis.com/v4/reports:batchGet?`;
+  let queryV4 = `{
+ "reportRequests": [
+  {
+   "viewId": "${process.env.GA_VIEW_ID}",
+   "dimensions": [
+    {
+     "name": "ga:pagePath"
+    }
+   ],
+   "metrics": [
+    {
+     "expression": "ga:pageviews"
+    }
+   ],
+   "dimensionFilterClauses": [
+    {
+     "filters": [
+      {
+       "operator": "IN_LIST",
+       "dimensionName": "ga:pagePath",
+       "expressions": ${JSON.stringify(links.map(l => '/' + l['linkname']))}
+      }
+     ]
+    }
+   ],
+   "dateRanges": [
+    {
+     "startDate": "2005-12-31",
+     "endDate": "2019-09-28"
+    }
+   ]
+  }
+ ]
+}`;
+
+  let optionV4 = {
+    uri: baseUrlV4 + `access_token=${access_token}`,
+    method: 'POST',
+    body: JSON.parse(queryV4),
+    json: true
+  };
+  let retV4 = await rp(optionV4);
+
+  let urlToPageviewMap = {};
+  retV4['reports'][0]['data']['rows'].forEach(d => {
+    let url = d['dimensions'][0];
+    let pageViews = d['metrics'][0]['values'][0];
+    urlToPageviewMap[url] = pageViews;
+  });
+
+  links.forEach(l => {
+    l['pageViews'] = urlToPageviewMap['/' + l['linkname']]
+  });
+  return links;
+};
+
 /* GET user profile. */
 router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
-  let links = await getLinksByEmailAsync(req.user.emails.map(item => item.value));
+  let links = await getLinksWithMetrics(
+      await getLinksByEmailAsync(req.user.emails.map(item => item.value)) as []);
   res.render('links', {
     links: links,
     isUser: true,
@@ -196,9 +282,7 @@ router.post('/edit', asyncHandler(async function (req, res) {
     let dest = req.body.dest;
     // Check if links can be updated. // also need to worry about trace
     let links = await getLinksWithCache(linkname) as Array<any>;
-    console.log(`edit XXX Links`, JSON.stringify(links, null, '  '));
     if (links.length == 0/*link doen't exist*/ || editable(links[0].author, req.user)) {
-      console.log(`edit XXX Links good:`);
       await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
       logger.info(`Done`);
       req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
@@ -270,7 +354,6 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
 router.get('/', asyncHandler(async function (req, res) {
   res.redirect('/edit');
 }));
-
 
 
 module.exports = router;

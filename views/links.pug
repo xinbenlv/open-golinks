@@ -8,6 +8,7 @@ block content
                 tr
                     th Link Name
                     th Destination
+                    th Clicks
                     th Action
             tbody
                 each link in links
@@ -16,6 +17,8 @@ block content
                             a(href=link['linkname']) #{link['linkname']}
                         td(style="word-break:break-all")
                             a(href=link['dest'] style="word-break") #{link['dest']}
+                        td
+                            | #{link['pageViews'] || 0}
                         td
                             a.btn.btn-primary.btn-outline(href="/edit/" + link['linkname']) Edit
 

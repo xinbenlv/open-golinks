@@ -1,3 +1,4 @@
 node_modules
 src/**/*.js
 .env
+oauth2.key.json
