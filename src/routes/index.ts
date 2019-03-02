@@ -184,9 +184,17 @@ router.post('/edit', asyncHandler(async function (req, res) {
     let dest = req.body.dest;
     // Check if links can be updated. // also need to worry about trace
     let links = await getLinksWithCache(linkname) as Array<any>;
+    console.log(`edit XXX Links`, JSON.stringify(links, null, '  '));
     if (links.length && links[0].author != "anonymous" && req.user && req.user.emails.map(i => i.value).indexOf(links[0].author) < 0) {
       res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
     } else {
+      console.log(`edit XXX Links good: 
+      links.length=${links.length}, 
+      links[0].author != "anonymous"=${links[0].author != "anonymous"}
+      req.user = ${req.user}
+      req.user.emails.map(i => i.value).indexOf(links[0].author) < 0 = ${req.user.emails.map(i => i.value).indexOf(links[0].author) < 0}
+      links = ${links}
+      `);
       await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
       logger.info(`Done`);
       req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
