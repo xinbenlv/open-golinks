@@ -44,8 +44,8 @@
         var dataChart = new gapi.analytics.googleCharts.DataChart({
             query: {
                 'ids': viewId,
-                'start-date': '30daysAgo',
-                'end-date': 'yesterday',
+                'start-date': '2005-01-01',
+                'end-date': '2019-03-03',
                 'metrics': 'ga:pageviews',
                 'dimensions': 'ga:pagePathLevel1',
                 'sort': '-ga:pageviews',
@@ -72,6 +72,8 @@
             query: {
                 'ids': viewId, // <-- Replace with the ids value for your view.
                 'dimensions': 'ga:pagePathLevel1',
+                'start-date': '2005-01-01',
+                'end-date': '2019-03-03',
                 'metrics': 'ga:sessions',
                 'sort': '-ga:sessions',
                 'max-results': '30'
