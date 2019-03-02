@@ -53,14 +53,15 @@ if (process.env.CLEARDB_DATABASE_URL) {
   process.exit(1);
 }
 
-let editable = function (author, user) {
-  logger.debug(`Author: ${author}`, 'user', user);
-  if (author === 'anonymous') return true;
-  else if (user && user.emails.map(i => i.value).indexOf(author) >= 0) {
+let editable = function (existingLinkAuthor, reqeustingUser) {
+  logger.debug(`Author: ${existingLinkAuthor}`, 'user', reqeustingUser);
+  if (existingLinkAuthor === 'anonymous' && process.env.ALLOW_OVERRIDE_ANONYMOUS === 'true') return true;
+  else if (reqeustingUser && reqeustingUser.emails.map(i => i.value).indexOf(existingLinkAuthor) >= 0) {
     return true;
   }
   return false;
 };
+
 let upsertLinkAsync = async function (linkname, dest, author) {
   logger.debug(`Updating linkname`);
   myCache.del( linkname );
@@ -188,9 +189,7 @@ router.post('/edit', asyncHandler(async function (req, res) {
     // Check if links can be updated. // also need to worry about trace
     let links = await getLinksWithCache(linkname) as Array<any>;
     console.log(`edit XXX Links`, JSON.stringify(links, null, '  '));
-    if (links.length && links[0].author != "anonymous" && req.user && req.user.emails.map(i => i.value).indexOf(links[0].author) < 0) {
-      res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
-    } else {
+    if (links.length == 0/*link doen't exist*/ || editable(links[0].author, req.user)) {
       console.log(`edit XXX Links good:`);
       console.log(`links.length=${links.length}`);
       if (links && links.length > 0) console.log(`links[0].author != "anonymous"=${links[0].author != "anonymous"}`);
@@ -200,7 +199,10 @@ router.post('/edit', asyncHandler(async function (req, res) {
       await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
       logger.info(`Done`);
       req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
-      res.send('OK');
+      res.send(`OK, updated Link ${linkname} to url = ${dest}`);
+    } else {
+      res.status(403).send(`You don't have permission to edit ${linkname} which belongs to ${links[0].author}.`);
+
     }
   }
 
