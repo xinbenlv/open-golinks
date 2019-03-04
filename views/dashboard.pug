@@ -20,15 +20,15 @@ block content
 
     .input-group.mb-3
         .btn-group.mr-2(role='group', aria-label='First group')
-            button.btn.btn-secondary.active.dash-duration(type='button', data-value=365 * 8) 全部
+            button.btn.btn-secondary.dash-duration(type='button', data-value=-1) 全部
             button.btn.btn-secondary.dash-duration(type='button', data-value=180) 180天
             button.btn.btn-secondary.dash-duration(type='button', data-value=90) 90天
             button.btn.btn-secondary.dash-duration(type='button', data-value=30) 30天
-            button.btn.btn-secondary.dash-duration(type='button', data-value=7) 7天
+            button.btn.btn-secondary.active.dash-duration(type='button', data-value=14) 14天
             button.btn.btn-secondary.dash-duration(type='button', data-value=1) 1天
         input.form-control#regex-input(type='text', placeholder="RegEx", aria-label="Regular Expression for Search", aria-describedby='button-addon2')
         .input-group-append
-            button#btn-update.btn.btn-outline-light(type='button') 刷新图标
+            button#btn-update.btn.btn-secondary(type='button') 刷新 <i class="fas fa-sync-alt"></i>
 
     div#pie-chart-container
     div#line-chart-container
@@ -36,47 +36,68 @@ block content
     script(src='https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/date_fns.min.js', crossorigin='anonymous')
     script.
         gapi.analytics.ready(function() {
-           var tableChart,pieChart, lineChart;
+          var tableChart,pieChart, lineChart;
+
            var charts;
+
+           function updateDateRangeAndDimension() {
+             let dateRangeBtn = $('.active.dash-duration');
+            let lastNDay = parseInt(dateRangeBtn.attr('data-value'));
+            var endDate = new Date(); // today
+            var startDate;
+            if (parseInt(lastNDay) === -1) {
+              console.log(`Setting startDate`, `2018-08-01`);
+              startDate = new Date(2018, 8, 1, 0, 0, 0);
+            } else {
+              console.log(`Setting startDate`, `today - lastNdate`);
+              startDate = dateFns.subDays(endDate, lastNDay);
+            }
+
+            var dateRange = {
+              'start-date': dateFns.format(startDate, `GGGG-MM-DD`),
+              'end-date': dateFns.format(endDate, `GGGG-MM-DD`),
+            };
+
+            let dimensions = 'ga:dateHour';
+             if (lastNDay === -1)  {
+               dimensions = 'ga:isoYearIsoWeek';
+             } else if (lastNDay <= 1) {
+              dimensions = 'ga:dateHour';
+            } else if (lastNDay <= 7) {
+              dimensions = 'ga:date';
+            } else if (lastNDay <= 180) {
+              dimensions = 'ga:date';
+            } else {
+              dimensions = 'ga:isoYearIsoWeek';
+            }
+
+            lineChart.set({query: {'dimensions': dimensions}});
+            charts.forEach(function (chart) {
+              chart.set({query: dateRange})
+                  .execute();
+            });
+          };
+
            $(`.dash-duration`).click(function() {
-             let lastNDay = $(this).attr('data-value');
-             console.log(`Setting date to`, lastNDay);
-             var endDate = new Date(); // today
-             var startDate = dateFns.subDays(endDate, lastNDay);
-
-             var dateRange = {
-               'start-date': dateFns.format(startDate, `GGGG-MM-DD`),
-               'end-date': dateFns.format(endDate, `GGGG-MM-DD`),
-             };
-             let dimensions = 'ga:dateHour';
-             if (lastNDay <= 1 ) {
-               dimensions = 'ga:dateHour';
-             } else if (lastNDay <= 7) {
-               dimensions = 'ga:date';
-             } else if (lastNDay <= 180 ) {
-               dimensions = 'ga:date';
-             } else {
-               dimensions = 'ga:year';
-             }
-
-             console.log(`Date Range`, dateRange);
-             console.log(`Dimension`, dimensions);
-             lineChart.set({query: {'dimensions': dimensions}});
-             charts.forEach(function (chart) {
-               chart.set({query: dateRange})
-                   .execute();
-             });
-
              $(`.active`).removeClass(`active`);
              $(this).addClass(`active`);
+             updateDateRangeAndDimension();
            });
            $(`#btn-update`).click(function () {
              var reg = $(`#regex-input`).val();
+             if (reg) {
+               charts.forEach(function (chart) {
+                 chart.set({query: {filters: `ga:pagePathLevel1=~${reg}`}});
+               });
+             } else {
+                 charts.forEach(function (chart) {
+                   chart.set({query: {filters: 'ga:pagePathLevel1!=/'}});
+                 });
+             }
              charts.forEach(function (chart) {
-               chart
-                   .set({query: {filters: `ga:pagePathLevel1=~${reg}`}})
-                   .execute();
+               chart.execute();
              });
+
            });
             const viewId = '#{viewId}';
             /**
@@ -125,7 +146,7 @@ block content
                 query: {
                     'ids': viewId, // <-- Replace with the ids value for your view.
                     'dimensions': 'ga:pagePathLevel1',
-                    'metrics': 'ga:sessions',
+                    'metrics': 'ga:sessions,ga:pageviews,ga:users',
                     'sort': '-ga:sessions',
                     'filters': `ga:pagePathLevel1!=/`,
                     'max-results': '30'
@@ -143,8 +164,8 @@ block content
             lineChart = new gapi.analytics.googleCharts.DataChart({
                 query: {
                   'ids': viewId, // <-- Replace with the ids value for your view.
-                  'metrics': 'ga:sessions',
-                  'dimensions': 'ga:date',
+                  'metrics': 'ga:sessions,ga:pageviews,ga:users',
+                  'dimensions': 'ga:isoYearIsoWeek',
                   'filters': `ga:pagePathLevel1!=/`,
                 },
                 chart: {
@@ -156,14 +177,5 @@ block content
                 }
               });
             charts = [tableChart, pieChart, lineChart];
-            var endDate = new Date(); // today
-            var startDate = dateFns.subDays(endDate, 365 * 8);
-            var dateRange = {
-              'start-date': dateFns.format(startDate, `GGGG-MM-DD`),
-              'end-date': dateFns.format(endDate, `GGGG-MM-DD`),
-            };
-            charts.forEach(function(chart) {
-              chart.set({query: dateRange})
-                  .execute();
-            })
+            updateDateRangeAndDimension();
         });
