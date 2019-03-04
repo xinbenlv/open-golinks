@@ -35,12 +35,18 @@ block content
     div#table-chart-container
     script(src='https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/date_fns.min.js', crossorigin='anonymous')
     script.
+
         gapi.analytics.ready(function() {
-          var tableChart,pieChart, lineChart;
+           var tableChart,pieChart, lineChart;
 
            var charts;
-
-           function updateDateRangeAndDimension() {
+           var lockedUrl = '#{lockedUrl}' ;
+           if (lockedUrl) {
+             $(`#regex-input`)
+                 .val(`#{lockedUrl}`)
+                 .prop('disabled', true);
+           }
+           function refreshQuery() {
              let dateRangeBtn = $('.active.dash-duration');
             let lastNDay = parseInt(dateRangeBtn.attr('data-value'));
             var endDate = new Date(); // today
@@ -73,31 +79,36 @@ block content
 
             lineChart.set({query: {'dimensions': dimensions}});
             charts.forEach(function (chart) {
-              chart.set({query: dateRange})
-                  .execute();
+              chart.set({query: dateRange});
             });
+
+            var reg = $(`#regex-input`).val();
+
+             if (lockedUrl) {
+               charts.forEach(function (chart) {
+                 chart.set({query: {filters: `ga:pagePathLevel1=~^/${lockedUrl}$`}});
+               });
+             } else if (reg) {
+               charts.forEach(function (chart) {
+                 chart.set({query: {filters: `ga:pagePathLevel1=~${reg}`}});
+               });
+             } else {
+               charts.forEach(function (chart) {
+                 chart.set({query: {filters: 'ga:pagePathLevel1!=/'}});
+               });
+             }
+             charts.forEach(function (chart) {
+               chart.execute();
+             });
           };
 
            $(`.dash-duration`).click(function() {
              $(`.active`).removeClass(`active`);
              $(this).addClass(`active`);
-             updateDateRangeAndDimension();
+             refreshQuery();
            });
            $(`#btn-update`).click(function () {
-             var reg = $(`#regex-input`).val();
-             if (reg) {
-               charts.forEach(function (chart) {
-                 chart.set({query: {filters: `ga:pagePathLevel1=~${reg}`}});
-               });
-             } else {
-                 charts.forEach(function (chart) {
-                   chart.set({query: {filters: 'ga:pagePathLevel1!=/'}});
-                 });
-             }
-             charts.forEach(function (chart) {
-               chart.execute();
-             });
-
+             refreshQuery();
            });
             const viewId = '#{viewId}';
             /**
@@ -177,5 +188,5 @@ block content
                 }
               });
             charts = [tableChart, pieChart, lineChart];
-            updateDateRangeAndDimension();
+            refreshQuery();
         });

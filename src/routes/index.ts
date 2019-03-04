@@ -265,6 +265,15 @@ router.get('/edit', (req, res) => {
   });
 });
 
+router.get(`/dashboard/:linkname(${LINKNAME_PATTERN})`, async (req, res) => {
+  res.render('dashboard', {
+    title: "Usage Dashboard",
+    viewId: process.env.GA_VIEW_ID,
+    lockedUrl: req.params.linkname,
+    accessToken: await getJWTClientAccessToekn()
+  });
+});
+
 router.get('/dashboard', async (req, res) => {
   res.render('dashboard', {
     title: "Usage Dashboard",
@@ -272,6 +281,7 @@ router.get('/dashboard', async (req, res) => {
     accessToken: await getJWTClientAccessToekn()
   });
 });
+
 
 router.post('/edit', asyncHandler(async function (req, res) {
   var regexPattern = RegExp(`^${LINKNAME_PATTERN}$`);
