@@ -4,6 +4,13 @@ html.h-100(lang='en')
         title= siteName
         meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
         link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', integrity='sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO', crossorigin='anonymous')
+        script(async src="https://www.googletagmanager.com/gtag/js?id=UA-89403611-3")
+        script.
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'UA-89403611-3');
+
     body.h-100.d-flex.flex-column.bg-dark
         header.container
             nav.navbar.navbar-expand-lg.navbar-light.bg-dark

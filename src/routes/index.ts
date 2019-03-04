@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+import * as ua from "universal-analytics";
+
 const Auth0Strategy = require('passport-auth0');
 const passport = require('passport');
 
@@ -163,9 +165,7 @@ router.get('/all-links', asyncHandler(async function (req, res) {
 
 let getJWTClientAccessToekn = async function() {
   const {JWT} = require('google-auth-library');
-  console.log(`KEY FILE=`, process.env.GOOGLE_JSON_KEY);
   let decoded = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString();
-  console.log(`KEY FILE DECODED=`, decoded);
   const keys = JSON.parse(decoded);
   const client = new JWT(
       keys.client_email,
@@ -287,7 +287,15 @@ router.post('/edit', asyncHandler(async function (req, res) {
     if (links.length == 0/*link doen't exist*/ || editable(links[0].author, req.user)) {
       await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
       logger.info(`Done`);
-      req.visitor.event("Edit", "Submit", "OK", {p: linkname}).send();
+
+      let params = {
+        ec: `Edit`,
+        ea: `Submit`,
+        el: `OK`,
+        p: linkname, // page
+        ev: 10,
+      };
+      req.visitor.event(params).send();
       res.send(`Edit/Update succeeded, updated Link ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} to url = ${dest}`);
     } else {
       res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} which belongs to user:${links[0].author}.`);
@@ -324,8 +332,8 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
 router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
   if (req.visitor) {
     logger.debug(`req.visitor is set to `, req.visitor, 'now logging pageview to ', req.originalUrl, req.query.nocache);
-    req.visitor.pageview(req.originalUrl).send();
   }
+
   let linkname = req.params.linkname;
   let links;
   if (req.query.nocache) {
@@ -338,7 +346,10 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
   if (links.length) {
     let link = links[0] as any;
     logger.info('redirect to golink:', link.dest);
+
+
     res.redirect(link.dest);
+
     req.visitor.event("Redirect", "Hit", "Forward", {p: req.originalUrl, dest: link.dest}).send();
   } else {
     logger.info('Not found', 'LINK_' + req.params.linkname);

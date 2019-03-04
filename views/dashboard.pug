@@ -17,11 +17,29 @@ block content
                 g.load('analytics');
             };
         }(window, document, 'script'));
+
+    .input-group.mb-3
+        input.form-control#regex-input(type='text', placeholder="RegEx", aria-label="Regular Expression for Search", aria-describedby='button-addon2')
+        .input-group-append
+            button#btn-update.btn.btn-outline-secondary(type='button') Update Chart
+
     div#chart-1-container
     div#table-chart-container
 
     script.
         gapi.analytics.ready(function() {
+
+           $(`#btn-update`).click(function () {
+             var reg = $(`#regex-input`).val();
+             console.log(`XXX reg=`, reg);
+             dataChart
+                     .set({query: {filters: `ga:pagePathLevel1=~${reg}`}})
+                     .execute();
+             tableChart
+                     .set({query: {filters: `ga:pagePathLevel1=~${reg}`}})
+                     .execute();
+             console.log(`XXX done execute`);
+           });
             const viewId = '#{viewId}';
             /**
              * Authorize the user immediately if the user has already granted access.
@@ -75,6 +93,7 @@ block content
                     'end-date': '2019-03-03',
                     'metrics': 'ga:sessions',
                     'sort': '-ga:sessions',
+                    'filters': `ga:pagePathLevel1!=/`,
                     'max-results': '30'
                 },
                 chart: {

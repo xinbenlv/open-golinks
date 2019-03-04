@@ -10,6 +10,7 @@ var log4js = require('log4js');
 var logger = log4js.getLogger();
 logger.level = 'debug';
 
+let PORT = process.env.PORT || 3000;
 let app = express();
 app.use('/static', express.static('static'));
 app.use(bodyParser.json());
@@ -24,7 +25,6 @@ console.assert(process.env.AUTH0_CLIENT_ID, `$AUTH0_CLIENT_ID is not set`);
 console.assert(process.env.AUTH0_CLIENT_SECRET, `AUTH0_CLIENT_SECRET is not set`);
 
 logger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
-app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
 app.locals.siteName = process.env.OPEN_GOLINKS_SITE_NAME || `Open GoLinks`;
 app.locals.siteHost = process.env.OPEN_GOLINKS_SITE_HOST || `http://localhost:3000`;
 
@@ -37,7 +37,7 @@ var strategy = new Auth0Strategy({
       domain: process.env.AUTH0_DOMAIN,
       clientID: process.env.AUTH0_CLIENT_ID,
       clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-      callbackURL: `${process.env.OPEN_GOLINKS_SITE_HOST}/callback` || 'http://localhost:3000/callback',
+      callbackURL: `${process.env.OPEN_GOLINKS_SITE_HOST}/callback` || `http://localhost:${PORT}/callback`,
     },
     function (accessToken, refreshToken, extraParams, profile, done) {
       // accessToken is the token to call Auth0 API (not needed in the most cases)
@@ -93,10 +93,21 @@ app.use(function (req, res, next) {
   logger.debug(`Result:`, res.locals.loggedIn);
   next();
 });
+
+app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
+app.use(function (req, res, next) {
+  if (req.user && req.user.emails) {
+    req.visitor.set('uid', req.user.emails[0]); // TODO(zzn): consider use a HASH fucntion instead
+    logger.debug(`set uid for req.visitor`, req.visitor);
+  }
+  // Log pageview for all requests
+  req.visitor.pageview(req.originalUrl).send();
+
+  next()
+});
 app.use('/', authRouter);
 app.use('/', indexRouter);
 
-let PORT = process.env.PORT || 3000;
 logger.debug('Start listening on ', PORT);
 app.listen(PORT);
 
