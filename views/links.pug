@@ -3,12 +3,13 @@ extends layout
 block content
 
     if (links.length)
-        table.table.table-light(style="width: 100%")
+        table.table.table-light.rounded(style="width: 100%")
             thead
                 tr
                     th Link Name
                     th Destination
-                    th Clicks
+                    th Page Views
+                    th Owner
                     th Action
             tbody
                 each link in links
@@ -18,9 +19,16 @@ block content
                         td(style="word-break:break-all")
                             a(href=link['dest'] style="word-break") #{link['dest']}
                         td
-                            | #{link['pageViews'] || 0}
+                            a(href='/dashboard/' + link['linkname'] style="word-break") #{link['pageViews'] || 0}
                         td
-                            a.btn.btn-primary.btn-outline(href="/edit/" + link['linkname']) Edit
+                            | #{link['author']}
+                        td
+                            if link['author'] === 'anonymous'
+                                a.btn.btn-success.btn-outline(href="/edit/" + link['linkname']) 认领
+                            else
+                                a.btn.btn-primary.btn-outline(href="/edit/" + link['linkname']) 编辑
+
+
 
     else
         h1 You don't have any links
