@@ -325,7 +325,15 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
       user: req.user,
       editable: editable(link['author'], req.user)
     });
-    req.visitor.event("Edit", "Render", "", {p: linkname}).send();
+
+    let params = {
+      ec: `Edit`,
+      ea: `Render`,
+      el: ``,
+      p: linkname, // page
+      ev: 20,
+    };
+    req.visitor.event(params).send();
   }
 });
 
@@ -347,10 +355,16 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
     let link = links[0] as any;
     logger.info('redirect to golink:', link.dest);
 
-
     res.redirect(link.dest);
-
-    req.visitor.event("Redirect", "Hit", "Forward", {p: req.originalUrl, dest: link.dest}).send();
+    let params = {
+      ec: `Redirect`,
+      ea: `Hit`,
+      el: `Forward`,
+      p: req.originalUrl,
+      dest: link.dest,
+      ev: 1,
+    };
+    req.visitor.event(params).send();
   } else {
     logger.info('Not found', 'LINK_' + req.params.linkname);
     res.render('edit', {
@@ -360,7 +374,15 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
       author: req.user ? req.user.emails[0].value : "anonymous",
       editable: true
     });
-    req.visitor.event("Redirect", "Miss", "ToEdit", {p: req.originalUrl}).send();
+
+    let params = {
+      ec: `Redirect`,
+      ea: `Miss`,
+      el: `ToEdit`,
+      p: req.originalUrl,
+      ev: 1,
+    };
+    req.visitor.event(params).send();
   }
 }));
 
