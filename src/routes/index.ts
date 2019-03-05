@@ -86,7 +86,7 @@ let getLinksFromDBByLinknameAsync = async (linkname) => {
     }
   });
   logger.debug(`getLinksFromDBByLinknameAsync linkname = ${linkname}, ret = ${JSON.stringify(ret, null, 2)}`);
-  return [ret] || [];
+  return ret == null ? [] : [ret];
 
 };
 
