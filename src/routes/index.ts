@@ -51,9 +51,13 @@ let upsertLinkAsync = async function (linkname, dest, author) {
   dbInstance = await maybeReconnect();
 
   const collection = dbInstance.collection('shortlinks');
+  let now = new Date();
   return await collection.updateOne(
       {linkname: linkname},
-      { $set: {linkname: linkname, dest: dest, author: author, time: new Date()} },
+      {
+        $set: {linkname: linkname, dest: dest, author: author, updatedTimed: now},
+        $setOnInsert: {createdTime: now}
+      },
       {upsert: true});
 
 };
