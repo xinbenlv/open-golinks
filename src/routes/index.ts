@@ -28,7 +28,7 @@ const maybeReconnect = async () => {
     return new Promise(((resolve, reject) => {
       MongoClient.connect(process.env.MONGODB_URI, (err, client) => {
         if (err) reject(err);
-        else resolve(client.db(`heroku_pts10rxp`));
+        else resolve(client.db(process.env.MONGODB_DB));
       });
     }));
 
