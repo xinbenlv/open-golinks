@@ -1,7 +1,7 @@
 {
   "name": "golink4np",
   "version": "1.0.0",
-  "description": "A short url app with MySQL",
+  "description": "A short url app with MongoDB",
   "main": "src/main.ts",
   "scripts": {
     "start": "ts-node src/main.ts",
@@ -35,7 +35,7 @@
     "express-status-monitor": "^1.1.5",
     "google-auth-library": "^3.1.0",
     "log4js": "^3.0.6",
-    "mysql": "^2.16.0",
+    "mongodb": "^3.1.13",
     "node-cache": "^4.2.0",
     "passport": "^0.4.0",
     "passport-auth0": "^1.0.0",

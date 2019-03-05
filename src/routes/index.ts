@@ -1,19 +1,13 @@
 var express = require('express');
 var router = express.Router();
-import * as ua from "universal-analytics";
-
-const Auth0Strategy = require('passport-auth0');
-const passport = require('passport');
 
 const queryString = require('query-string');
 const rp = require('request-promise');
 const validator = require('validator');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
-const SqlString = require('sqlstring');
-import * as mysql from "mysql";
+const MongoClient = require('mongodb').MongoClient;
 
 const LINKNAME_PATTERN = '[A-Za-z0-9-_]+';
-let connection;
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 
@@ -25,37 +19,21 @@ const asyncHandler = fn => (req, res, next) =>
         .resolve(fn(req, res, next))
         .catch(next);
 
-const reconnect = () => {
-  let _connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-  _connection.connect();
-  logger.info('\nRe-connected lost mysql connection');
-  return _connection;
+let dbInstance = null; // global
+
+const maybeReconnect = async () => {
+  if (dbInstance) {
+    return dbInstance;
+  } else {
+    return new Promise(((resolve, reject) => {
+      MongoClient.connect(process.env.MONGODB_URI, (err, client) => {
+        if (err) reject(err);
+        else resolve(client.db(`heroku_pts10rxp`));
+      });
+    }));
+
+  }
 };
-
-const handleDisconnect = () => {
-  connection.on('error', function (err) {
-    logger.warn('Handling mysql err', err);
-    if (!err.fatal) {
-      return;
-    }
-    if (err.code !== 'PROTOCOL_CONNECTION_LOST') {
-      throw err;
-    }
-
-    logger.info('\nRe-connecting lost connection: ' + err.stack);
-    connection = reconnect();
-    handleDisconnect();
-  });
-};
-
-if (process.env.CLEARDB_DATABASE_URL) {
-  logger.debug(`Using MySQL`);
-  connection = mysql.createConnection(process.env.CLEARDB_DATABASE_URL);
-  handleDisconnect();
-} else {
-  logger.warn(`No MySQL specified, please set export CLEARDB_DATABASE_URL=<mysql url>`);
-  process.exit(1);
-}
 
 let editable = function (existingLinkAuthor, reqeustingUser) {
   logger.debug(`Author: ${existingLinkAuthor}`, 'user', reqeustingUser);
@@ -70,19 +48,14 @@ let upsertLinkAsync = async function (linkname, dest, author) {
   logger.debug(`Updating linkname`);
   myCache.del(linkname);
   logger.debug(`Removed cahce for linkname`);
-  let query = `
-INSERT INTO golinks (linkname, dest, author)
-VALUES (${SqlString.escape(linkname)}, ${SqlString.escape(dest)}, ${SqlString.escape(author)})
-ON DUPLICATE KEY UPDATE
-    dest = ${SqlString.escape(dest)},
-    author = ${SqlString.escape(author)};
-    `;
-  return new Promise((resolve, reject) => {
-    connection.query(query, function (err, rows) {
-      if (err) reject(err);
-      else resolve(rows);
-    })
-  });
+  dbInstance = await maybeReconnect();
+
+  const collection = dbInstance.collection('shortlinks');
+  return await collection.updateOne(
+      {linkname: linkname},
+      { $set: {linkname: linkname, dest: dest, author: author, time: new Date()} },
+      {upsert: true});
+
 };
 
 let getLinksWithCache = async (linkname) => {
@@ -93,61 +66,62 @@ let getLinksWithCache = async (linkname) => {
   } else {
     logger.debug(`cache missed for ${linkname}`);
     // handle miss!
-    let originalValue = getLinksAsync(linkname);
+    let originalValue = getLinksFromDBByLinknameAsync(linkname);
     myCache.set(linkname, originalValue);
     logger.debug(`cache set for ${linkname}`);
     return originalValue;
   }
 };
 
-let getLinksAsync = async (linkname) => {
-  let query = `SELECT linkname, dest, author from golinks WHERE linkname=${SqlString.escape(linkname)};`;
-
-  return new Promise((resolve, reject) => {
-    connection.query(query, function (err, rows, fields) {
-      if (err) {
-        logger.warn(err.message);
-        if (/after fatal error/.test(err.message)) {
-          // retry connection
-          // TODO(xinbenlv): consider apply similar case
-          connection = reconnect();
-          connection.query(query, function (err, rows, fields) {
-            if (err) reject(err);
-            else resolve(rows);
-          });
-          // if failed again, we will let it fail and report.
-        } else {
-          reject(err);
-        }
-      } else resolve(rows);
-    })
+let getLinksFromDBByLinknameAsync = async (linkname) => {
+  dbInstance = await maybeReconnect();
+  const collection = dbInstance.collection('shortlinks');
+  let ret = await collection.findOne({linkname: linkname}, {
+    projection: {
+      linkname: true,
+      dest: true,
+      author: true,
+      createdTime: true,
+      updatedTime: true
+    }
   });
+  logger.debug(`getLinksFromDBByLinknameAsync linkname = ${linkname}, ret = ${JSON.stringify(ret, null, 2)}`);
+  return [ret] || [];
 
 };
 
 let getLinksByEmailAsync = async function (emails) {
-  let emailsWhereClause = emails.map(v => `${SqlString.escape(v)}`).join(',');
-  let query = `SELECT linkname, dest, author from golinks WHERE author in (${emailsWhereClause});`;
-  return new Promise(function (resolve, reject) {
-    connection.query(query, (err, rows) => {
-      if (err) reject(err);
-      else {
-        resolve(rows);
-      }
-    });
+  dbInstance = await maybeReconnect();
+  const collection = dbInstance.collection('shortlinks');
+  logger.debug(`emails ${JSON.stringify(emails, null, 2)}`);
+  let ret = await collection.find({author: {'$in': emails}}, {
+    projection: {
+      linkname: true,
+      dest: true,
+      author: true,
+      createdTime: true,
+      updatedTime: true
+    }
   });
+  let t = ret.toArray();
+  logger.debug(`getLinksByEmailAsync ret = ${JSON.stringify(t, null, 2)}`);
+  return t;
+
 };
 
 let getAllLinks = async function () {
-  let query = `SELECT linkname, dest, author from golinks LIMIT 10;`;
-  return new Promise(function (resolve, reject) {
-    connection.query(query, (err, rows) => {
-      if (err) reject(err);
-      else {
-        resolve(rows);
-      }
-    });
-  });
+  dbInstance = await maybeReconnect();
+  const collection = dbInstance.collection('shortlinks');
+  return (await collection.find({}, {
+    projection: {
+      linkname: true,
+      dest: true,
+      author: true,
+      createdTime: true,
+      updatedTime: true
+    },
+    limit: 10
+  })).toArray();
 };
 
 router.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler(async (req, res) => {
@@ -162,8 +136,7 @@ router.get('/all-links', asyncHandler(async function (req, res) {
 }));
 
 
-
-let getJWTClientAccessToekn = async function() {
+let getJWTClientAccessToekn = async function () {
   const {JWT} = require('google-auth-library');
   let decoded = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString();
   const keys = JSON.parse(decoded);
@@ -172,7 +145,7 @@ let getJWTClientAccessToekn = async function() {
       null,
       keys.private_key,
       [
-          `https://www.googleapis.com/auth/analytics.readonly`
+        `https://www.googleapis.com/auth/analytics.readonly`
       ],
   );
   return new Promise((resolve, reject) => {
@@ -186,6 +159,7 @@ let getJWTClientAccessToekn = async function() {
   });
 };
 let getLinksWithMetrics = async function (links) {
+  if (links.length == 0) return links;
   let access_token = await getJWTClientAccessToekn();
   const baseUrlV4 = `https://analyticsreporting.googleapis.com/v4/reports:batchGet?`;
   let queryV4 = `{
@@ -356,7 +330,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
   let links;
   if (req.query.nocache) {
     logger.info(`Forced nocache for ${linkname}`);
-    links = await getLinksAsync(linkname) as Array<object>;
+    links = await getLinksFromDBByLinknameAsync(linkname) as Array<object>;
   } else {
     links = await getLinksWithCache(linkname) as Array<object>;
   }
