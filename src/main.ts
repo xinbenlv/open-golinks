@@ -1,3 +1,10 @@
+var log4js = require('log4js');
+var logger = log4js.getLogger();
+logger.level = 'debug';
+
+const { version, name } = require('./../package.json');
+logger.debug(`App: ${name}, version ${version}`);
+
 import * as express from "express";
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
@@ -6,9 +13,6 @@ const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
 const cookieParser = require('cookie-parser');
 
-var log4js = require('log4js');
-var logger = log4js.getLogger();
-logger.level = 'debug';
 
 let PORT = process.env.PORT || 3000;
 let app = express();
