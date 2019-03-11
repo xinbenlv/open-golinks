@@ -47,7 +47,7 @@
     "sqlstring": "^2.3.1",
     "ts-node": "^7.0.1",
     "typescript": "^3.0.1",
-    "universal-analytics": "^0.4.17",
+    "universal-analytics": "^0.4.20",
     "uuid": "^3.3.2",
     "validator": "^10.7.0"
   },
