@@ -1,7 +1,7 @@
 {
-  "name": "golink4np",
+  "name": "open-golinks",
   "version": "1.0.0",
-  "description": "A short url app with MongoDB",
+  "description": "An web app providing go-links service.",
   "main": "src/main.ts",
   "scripts": {
     "start": "ts-node src/main.ts",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xinbenlv/golink4np.git"
+    "url": "git+https://github.com/xinbenlv/open-golinks.git"
   },
   "keywords": [
     "golink",
@@ -20,9 +20,9 @@
   "author": "Zainan Victor Zhou",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/xinbenlv/golink4np/issues"
+    "url": "https://github.com/xinbenlv/open-golinks/issues"
   },
-  "homepage": "https://github.com/xinbenlv/golink4np#readme",
+  "homepage": "https://github.com/xinbenlv/open-golinks#readme",
   "dependencies": {
     "@types/node": "^10.9.3",
     "body-parser": "^1.18.3",
@@ -44,7 +44,6 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "request-promise-native": "^1.0.7",
-    "sqlstring": "^2.3.1",
     "ts-node": "^7.0.1",
     "typescript": "^3.0.1",
     "universal-analytics": "^0.4.20",
