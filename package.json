@@ -36,7 +36,7 @@
     "google-auth-library": "^3.1.0",
     "log4js": "^4.0.0",
     "mongodb": "^3.1.13",
-    "node-cache": "^4.2.0",
+    "node-cache": "^5.0.0",
     "passport": "^0.4.0",
     "passport-auth0": "^1.0.0",
     "pug": "^2.0.3",
