@@ -210,6 +210,7 @@ let getLinksWithMetrics = async function (links) {
   let retV4 = await rp(optionV4);
 
   let urlToPageviewMap = {};
+  console.log(`XXX debug in the prod! retV4 =`, retV4);
   retV4['reports'][0]['data']['rows'].forEach(d => {
     let url = d['dimensions'][0];
     let pageViews = d['metrics'][0]['values'][0];
