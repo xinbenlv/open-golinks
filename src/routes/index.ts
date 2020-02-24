@@ -210,12 +210,13 @@ let getLinksWithMetrics = async function (links) {
   let retV4 = await rp(optionV4);
 
   let urlToPageviewMap = {};
-  console.log(`XXX debug in the prod! retV4 =`, JSON.stringify(retV4, null, 2));
-  retV4['reports'][0]['data']['rows'].forEach(d => {
-    let url = d['dimensions'][0];
-    let pageViews = d['metrics'][0]['values'][0];
-    urlToPageviewMap[url] = pageViews;
-  });
+  if (retV4['reports'][0]['data']['rows']) {
+    retV4['reports'][0]['data']['rows'].forEach(d => {
+      let url = d['dimensions'][0];
+      let pageViews = d['metrics'][0]['values'][0];
+      urlToPageviewMap[url] = pageViews;
+    });
+  }
 
   links.forEach(l => {
     l['pageViews'] = urlToPageviewMap['/' + l['linkname']]
