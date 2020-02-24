@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/xinbenlv/open-golinks#readme",
   "dependencies": {
-    "@types/node": "^10.9.3",
+    "@types/node": "^13.7.4",
     "body-parser": "^1.18.3",
     "connect-ensure-login": "^0.1.1",
     "cookie-parser": "^1.4.3",
