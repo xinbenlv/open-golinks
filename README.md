@@ -2,6 +2,9 @@ This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`
 
 
 ## Deploy your own instance
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/xinbenlv/open-golinks.svg)](https://greenkeeper.io/)
+
 1. Create and config your MongoDB instance. We recommend using [mLab](https://mlab.com/) from Heroku Credentials
 2. Create your Google Analytics instance, take down Tracking ID
 3. Create your Auth0 account and take down the client id, client secret, domain and callback url.
