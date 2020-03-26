@@ -11,6 +11,8 @@ import * as bodyParser from "body-parser";
 require('dotenv').config();
 const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
+const qrRouter = require("./routes/qr");
+const fakeRouter = require("./routes/fake");
 const cookieParser = require('cookie-parser');
 
 
@@ -56,6 +58,7 @@ passport.use(strategy);
 // app.js
 
 import * as session from 'express-session';
+import { eventNames } from "cluster";
 
 //session-related stuff
 var sess = {
@@ -110,7 +113,9 @@ app.use(function (req, res, next) {
   next()
 });
 app.use('/', authRouter);
+app.use('/qr/', qrRouter);
 app.use('/', indexRouter);
+if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
 
 logger.debug('Start listening on ', PORT);
 app.listen(PORT);
