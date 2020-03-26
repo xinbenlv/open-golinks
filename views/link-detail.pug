@@ -1,0 +1,37 @@
+extends layout
+
+block content
+  .main.d-flex.flex-column.justify-content-center.h-100
+    .row
+      .col-lg-6.offset-lg-3.col-md-8.offset-md-2
+        div.card.shadow
+          div.card-header
+            span #{title}
+          div.card-body
+            form(method='POST' action='/edit')
+              div.form-group
+                label(for='linkname') Short Url (#{siteHost}/[ShortUrl])
+                input#linkname.form-control(
+                type='text',
+                name='linkname'
+                placeholder= "ShortUrl"
+                value= linkname,
+                )
+              div.form-group
+                label(for='dest') Long Url
+                input#dest.form-control(
+                type='text',
+                value= old_dest,
+                name= "dest"
+                )
+              div.form-group
+                label(for='author') Owner (Login to Claim Ownership)
+                input#author.form-control(
+                type='text',
+                value= author,
+                name="author",
+                disabled="true")
+              if editable
+                button.btn.btn-primary.right(type='submit', value='Submit') Submit
+              if !loggedIn && !editable && author == 'anonymous'
+                a.btn.btn-primary(href='/login') Log In to Edit
