@@ -5,54 +5,69 @@ block content
     .row
       .col-lg-6.offset-lg-3.col-md-8.offset-md-2
         div.card.shadow
-          div.card-header
-            span #{title}
-          div.card-body
+          div.card-header.bg-light.border-bottom-0.text-center
+            h5
+              i.fas.fa-check-circle.text-lg.pr-2.text-success
+              span #{title}
+          div.card-body.bg-light
             form.p-2(method='POST' action='/edit')
               div.form-group
                 label(for='dest') Long Url
-                input#dest.form-control(
-                type='text',
-                value= old_dest,
-                name= "dest"
-                )
+                .input-group
+                  input#dest.form-control(
+                  type='text',
+                  value= old_dest,
+                  name= "dest"
+                  disabled
+                  )
+                  .input-group-append
+                    button#btn_updatet_short_url.btn.btn-outline-secondary(type='button')
+                      i.fas.fa-pen
               div.form-group
                 label(for='linkname') Short Url
-                input#linkname.form-control(
-                type='text',
-                name='linkname'
-                placeholder= "#{siteHost}/[ShortUrl]"
-                value= siteHost + "/" + linkname,
+                .input-group
+                  input#linkname.text-primary.form-control(
+                  type='text',
+                  name='linkname'
+                  disabled
+                  placeholder= "#{siteHost}/[ShortUrl]"
+                  value= siteHost + "/" + linkname,
                 )
+                  .input-group-append
+                    button#btn_copy_short_url.btn.btn-outline-secondary(type='button')
+                      i.fas.fa-copy
 
               .qr-code-section.d-flex.my-2
                 div
-                  img#qr_code.border.w-100.h-100(src='/qr/fake_qr.png')
-                div
-                  .m-2
-                    div.mb-1.mr-2
+                  img#qr_code.border(src='/qr/fake_qr.png')
+                div.ml-3.flex-grow-1
+                  div
+                    .input-group
                       input#qrcode_caption.form-control(
                         type='text',
                         placeholder='add a description'
+                        disabled
                       )
-                    div.mb-1
-                      span
-                        small 20 character or less
-                    div.my-1.form-check.mt-1
-                      input#qrcode_logo.form-check-input(
-                        type='checkbox'
-                        name='qrcode_logo',
-                      )
-                      label.ml-2.form-check-label(for='qrcode_logo') Add Zaigeaigu logo
-                      
-              div.form-group
-                label(for='author') Owner (Login to Claim Ownership)
-                input#author.form-control(
-                type='text',
-                value= author,
-                name="author",
-                disabled="true")
-              if editable
-                button.btn.btn-primary.right(type='submit', value='Submit') Submit
-              if !loggedIn && !editable && author == 'anonymous'
-                a.btn.btn-primary(href='/login') Log In to Edit
+                      .input-group-append
+                        button#btn_update_caption.btn.btn-outline-secondary(type='button')
+                          i.fas.fa-pen
+                  div
+                    span.text-secondary
+                      small 20 character or less
+                  div.my-1.form-check.mt-1
+                    input#checkbox_qrcode_logo.form-check-input(
+                      type='checkbox'
+                      name='qrcode_logo'
+                    )
+                    label.ml-2.form-check-label(for='checkbox_qrcode_logo') Add ZaiGeZaiGu logo
+              div.d-flex.justify-content-between.align-self-center
+                div#owner
+                  if author
+                    span Owner: #{author}
+                  else
+                    span Owner: Anonymous
+                div
+                  if editable
+                    button.btn.btn-primary.btn-sm.right(type='submit', value='Submit') Claim the link
+                  if !loggedIn && !editable && author == 'anonymous'
+                    a.btn.btn-primary.btn-smright(href='/login') Login to claim the link

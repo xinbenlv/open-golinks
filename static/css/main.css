@@ -1,0 +1,8 @@
+#qr_code {
+    width: 128px;
+    height: 128px;
+}
+
+#owner {
+    line-height: 31px;
+}
