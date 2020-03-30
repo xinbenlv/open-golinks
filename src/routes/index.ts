@@ -361,7 +361,18 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
     let link = links[0] as any;
     logger.info('redirect to golink:', link.dest);
 
-    res.redirect(link.dest);
+    res.render('redirect', {
+      msg: `In 3 seconds, you are going to be directed to ${link.dest}`,
+      msgType: 'success',
+      oldDest: link.dest,
+      linkname: link.linkname,
+      author: link.author,
+      addLogo: link.addLogo,
+      caption: link.caption,
+      user: req.user,
+      editable: editable(link['author'], req.user)
+    });
+
     let params = {
       ec: `Redirect`,
       ea: `Hit`,
