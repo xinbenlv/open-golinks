@@ -231,7 +231,7 @@ router.get('/edit', asyncHandler((req, res) => {
   res.render('link-detail', {
     title: "Create New Link",
     linkname: '',
-    old_dest: '',
+    oldDest: '',
     author: req.user ? req.user.emails[0].value : "anonymous",
     editable: true
   });
@@ -267,14 +267,14 @@ router.post('/edit', asyncHandler(async function (req, res) {
     let dest = req.body.dest;
     let addLogo = req.body.addLogo;
     let caption = req.body.caption;
-
+    let author = req.user ? req.user.emails[0].value : 'anonymous';
     // Check if links can be updated. // also need to worry about trace
     let links = await getLinksWithCache(linkname) as Array<any>;
     if (links.length == 0/*link doen't exist*/ || editable(links[0].author, req.user)) {
       await upsertLinkAsync(
         linkname,
         dest,
-        req.user ? req.user.emails[0].value : 'anonymous',
+        author,
         addLogo,
         caption);
       logger.info(`Done`);
@@ -287,7 +287,19 @@ router.post('/edit', asyncHandler(async function (req, res) {
         ev: 10,
       };
       req.visitor.event(params).send();
-      res.send(`Edit/Update succeeded, updated Link ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} to url = ${dest}`);
+      res.render('link-detail', {
+            title: `Edit`,
+            msg: 'Your link is created/updated successsfully!',
+            msgType: "success",
+            linkname: linkname,
+            oldDest: dest,
+            author: author,
+            addLogo: addLogo,
+            caption: caption,
+            user: req.user,
+            editable: editable(author, req.user)
+          }
+      );
     } else {
       res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} which belongs to user:${links[0].author}.`);
 
@@ -304,7 +316,7 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (
       msg: "Create new link",
       title: 'Create',
       linkname: linkname,
-      old_dest: "",
+      oldDest: "",
       author: req.user ? req.user.emails[0].value : "anonymous",
       editable: true
     });
@@ -312,7 +324,7 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (
     let link = links[0];
     res.render('link-detail', {
       title: `Edit`,
-      linkname: link['linkname'], old_dest: link['dest'],
+      linkname: link['linkname'], oldDest: link['dest'],
       author: link['author'],
       addLogo: link['addLogo'],
       caption: link['caption'],
@@ -365,7 +377,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
       msg: "Create new link",
       title: "Create",
       linkname: linkname,
-      old_dest: '',
+      oldDest: '',
       author: req.user ? req.user.emails[0].value : "anonymous",
       editable: true
     });

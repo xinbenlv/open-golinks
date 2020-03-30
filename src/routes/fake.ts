@@ -6,7 +6,7 @@ router.get('/edit', (req, res) => {
     res.render('edit', {
       title: "Create New Link",
       linkname: 'exp',
-      old_dest: 'http://old.example.com',
+      oldDest: 'http://old.example.com',
       author: "johnsmith@example.com",
       editable: true
     });
@@ -20,7 +20,7 @@ router.get('/newedit', (req, res) => {
       linkname: 'fake_qr',
       addLogo: true,
       caption: 'Hello World!',
-      old_dest: 'http://old.example.com',
+      oldDest: 'http://old.example.com',
       author: "johnsmith@example.com",
       editable: true
     });

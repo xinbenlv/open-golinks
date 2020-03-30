@@ -21,9 +21,9 @@ block content
                 .input-group
                   input#dest.form-control(
                   type='text',
-                  value= old_dest,
+                  value= oldDest,
                   name= "dest"
-                  disabled=old_dest ? true : false
+                  disabled=oldDest ? true : false
                   )
                   .input-group-append
                     button#btn_updatet_short_url.btn.btn-outline-secondary(type='button')
@@ -36,7 +36,7 @@ block content
                   input#linkname.text-primary.form-control(
                   type='text',
                   name='linkname'
-                  disabled=old_dest ? true : false
+                  disabled=oldDest ? true : false
                   placeholder= "Input the short url here"
                   value= linkname,
                 )
@@ -46,7 +46,7 @@ block content
 
               .qr-code-section.d-flex.my-2
                 div
-                  if old_dest
+                  if oldDest
                     img#qr_code.border(src= "/qr/" + linkname + '.png')
                   else
                     div#qr_code.border.bg-white
@@ -56,7 +56,7 @@ block content
                       input#qrcode_caption.form-control(
                         type='text',
                         placeholder='add a description'
-                        disabled=old_dest ? true : false
+                        disabled=oldDest ? true : false
                         name='caption'
                         value=caption
                       )
@@ -71,7 +71,7 @@ block content
                       type='checkbox'
                       name='addLogo'
                       checked=addLogo
-                      disabled = old_dest ? true : false
+                      disabled = oldDest ? true : false
                     )
                     label.ml-2.form-check-label(for='checkbox_qrcode_logo') Add ZaiGeZaiGu logo
               div.d-flex.justify-content-between.align-self-center
@@ -81,7 +81,7 @@ block content
                   else
                     span Owner: Anonymous
                 div.btn-group
-                  if !old_dest
+                  if !oldDest
                     button.btn.btn-primary.btn-sm(type='submit', value='Submit') Create
                   else
                     a.btn.btn-outline-secondary.btn-sm(href='/qr/d/' + linkname + '.png')
