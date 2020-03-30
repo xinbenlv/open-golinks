@@ -41,8 +41,7 @@ block content
                   value= linkname,
                 )
                   .input-group-append
-                    button#btn_copy_short_url.btn.btn-outline-secondary(type='button')
-                      i.fas.fa-clipboard(style="width:16px")
+                    button#btn_copy_short_url.btn.btn-primary(type='button' style="width:120px") Copy URL
 
               .qr-code-section.d-flex.my-2
                 div
@@ -89,5 +88,5 @@ block content
                     if editable
                       button.btn.btn-outline-primary.btn-sm(type='submit', value='Submit') Update
                     if author === 'anonymous' && !loggedIn
-                      a.btn.btn-outline-primary.btn-sm(href='/login') Login to claim
+                      a.btn.btn-outline-primary.btn-sm(href='/login' style="width:120px") Login to claim
 
