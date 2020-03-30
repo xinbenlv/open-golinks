@@ -9,7 +9,7 @@ block content
             h5
               i.fas.fa-check-circle.text-lg.pr-2.text-success
               span #{title}
-          div.card-body.bg-light
+          div.card-body.bg-light.pt-0
             form.p-2(method='POST' action='/edit')
               div.form-group
                 label(for='dest') Long Url
@@ -35,7 +35,7 @@ block content
                 )
                   .input-group-append
                     button#btn_copy_short_url.btn.btn-outline-secondary(type='button')
-                      i.fas.fa-copy
+                      i.fas.fa-clipboard(style="width:16px")
 
               .qr-code-section.d-flex.my-2
                 div
@@ -66,8 +66,10 @@ block content
                     span Owner: #{author}
                   else
                     span Owner: Anonymous
-                div
+                div.btn-group
+                  a.btn.btn-outline-secondary.btn-sm(href='/qr/d/fake_qr.png')
+                    i.fas.fa-download
                   if editable
-                    button.btn.btn-primary.btn-sm.right(type='submit', value='Submit') Claim the link
+                    button.btn.btn-outline-primary.btn-sm(type='submit', value='Submit') Claim the link
                   if !loggedIn && !editable && author == 'anonymous'
-                    a.btn.btn-primary.btn-smright(href='/login') Login to claim the link
+                    a.btn.btn-outline-primary.btn-sm(href='/login') Login to claim the link
