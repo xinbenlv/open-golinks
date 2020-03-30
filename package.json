@@ -34,7 +34,7 @@
     "express": "^4.16.3",
     "express-session": "^1.15.6",
     "express-status-monitor": "^1.1.5",
-    "google-auth-library": "^5.0.0",
+    "google-auth-library": "^6.0.0",
     "log4js": "^6.0.0",
     "mongodb": "^3.1.13",
     "node-cache": "^5.0.0",
@@ -51,10 +51,10 @@
     "typescript": "^3.0.1",
     "universal-analytics": "^0.4.20",
     "uuid": "^7.0.0",
-    "validator": "^12.0.0"
+    "validator": "^13.0.0"
   },
   "engines": {
     "node": "10.19.0",
-    "npm": "6.13.7"
+    "npm": "6.14.4"
   }
 }
