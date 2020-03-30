@@ -74,6 +74,8 @@ block content
                       disabled = oldDest ? true : false
                     )
                     label.ml-2.form-check-label(for='checkbox_qrcode_logo') Add ZaiGeZaiGu logo
+                  div
+                    a.btn.btn-outline-secondary.btn-sm(href='/qr/d/' + linkname + '.png') Download
               div.d-flex.justify-content-between.align-self-center
                 div#owner
                   if author
@@ -84,8 +86,6 @@ block content
                   if !oldDest
                     button.btn.btn-primary.btn-sm(type='submit', value='Submit') Create
                   else
-                    a.btn.btn-outline-secondary.btn-sm(href='/qr/d/' + linkname + '.png')
-                      i.fas.fa-download
                     if editable
                       button.btn.btn-outline-primary.btn-sm(type='submit', value='Submit') Update
                     if author === 'anonymous' && !loggedIn
