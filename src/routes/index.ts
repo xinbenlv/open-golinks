@@ -362,7 +362,7 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
     logger.info('redirect to golink:', link.dest);
 
     res.render('redirect', {
-      msg: `In 3 seconds, you are going to be directed to ${link.dest}`,
+      msg: `In 2 seconds, you are going to be directed to ${link.dest}`,
       msgType: 'success',
       oldDest: link.dest,
       linkname: link.linkname,
