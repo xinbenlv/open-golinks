@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/xinbenlv/open-golinks#readme",
   "dependencies": {
-    "@jimp/plugin-print": "^0.9.8",
+    "@jimp/plugin-print": "^0.10.0",
     "@types/node": "^13.7.4",
     "@types/qrcode": "^1.3.4",
     "body-parser": "^1.18.3",
