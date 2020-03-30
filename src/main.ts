@@ -14,7 +14,7 @@ const authRouter = require("./routes/auth");
 const qrRouter = require("./routes/qr");
 const fakeRouter = require("./routes/fake");
 const cookieParser = require('cookie-parser');
-
+const mongoose = require('mongoose');
 
 let PORT = process.env.PORT || 3000;
 let app = express();
@@ -116,7 +116,13 @@ app.use('/', authRouter);
 app.use('/qr/', qrRouter);
 app.use('/', indexRouter);
 if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
+mongoose
+  .connect(process.env.MONGODB_URI, { useNewUrlParser: true})
+  .then(() => {
+    logger.debug('Connected');
+    logger.debug('Start listening on ', PORT);
+    app.listen(PORT);
+});
 
-logger.debug('Start listening on ', PORT);
-app.listen(PORT);
+
 

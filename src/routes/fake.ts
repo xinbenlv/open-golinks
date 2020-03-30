@@ -14,8 +14,12 @@ router.get('/edit', (req, res) => {
 
 router.get('/newedit', (req, res) => {
     res.render('link-detail', {
-      title: "Your link is created successfully!",
-      linkname: 'exp',
+      msgType: 'success',
+      msg: "Your link is created successfully!",
+      title: 'Edit',
+      linkname: 'fake_qr',
+      addLogo: true,
+      caption: 'Hello World!',
       old_dest: 'http://old.example.com',
       author: "johnsmith@example.com",
       editable: true

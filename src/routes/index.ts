@@ -1,61 +1,54 @@
+import { asyncHandler, LINKNAME_PATTERN } from "./utils";
+
 var express = require('express');
 var router = express.Router();
 
+const mongoose = require('mongoose');
 const queryString = require('query-string');
 const rp = require('request-promise');
 const validator = require('validator');
 var ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
-const MongoClient = require('mongodb').MongoClient;
 
-const LINKNAME_PATTERN = '[A-Za-z0-9-_]+';
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 
 const NodeCache = require("node-cache");
 const myCache = new NodeCache();
 
-const asyncHandler = fn => (req, res, next) =>
-    Promise
-        .resolve(fn(req, res, next))
-        .catch(next);
-
-let dbInstance = null; // global
-
-const maybeReconnect = async () => {
-  if (dbInstance) {
-    return dbInstance;
-  } else {
-    return new Promise(((resolve, reject) => {
-      MongoClient.connect(process.env.MONGODB_URI, (err, client) => {
-        if (err) reject(err);
-        else resolve(client.db(process.env.MONGODB_DB));
-      });
-    }));
-
-  }
-};
-
 let editable = function (existingLinkAuthor, reqeustingUser) {
   logger.debug(`Author: ${existingLinkAuthor}`, 'user', reqeustingUser);
-  if (existingLinkAuthor === 'anonymous' && reqeustingUser && process.env.ALLOW_OVERRIDE_ANONYMOUS === 'true') return true;
+  if (existingLinkAuthor === 'anonymous'
+    && process.env.ALLOW_OVERRIDE_ANONYMOUS === 'true'
+    // We request a user to login before updating an anonymous link
+    && reqeustingUser)
+    return true;
   else if (reqeustingUser && reqeustingUser.emails.map(i => i.value).indexOf(existingLinkAuthor) >= 0) {
     return true;
   }
   return false;
 };
 
-let upsertLinkAsync = async function (linkname, dest, author) {
-  logger.debug(`Updating linkname`);
+let upsertLinkAsync = async function (linkname, dest, author, addLogo, caption) {
+  logger.debug(`Updating ${linkname}`);
   myCache.del(linkname);
-  logger.debug(`Removed cahce for linkname`);
-  dbInstance = await maybeReconnect();
+  logger.debug(`Removed cahce for ${linkname}`);
 
-  const collection = dbInstance.collection('shortlinks');
+  const collection = mongoose.connections[0].db.collection('shortlinks');
   let now = new Date();
   return await collection.updateOne(
       {linkname: linkname},
       {
-        $set: {linkname: linkname, dest: dest, author: author, updatedTimed: now},
+        $set: {
+          linkname: linkname,
+          dest: dest,
+          author: author,
+          addLogo: addLogo,
+          caption: caption,
+          updatedTimed: now
+        },
+        $push: {
+          destHistory: {dest: dest, timestamp: now}
+        },
         $setOnInsert: {createdTime: now}
       },
       {upsert: true});
@@ -78,15 +71,16 @@ let getLinksWithCache = async (linkname) => {
 };
 
 let getLinksFromDBByLinknameAsync = async (linkname) => {
-  dbInstance = await maybeReconnect();
-  const collection = dbInstance.collection('shortlinks');
+  const collection = mongoose.connections[0].db.collection('shortlinks');
   let ret = await collection.findOne({linkname: linkname}, {
     projection: {
       linkname: true,
       dest: true,
       author: true,
       createdTime: true,
-      updatedTime: true
+      updatedTime: true,
+      addLogo: true,
+      caption: true
     }
   });
   logger.debug(`getLinksFromDBByLinknameAsync linkname = ${linkname}, ret = ${JSON.stringify(ret, null, 2)}`);
@@ -95,8 +89,7 @@ let getLinksFromDBByLinknameAsync = async (linkname) => {
 };
 
 let getLinksByEmailAsync = async function (emails) {
-  dbInstance = await maybeReconnect();
-  const collection = dbInstance.collection('shortlinks');
+  const collection = mongoose.connections[0].db.collection('shortlinks');
   logger.debug(`emails ${JSON.stringify(emails, null, 2)}`);
   let ret = await collection.find({author: {'$in': emails}}, {
     projection: {
@@ -114,8 +107,7 @@ let getLinksByEmailAsync = async function (emails) {
 };
 
 let getAllLinks = async function () {
-  dbInstance = await maybeReconnect();
-  const collection = dbInstance.collection('shortlinks');
+  const collection = mongoose.connections[0].db.collection('shortlinks');
   return (await collection.find({}, {
     projection: {
       linkname: true,
@@ -235,25 +227,25 @@ router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
   return;
 }));
 
-router.get('/edit', (req, res) => {
-  res.render('edit', {
+router.get('/edit', asyncHandler((req, res) => {
+  res.render('link-detail', {
     title: "Create New Link",
     linkname: '',
     old_dest: '',
     author: req.user ? req.user.emails[0].value : "anonymous",
     editable: true
   });
-});
+}));
 
 
-router.get(`/dashboard/:linkname(${LINKNAME_PATTERN})`, async (req, res) => {
+router.get(`/dashboard/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async (req, res) => {
   res.render('dashboard', {
     title: "Usage Dashboard",
     viewId: process.env.GA_VIEW_ID,
     lockedUrl: req.params.linkname,
     accessToken: await getJWTClientAccessToekn()
   });
-});
+}));
 
 router.get('/dashboard', async (req, res) => {
   res.render('dashboard', {
@@ -273,10 +265,18 @@ router.post('/edit', asyncHandler(async function (req, res) {
   } else {
     let linkname = req.body.linkname;
     let dest = req.body.dest;
+    let addLogo = req.body.addLogo;
+    let caption = req.body.caption;
+
     // Check if links can be updated. // also need to worry about trace
     let links = await getLinksWithCache(linkname) as Array<any>;
     if (links.length == 0/*link doen't exist*/ || editable(links[0].author, req.user)) {
-      await upsertLinkAsync(linkname, dest, req.user ? req.user.emails[0].value : 'anonymous');
+      await upsertLinkAsync(
+        linkname,
+        dest,
+        req.user ? req.user.emails[0].value : 'anonymous',
+        addLogo,
+        caption);
       logger.info(`Done`);
 
       let params = {
@@ -296,12 +296,13 @@ router.post('/edit', asyncHandler(async function (req, res) {
 
 }));
 
-router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
+router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
   let linkname = req.params.linkname;
   let links = await getLinksWithCache(linkname) as Array<object>; // must be lenght = 1 or 0 because linkname is primary key
   if (links.length == 0) {
-    res.render('edit', {
-      title: "Create New Link",
+    res.render('link-detail', {
+      msg: "Create new link",
+      title: 'Create',
       linkname: linkname,
       old_dest: "",
       author: req.user ? req.user.emails[0].value : "anonymous",
@@ -309,10 +310,12 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
     });
   } else {
     let link = links[0];
-    res.render('edit', {
-      title: `Edit Existing Link`,
+    res.render('link-detail', {
+      title: `Edit`,
       linkname: link['linkname'], old_dest: link['dest'],
       author: link['author'],
+      addLogo: link['addLogo'],
+      caption: link['caption'],
       user: req.user,
       editable: editable(link['author'], req.user)
     });
@@ -326,7 +329,7 @@ router.get(`/edit/:linkname(${LINKNAME_PATTERN})`, async function (req, res) {
     };
     req.visitor.event(params).send();
   }
-});
+}));
 
 router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
   if (req.visitor) {
@@ -358,8 +361,9 @@ router.get(`/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, 
     req.visitor.event(params).send();
   } else {
     logger.info('Not found', 'LINK_' + req.params.linkname);
-    res.render('edit', {
-      title: "Create New Link",
+    res.render('link-detail', {
+      msg: "Create new link",
+      title: "Create",
       linkname: linkname,
       old_dest: '',
       author: req.user ? req.user.emails[0].value : "anonymous",

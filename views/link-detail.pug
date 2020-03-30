@@ -6,9 +6,14 @@ block content
       .col-lg-6.offset-lg-3.col-md-8.offset-md-2
         div.card.shadow
           div.card-header.bg-light.border-bottom-0.text-center
-            h5
-              i.fas.fa-check-circle.text-lg.pr-2.text-success
-              span #{title}
+            if msg
+              h5
+                if msgType
+                  i.fas.fa-check-circle.text-lg.pr-2(class='text-' + msgType)
+                span #{msg}
+            else
+              h5
+                span #{title}
           div.card-body.bg-light.pt-0
             form.p-2(method='POST' action='/edit')
               div.form-group
@@ -18,7 +23,7 @@ block content
                   type='text',
                   value= old_dest,
                   name= "dest"
-                  disabled
+                  disabled=old_dest ? true : false
                   )
                   .input-group-append
                     button#btn_updatet_short_url.btn.btn-outline-secondary(type='button')
@@ -26,12 +31,14 @@ block content
               div.form-group
                 label(for='linkname') Short Url
                 .input-group
+                  .input-group-prepend
+                    span.input-group-text.text-primary #{siteHost}/
                   input#linkname.text-primary.form-control(
                   type='text',
                   name='linkname'
-                  disabled
-                  placeholder= "#{siteHost}/[ShortUrl]"
-                  value= siteHost + "/" + linkname,
+                  disabled=old_dest ? true : false
+                  placeholder= "Input the short url here"
+                  value= linkname,
                 )
                   .input-group-append
                     button#btn_copy_short_url.btn.btn-outline-secondary(type='button')
@@ -39,14 +46,19 @@ block content
 
               .qr-code-section.d-flex.my-2
                 div
-                  img#qr_code.border(src='/qr/fake_qr.png')
+                  if old_dest
+                    img#qr_code.border(src= "/qr/" + linkname + '.png')
+                  else
+                    div#qr_code.border.bg-white
                 div.ml-3.flex-grow-1
                   div
                     .input-group
                       input#qrcode_caption.form-control(
                         type='text',
                         placeholder='add a description'
-                        disabled
+                        disabled=old_dest ? true : false
+                        name='caption'
+                        value=caption
                       )
                       .input-group-append
                         button#btn_update_caption.btn.btn-outline-secondary(type='button')
@@ -57,7 +69,9 @@ block content
                   div.my-1.form-check.mt-1
                     input#checkbox_qrcode_logo.form-check-input(
                       type='checkbox'
-                      name='qrcode_logo'
+                      name='addLogo'
+                      checked=addLogo
+                      disabled = old_dest ? true : false
                     )
                     label.ml-2.form-check-label(for='checkbox_qrcode_logo') Add ZaiGeZaiGu logo
               div.d-flex.justify-content-between.align-self-center
@@ -67,9 +81,13 @@ block content
                   else
                     span Owner: Anonymous
                 div.btn-group
-                  a.btn.btn-outline-secondary.btn-sm(href='/qr/d/fake_qr.png')
-                    i.fas.fa-download
-                  if editable
-                    button.btn.btn-outline-primary.btn-sm(type='submit', value='Submit') Claim the link
-                  if !loggedIn && !editable && author == 'anonymous'
-                    a.btn.btn-outline-primary.btn-sm(href='/login') Login to claim the link
+                  if !old_dest
+                    button.btn.btn-primary.btn-sm(type='submit', value='Submit') Create
+                  else
+                    a.btn.btn-outline-secondary.btn-sm(href='/qr/d/' + linkname + '.png')
+                      i.fas.fa-download
+                    if editable
+                      button.btn.btn-outline-primary.btn-sm(type='submit', value='Submit') Update
+                    if author === 'anonymous' && !loggedIn
+                      a.btn.btn-outline-primary.btn-sm(href='/login') Login to claim
+
