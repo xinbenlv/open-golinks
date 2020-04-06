@@ -5,7 +5,7 @@
   "main": "src/main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:node": "node — inspect=5858 -r ts-node/register ./src/main.ts",
+    "dev:node": "node -r ts-node/register ./src/main.ts",
     "dev": "nodemon",
     "nuxt": "nuxt"
   },
@@ -75,7 +75,7 @@
     "watch": [
       "src"
     ],
-    "exec": "npm start dev:node",
+    "exec": "npm run dev:node",
     "ext": "ts"
   },
   "devDependencies": {

@@ -6,7 +6,7 @@ const { version, name } = require('./../package.json');
 logger.debug(`App: ${name}, version ${version}`);
 
 const {Nuxt, Builder} = require('nuxt');
-import Express from "express";
+const express = require("express");
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
 require('dotenv').config();
@@ -58,9 +58,9 @@ passport.use(strategy);
 
 // app.js
 
-import * as session from 'express-session';
-import { eventNames } from "cluster";
+const session = require('express-session');
 
+const main = async () => {
 //session-related stuff
 var sess = {
   secret: 'some cool secret', // TODO use another one
@@ -76,6 +76,10 @@ var sess = {
 
 // app.js
 
+const config = require('../nuxt.config.js');
+config.dev = !(process.env.NODE_ENV === 'production');
+const nuxt = new Nuxt(config);
+const {host, port} = nuxt.options.server;
 
 app.use(cookieParser());
 
@@ -92,7 +96,7 @@ passport.deserializeUser(function (user, done) {
 });
 
 // Look up session to know if user is logged in
-app.use(function (req, res, next) {
+app.use(function (req:any, res:any, next) {
   logger.debug(`Query if it's logged in`, req.session);
   res.locals.loggedIn = false;
   if (req.session.passport && typeof req.session.passport.user != 'undefined') {
@@ -103,7 +107,7 @@ app.use(function (req, res, next) {
 });
 
 app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
-app.use(function (req, res, next) {
+app.use((req:any, res:any, next:any) => {
   if (req.user && req.user.emails) {
     req.visitor.set('uid', req.user.emails[0]); // TODO(zzn): consider use a HASH fucntion instead
     logger.debug(`set uid for req.visitor`, req.visitor);
@@ -115,15 +119,31 @@ app.use(function (req, res, next) {
 });
 app.use('/', authRouter);
 app.use('/qr/', qrRouter);
-app.use('/', indexRouter);
 if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
-mongoose
-  .connect(process.env.MONGODB_URI, { useNewUrlParser: true})
-  .then(() => {
+await mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true});
+
     logger.debug('Connected');
+
+    await nuxt.ready();
+
+    // Build only in dev mode
+    if (config.dev) {
+        logger.info(`Running Nuxt Builder ... `);
+        const builder = new Builder(nuxt);
+        await builder.build();
+        logger.info(`DONE ... `);
+    } else {
+        logger.info(`NOT Running Nuxt Builder`);
+    }
+    // Give nuxt middleware to express
+    app.use(nuxt.render);
+
+    app.use('/', indexRouter);
     logger.debug('Start listening on ', PORT);
     app.listen(PORT);
+};
+
+main().then(() => {
+console.log(`Main done!`);
+//process.exit(-1);
 });
-
-
-
