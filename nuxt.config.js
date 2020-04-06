@@ -1,4 +1,4 @@
 export default {
-    // Define your configuration with auto-completion & type checking
-    buildModules: ['@nuxt/typescript-build']
+  // Define your configuration with auto-completion & type checking
+  buildModules: ['@nuxt/typescript-build']
 };

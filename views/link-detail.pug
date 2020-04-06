@@ -20,10 +20,10 @@ block content
                 label(for='dest') Long Url
                 .input-group
                   input#dest.form-control(
-                  type='text',
-                  value= oldDest,
-                  name= "dest"
-                  disabled=oldDest ? true : false
+                    type='text',
+                    value= oldDest,
+                    name= "dest"
+                    disabled=oldDest ? true : false
                   )
                   .input-group-append
                     button#btn_updatet_short_url.btn.btn-outline-secondary(type='button')
@@ -34,12 +34,12 @@ block content
                   .input-group-prepend
                     span.input-group-text.text-primary #{siteHost}/
                   input#linkname.text-primary.form-control(
-                  type='text',
-                  name='linkname'
-                  disabled=oldDest ? true : false
-                  placeholder= "Input the short url here"
-                  value= linkname,
-                )
+                    type='text',
+                    name='linkname'
+                    disabled=oldDest ? true : false
+                    placeholder= "Input the short url here"
+                    value= linkname,
+                  )
                   .input-group-append
                     button#btn_copy_short_url.btn.btn-primary(type='button' style="width:120px") Copy URL
 

@@ -1,4 +1,4 @@
-import { asyncHandler, LINKNAME_PATTERN } from "./utils";
+import {asyncHandler, LINKNAME_PATTERN} from "./utils";
 
 var express = require('express');
 var router = express.Router();
@@ -36,22 +36,22 @@ let upsertLinkAsync = async function (linkname, dest, author, addLogo, caption) 
   const collection = mongoose.connections[0].db.collection('shortlinks');
   let now = new Date();
   return await collection.updateOne(
-      {linkname: linkname},
-      {
-        $set: {
-          linkname: linkname,
-          dest: dest,
-          author: author,
-          addLogo: addLogo,
-          caption: caption,
-          updatedTimed: now
-        },
-        $push: {
-          destHistory: {dest: dest, timestamp: now}
-        },
-        $setOnInsert: {createdTime: now}
+    {linkname: linkname},
+    {
+      $set: {
+        linkname: linkname,
+        dest: dest,
+        author: author,
+        addLogo: addLogo,
+        caption: caption,
+        updatedTimed: now
       },
-      {upsert: true});
+      $push: {
+        destHistory: {dest: dest, timestamp: now}
+      },
+      $setOnInsert: {createdTime: now}
+    },
+    {upsert: true});
 
 };
 
@@ -137,12 +137,12 @@ let getJWTClientAccessToekn = async function () {
   let decoded = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString();
   const keys = JSON.parse(decoded);
   const client = new JWT(
-      keys.client_email,
-      null,
-      keys.private_key,
-      [
-        `https://www.googleapis.com/auth/analytics.readonly`
-      ],
+    keys.client_email,
+    null,
+    keys.private_key,
+    [
+      `https://www.googleapis.com/auth/analytics.readonly`
+    ],
   );
   return new Promise((resolve, reject) => {
     client.authorize((err, result) => {
@@ -219,7 +219,7 @@ let getLinksWithMetrics = async function (links) {
 /* GET user profile. */
 router.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) {
   let links = await getLinksWithMetrics(
-      await getLinksByEmailAsync(req.user.emails.map(item => item.value)) as []);
+    await getLinksByEmailAsync(req.user.emails.map(item => item.value)) as []);
   res.render('links', {
     links: links,
     isUser: true,
@@ -288,17 +288,17 @@ router.post('/edit', asyncHandler(async function (req, res) {
       };
       req.visitor.event(params).send();
       res.render('link-detail', {
-            title: `Edit`,
-            msg: 'Your link is created/updated successsfully!',
-            msgType: "success",
-            linkname: linkname,
-            oldDest: dest,
-            author: author,
-            addLogo: addLogo,
-            caption: caption,
-            user: req.user,
-            editable: editable(author, req.user)
-          }
+          title: `Edit`,
+          msg: 'Your link is created/updated successsfully!',
+          msgType: "success",
+          linkname: linkname,
+          oldDest: dest,
+          author: author,
+          addLogo: addLogo,
+          caption: caption,
+          user: req.user,
+          editable: editable(author, req.user)
+        }
       );
     } else {
       res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} which belongs to user:${links[0].author}.`);
@@ -408,7 +408,7 @@ router.get('/', asyncHandler(async function (req, res) {
   res.redirect('/edit');
 }));
 
-router.get('/tencent5563221124109059836.txt', function(req,res) {
+router.get('/tencent5563221124109059836.txt', function (req, res) {
   // 进行微信申诉，微信所要求的的站长认证机制
   res.setHeader('Content-Type', 'text/txt');
   res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'tencent5563221124109059836.txt\"');

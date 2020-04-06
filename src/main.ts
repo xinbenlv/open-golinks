@@ -2,13 +2,14 @@ var log4js = require('log4js');
 var logger = log4js.getLogger();
 logger.level = 'debug';
 
-const { version, name } = require('./../package.json');
+const {version, name} = require('./../package.json');
 logger.debug(`App: ${name}, version ${version}`);
 
 const {Nuxt, Builder} = require('nuxt');
 const express = require("express");
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
+
 require('dotenv').config();
 const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
@@ -37,21 +38,21 @@ app.locals.siteHost = process.env.OPEN_GOLINKS_SITE_HOST || `localhost:3000`;
 
 
 var Auth0Strategy = require('passport-auth0'),
-    passport = require('passport');
+  passport = require('passport');
 
 //passport-auth0
 var strategy = new Auth0Strategy({
-      domain: process.env.AUTH0_DOMAIN,
-      clientID: process.env.AUTH0_CLIENT_ID,
-      clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-      callbackURL: `http://${process.env.OPEN_GOLINKS_SITE_HOST}/callback` || `http://localhost:${PORT}/callback`,
-    },
-    function (accessToken, refreshToken, extraParams, profile, done) {
-      // accessToken is the token to call Auth0 API (not needed in the most cases)
-      // extraParams.id_token has the JSON Web Token
-      // profile has all the information from the user
-      return done(null, profile);
-    }
+    domain: process.env.AUTH0_DOMAIN,
+    clientID: process.env.AUTH0_CLIENT_ID,
+    clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
+    callbackURL: `http://${process.env.OPEN_GOLINKS_SITE_HOST}/callback` || `http://localhost:${PORT}/callback`,
+  },
+  function (accessToken, refreshToken, extraParams, profile, done) {
+    // accessToken is the token to call Auth0 API (not needed in the most cases)
+    // extraParams.id_token has the JSON Web Token
+    // profile has all the information from the user
+    return done(null, profile);
+  }
 );
 
 passport.use(strategy);
@@ -62,12 +63,12 @@ const session = require('express-session');
 
 const main = async () => {
 //session-related stuff
-var sess = {
-  secret: 'some cool secret', // TODO use another one
-  cookie: {},
-  resave: false,
-  saveUninitialized: true
-};
+  var sess = {
+    secret: 'some cool secret', // TODO use another one
+    cookie: {},
+    resave: false,
+    saveUninitialized: true
+  };
 
 // If enable, it will fail and login again and again
 // if (app.get('env') === 'production') {
@@ -76,74 +77,74 @@ var sess = {
 
 // app.js
 
-const config = require('../nuxt.config.js');
-config.dev = !(process.env.NODE_ENV === 'production');
-const nuxt = new Nuxt(config);
-const {host, port} = nuxt.options.server;
+  const config = require('../nuxt.config.js');
+  config.dev = !(process.env.NODE_ENV === 'production');
+  const nuxt = new Nuxt(config);
+  const {host, port} = nuxt.options.server;
 
-app.use(cookieParser());
+  app.use(cookieParser());
 
-app.use(session(sess));
-app.use(passport.initialize());
-app.use(passport.session());
+  app.use(session(sess));
+  app.use(passport.initialize());
+  app.use(passport.session());
 
-passport.serializeUser(function (user, done) {
-  done(null, user);
-});
+  passport.serializeUser(function (user, done) {
+    done(null, user);
+  });
 
-passport.deserializeUser(function (user, done) {
-  done(null, user);
-});
+  passport.deserializeUser(function (user, done) {
+    done(null, user);
+  });
 
 // Look up session to know if user is logged in
-app.use(function (req:any, res:any, next) {
-  logger.debug(`Query if it's logged in`, req.session);
-  res.locals.loggedIn = false;
-  if (req.session.passport && typeof req.session.passport.user != 'undefined') {
-    res.locals.loggedIn = true;
-  }
-  logger.debug(`Result:`, res.locals.loggedIn);
-  next();
-});
-
-app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
-app.use((req:any, res:any, next:any) => {
-  if (req.user && req.user.emails) {
-    req.visitor.set('uid', req.user.emails[0]); // TODO(zzn): consider use a HASH fucntion instead
-    logger.debug(`set uid for req.visitor`, req.visitor);
-  }
-  // Log pageview for all requests
-  req.visitor.pageview(req.originalUrl).send();
-
-  next()
-});
-app.use('/', authRouter);
-app.use('/qr/', qrRouter);
-if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
-await mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true});
-
-    logger.debug('Connected');
-
-    await nuxt.ready();
-
-    // Build only in dev mode
-    if (config.dev) {
-        logger.info(`Running Nuxt Builder ... `);
-        const builder = new Builder(nuxt);
-        await builder.build();
-        logger.info(`DONE ... `);
-    } else {
-        logger.info(`NOT Running Nuxt Builder`);
+  app.use(function (req: any, res: any, next) {
+    logger.debug(`Query if it's logged in`, req.session);
+    res.locals.loggedIn = false;
+    if (req.session.passport && typeof req.session.passport.user != 'undefined') {
+      res.locals.loggedIn = true;
     }
-    // Give nuxt middleware to express
-    app.use(nuxt.render);
+    logger.debug(`Result:`, res.locals.loggedIn);
+    next();
+  });
 
-    app.use('/', indexRouter);
-    logger.debug('Start listening on ', PORT);
-    app.listen(PORT);
+  app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
+  app.use((req: any, res: any, next: any) => {
+    if (req.user && req.user.emails) {
+      req.visitor.set('uid', req.user.emails[0]); // TODO(zzn): consider use a HASH fucntion instead
+      logger.debug(`set uid for req.visitor`, req.visitor);
+    }
+    // Log pageview for all requests
+    req.visitor.pageview(req.originalUrl).send();
+
+    next()
+  });
+  app.use('/', authRouter);
+  app.use('/qr/', qrRouter);
+  if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
+  await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
+
+  logger.debug('Connected');
+
+  await nuxt.ready();
+
+  // Build only in dev mode
+  if (config.dev) {
+    logger.info(`Running Nuxt Builder ... `);
+    const builder = new Builder(nuxt);
+    await builder.build();
+    logger.info(`DONE ... `);
+  } else {
+    logger.info(`NOT Running Nuxt Builder`);
+  }
+  // Give nuxt middleware to express
+  app.use(nuxt.render);
+
+  app.use('/', indexRouter);
+  logger.debug('Start listening on ', PORT);
+  app.listen(PORT);
 };
 
 main().then(() => {
-console.log(`Main done!`);
+  console.log(`Main done!`);
 //process.exit(-1);
 });
