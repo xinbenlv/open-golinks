@@ -5,7 +5,8 @@ logger.level = 'debug';
 const { version, name } = require('./../package.json');
 logger.debug(`App: ${name}, version ${version}`);
 
-import * as express from "express";
+const {Nuxt, Builder} = require('nuxt');
+import Express from "express";
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
 require('dotenv').config();
