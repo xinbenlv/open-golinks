@@ -408,5 +408,10 @@ router.get('/', asyncHandler(async function (req, res) {
   res.redirect('/edit');
 }));
 
-
+router.get('/tencent5563221124109059836.txt', function(req,res) {
+  // 进行微信申诉，微信所要求的的站长认证机制
+  res.setHeader('Content-Type', 'text/txt');
+  res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'tencent5563221124109059836.txt\"');
+  res.send(`12849895376138040179`);
+});
 module.exports = router;
