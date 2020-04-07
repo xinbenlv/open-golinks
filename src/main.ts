@@ -1,9 +1,7 @@
-var log4js = require('log4js');
-var logger = log4js.getLogger();
-logger.level = 'debug';
-
+import {myLogger} from "./routes/utils";
+import config from '../nuxt.config';
 const {version, name} = require('./../package.json');
-logger.debug(`App: ${name}, version ${version}`);
+myLogger.debug(`App: ${name}, version ${version}`);
 
 const {Nuxt, Builder} = require('nuxt');
 const express = require("express");
@@ -11,10 +9,10 @@ import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
 
 require('dotenv').config();
-const indexRouter = require('./routes/index');
-const authRouter = require("./routes/auth");
-const qrRouter = require("./routes/qr");
-const fakeRouter = require("./routes/fake");
+import indexRouter from "./routes/index";
+import authRouter from "./routes/auth";
+import qrRouter from "./routes/qr";
+import fakeRouter from "./routes/fake";
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 
@@ -32,16 +30,15 @@ console.assert(process.env.AUTH0_DOMAIN, `$AUTH0_DOMAIN is not set`);
 console.assert(process.env.AUTH0_CLIENT_ID, `$AUTH0_CLIENT_ID is not set`);
 console.assert(process.env.AUTH0_CLIENT_SECRET, `AUTH0_CLIENT_SECRET is not set`);
 
-logger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
+myLogger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
 app.locals.siteName = process.env.OPEN_GOLINKS_SITE_NAME || `Open GoLinks`;
 app.locals.siteHost = process.env.OPEN_GOLINKS_SITE_HOST || `localhost:3000`;
 
-
-var Auth0Strategy = require('passport-auth0'),
+const Auth0Strategy = require('passport-auth0'),
   passport = require('passport');
 
 //passport-auth0
-var strategy = new Auth0Strategy({
+const strategy = new Auth0Strategy({
     domain: process.env.AUTH0_DOMAIN,
     clientID: process.env.AUTH0_CLIENT_ID,
     clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
@@ -76,8 +73,6 @@ const main = async () => {
 // }
 
 // app.js
-
-  const config = require('../nuxt.config.js');
   config.dev = !(process.env.NODE_ENV === 'production');
   const nuxt = new Nuxt(config);
   const {host, port} = nuxt.options.server;
@@ -98,12 +93,12 @@ const main = async () => {
 
 // Look up session to know if user is logged in
   app.use(function (req: any, res: any, next) {
-    logger.debug(`Query if it's logged in`, req.session);
+    myLogger.debug(`Query if it's logged in`, req.session);
     res.locals.loggedIn = false;
     if (req.session.passport && typeof req.session.passport.user != 'undefined') {
       res.locals.loggedIn = true;
     }
-    logger.debug(`Result:`, res.locals.loggedIn);
+    myLogger.debug(`Result:`, res.locals.loggedIn);
     next();
   });
 
@@ -111,7 +106,7 @@ const main = async () => {
   app.use((req: any, res: any, next: any) => {
     if (req.user && req.user.emails) {
       req.visitor.set('uid', req.user.emails[0]); // TODO(zzn): consider use a HASH fucntion instead
-      logger.debug(`set uid for req.visitor`, req.visitor);
+      myLogger.debug(`set uid for req.visitor`, req.visitor);
     }
     // Log pageview for all requests
     req.visitor.pageview(req.originalUrl).send();
@@ -123,24 +118,24 @@ const main = async () => {
   if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
   await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
 
-  logger.debug('Connected');
+  myLogger.debug('Connected');
 
   await nuxt.ready();
 
   // Build only in dev mode
   if (config.dev) {
-    logger.info(`Running Nuxt Builder ... `);
+    myLogger.info(`Running Nuxt Builder ... `);
     const builder = new Builder(nuxt);
     await builder.build();
-    logger.info(`DONE ... `);
+    myLogger.info(`DONE built nuxt... `);
   } else {
-    logger.info(`NOT Running Nuxt Builder`);
+    myLogger.info(`NOT Running Nuxt Builder`);
   }
   // Give nuxt middleware to express
   app.use(nuxt.render);
 
   app.use('/', indexRouter);
-  logger.debug('Start listening on ', PORT);
+  myLogger.debug('Start listening on ', PORT);
   app.listen(PORT);
 };
 

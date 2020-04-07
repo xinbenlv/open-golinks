@@ -31,6 +31,8 @@
     "@types/node": "^13.7.4",
     "@types/qrcode": "^1.3.4",
     "body-parser": "^1.18.3",
+    "bootstrap": "^4.4.1",
+    "bootstrap-vue": "^2.10.1",
     "connect-ensure-login": "^0.1.1",
     "cookie-parser": "^1.4.3",
     "core-js": "^2.6.11",
@@ -70,10 +72,17 @@
       "**/*.test.ts",
       "**/*.spec.ts",
       ".git",
-      "node_modules"
+      "node_modules",
+      ".nuxt",
+      ".idea"
     ],
     "watch": [
-      "src"
+      "src",
+      "static",
+      "nuxt.config.js",
+      "package.json",
+      "vue-shim.d.ts",
+      "tsconfig.json"
     ],
     "exec": "npm run dev:node",
     "ext": "ts"

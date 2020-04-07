@@ -85,7 +85,7 @@ block content
                   if !oldDest
                     button.btn.btn-primary.btn-sm(type='submit', value='Submit') Create
                   else
-                    if editable
+                    if isEditable
                       button.btn.btn-outline-primary.btn-sm(type='submit', value='Submit') Update
                     if author === 'anonymous' && !loggedIn
                       a.btn.btn-outline-primary.btn-sm(href='/login' style="width:120px") Login to claim

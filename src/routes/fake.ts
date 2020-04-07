@@ -1,8 +1,8 @@
 // The fake routes for faster frontend development
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const fakeRouter = express.Router();
 
-router.get('/edit', (req, res) => {
+fakeRouter.get('/edit', (req, res) => {
   res.render('edit', {
     title: "Create New Link",
     linkname: 'exp',
@@ -12,7 +12,7 @@ router.get('/edit', (req, res) => {
   });
 });
 
-router.get('/newedit', (req, res) => {
+fakeRouter.get('/newedit', (req, res) => {
   res.render('link-detail', {
     msgType: 'success',
     msg: "Your link is created successfully!",
@@ -27,4 +27,4 @@ router.get('/newedit', (req, res) => {
 });
 
 
-module.exports = router;
+export default fakeRouter;

@@ -4,8 +4,8 @@ import {asyncHandler, LINKNAME_PATTERN} from "./utils";
 
 const Jimp = require('jimp');
 const mongoose = require('mongoose');
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const qrRouter = express.Router();
 let composeQrCodePng = async function (qrDest, caption, addLogo) {
   let url = await toDataURL(
     qrDest,
@@ -41,7 +41,7 @@ let composeQrCodePng = async function (qrDest, caption, addLogo) {
 };
 
 if (process.env.DEBUG === '1') {
-  router.get('/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
+  qrRouter.get('/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
     let outputBuff = await composeQrCodePng('http://zgzg.link/fake_qr', 'hello world', true);
     res.writeHead(200, {
       'Content-Type': 'image/png',
@@ -50,7 +50,7 @@ if (process.env.DEBUG === '1') {
     res.end(outputBuff);
   });
 
-  router.get('/d/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
+  qrRouter.get('/d/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
     let outputBuff = await composeQrCodePng('http://zgzg.link/fake_qr', 'hello world', true);
     res.set();
     res.writeHead(200, {
@@ -89,12 +89,12 @@ let qrImageEndpoint = async (req, res, download) => {
   }
 };
 
-router.get(`/d/:linkname(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
+qrRouter.get(`/d/:linkname(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, true);
 }));
 
-router.get(`/:linkname(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
+qrRouter.get(`/:linkname(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, false);
 }));
 
-module.exports = router;
+export default qrRouter;
