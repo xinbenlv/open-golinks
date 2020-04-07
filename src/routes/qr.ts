@@ -63,8 +63,8 @@ if (process.env.DEBUG === '1') {
 }
 
 let qrImageEndpoint = async (req, res, download) => {
-  let shortlinkItems = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.linkname}).toArray();
-  let qrDeskUrl = `http://${req.app.locals.siteHost}/${req.params.linkname}`;
+  let shortlinkItems = await mongoose.connections[0].db.collection('shortlinks').find({golink: req.params.golink}).toArray();
+  let qrDeskUrl = `http://${req.app.locals.siteHost}/${req.params.golink}`;
   if (shortlinkItems.length == 0) {
     res.status(404);
     res.send(`Couldn't find ${qrDeskUrl}`);
@@ -81,7 +81,7 @@ let qrImageEndpoint = async (req, res, download) => {
       'Content-Length': outputBuff.length
     };
     if (download) {
-      headers['Content-disposition'] = 'attachment; filename=' + `${req.params.linkname}.png`;
+      headers['Content-disposition'] = 'attachment; filename=' + `${req.params.golink}.png`;
     }
 
     res.writeHead(200, headers);
@@ -89,11 +89,11 @@ let qrImageEndpoint = async (req, res, download) => {
   }
 };
 
-qrRouter.get(`/d/:linkname(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
+qrRouter.get(`/d/:golink(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, true);
 }));
 
-qrRouter.get(`/:linkname(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
+qrRouter.get(`/:golink(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, false);
 }));
 

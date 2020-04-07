@@ -34,7 +34,7 @@ indexRouter.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) 
 indexRouter.get('/edit', asyncHandler((req, res) => {
   res.render('link-detail', {
     title: "Create New Link",
-    linkname: '',
+    golink: '',
     oldDest: '',
     author: req.user ? req.user.emails[0].value : "anonymous",
     editable: true
@@ -42,11 +42,11 @@ indexRouter.get('/edit', asyncHandler((req, res) => {
 }));
 
 
-indexRouter.get(`/dashboard/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async (req, res) => {
+indexRouter.get(`/dashboard/:golink(${LINKNAME_PATTERN})`, asyncHandler(async (req, res) => {
   res.render('dashboard', {
     title: "Usage Dashboard",
     viewId: process.env.GA_VIEW_ID,
-    lockedUrl: req.params.linkname,
+    lockedUrl: req.params.golink,
     accessToken: await getJWTClientAccessToekn()
   });
 }));
@@ -64,19 +64,19 @@ indexRouter.post('/edit', asyncHandler(async function (req, res) {
   const regexPattern = RegExp(`^${LINKNAME_PATTERN}$`);
   if (!validator.isURL(req.body.dest)) {
     res.status(400).send(`Bad Request, invalid URL: ${req.body.dest}`);
-  } else if (!regexPattern.test(req.body.linkname)) {
-    res.status(400).send(`Bad Request, invalid linkname: ${req.body.linkname}`);
+  } else if (!regexPattern.test(req.body.golink)) {
+    res.status(400).send(`Bad Request, invalid golink: ${req.body.golink}`);
   } else {
-    let linkname = req.body.linkname;
+    let golink = req.body.golink;
     let dest = req.body.dest;
     let addLogo = req.body.addLogo;
     let caption = req.body.caption;
     let author = req.user ? req.user.emails[0].value : 'anonymous';
     // Check if links can be updated. // also need to worry about trace
-    let links = await getLinksWithCache(linkname) as Array<any>;
+    let links = await getLinksWithCache(golink) as Array<any>;
     if (links.length == 0/*link doen't exist*/ || isEditable(links[0].author, req.user)) {
       await upsertLinkAsync(
-        linkname,
+        golink,
         dest,
         author,
         addLogo,
@@ -87,7 +87,7 @@ indexRouter.post('/edit', asyncHandler(async function (req, res) {
         ec: `Edit`,
         ea: `Submit`,
         el: `OK`,
-        p: linkname, // page
+        p: golink, // page
         ev: 10,
       };
       req.visitor.event(params).send();
@@ -95,7 +95,7 @@ indexRouter.post('/edit', asyncHandler(async function (req, res) {
           title: `Edit`,
           msg: 'Your link is created/updated successsfully!',
           msgType: "success",
-          linkname: linkname,
+          golink: golink,
           oldDest: dest,
           author: author,
           addLogo: addLogo,
@@ -105,21 +105,21 @@ indexRouter.post('/edit', asyncHandler(async function (req, res) {
         }
       );
     } else {
-      res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${linkname} which belongs to user:${links[0].author}.`);
+      res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${golink} which belongs to user:${links[0].author}.`);
 
     }
   }
 
 }));
 
-indexRouter.get(`/edit/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
-  let linkname = req.params.linkname;
-  let links = await getLinksWithCache(linkname) as Array<object>; // must be lenght = 1 or 0 because linkname is primary key
+indexRouter.get(`/edit/:golink(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
+  let golink = req.params.golink;
+  let links = await getLinksWithCache(golink) as Array<object>; // must be lenght = 1 or 0 because golink is primary key
   if (links.length == 0) {
     res.render('link-detail', {
       msg: "Create new link",
       title: 'Create',
-      linkname: linkname,
+      golink: golink,
       oldDest: "",
       author: req.user ? req.user.emails[0].value : "anonymous",
       editable: true
@@ -128,7 +128,7 @@ indexRouter.get(`/edit/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async funct
     let link = links[0];
     res.render('link-detail', {
       title: `Edit`,
-      linkname: link['linkname'], oldDest: link['dest'],
+      golink: link['golink'], oldDest: link['dest'],
       author: link['author'],
       addLogo: link['addLogo'],
       caption: link['caption'],
@@ -140,7 +140,7 @@ indexRouter.get(`/edit/:linkname(${LINKNAME_PATTERN})`, asyncHandler(async funct
       ec: `Edit`,
       ea: `Render`,
       el: ``,
-      p: linkname, // page
+      p: golink, // page
       ev: 20,
     };
     req.visitor.event(params).send();

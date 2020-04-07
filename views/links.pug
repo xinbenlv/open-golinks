@@ -15,18 +15,18 @@ block content
         each link in links
           tr
             td
-              a(href=link['linkname']) #{link['linkname']}
+              a(href=link['golink']) #{link['golink']}
             td(style="word-break:break-all")
               a(href=link['dest'] style="word-break") #{link['dest']}
             td
-              a(href='/dashboard/' + link['linkname'] style="word-break") #{link['pageViews'] || 0}
+              a(href='/dashboard/' + link['golink'] style="word-break") #{link['pageViews'] || 0}
             td
               | #{link['author']}
             td
               if link['author'] === 'anonymous'
-                a.btn.btn-success.btn-outline(href="/edit/" + link['linkname']) 认领
+                a.btn.btn-success.btn-outline(href="/edit/" + link['golink']) 认领
               else
-                a.btn.btn-primary.btn-outline(href="/edit/" + link['linkname']) 编辑
+                a.btn.btn-primary.btn-outline(href="/edit/" + link['golink']) 编辑
 
 
 

@@ -48,7 +48,10 @@ export default {
         type: "text/javascript",
         //crossorigin: "anonymous"
       },
-    ]
+    ],
+    bodyAttrs: {
+      class: 'h-100'
+    },
   },
 
   /*
@@ -59,7 +62,9 @@ export default {
   /*
    ** Global CSS
    */
-  css: [],
+  css: [
+    `@/static/css/main.css`,
+  ],
 
   // Define your configuration with auto-completion & type checking
   buildModules: ['@nuxt/typescript-build'],

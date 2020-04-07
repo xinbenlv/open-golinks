@@ -5,7 +5,7 @@ const fakeRouter = express.Router();
 fakeRouter.get('/edit', (req, res) => {
   res.render('edit', {
     title: "Create New Link",
-    linkname: 'exp',
+    golink: 'exp',
     oldDest: 'http://old.example.com',
     author: "johnsmith@example.com",
     editable: true
@@ -17,7 +17,7 @@ fakeRouter.get('/newedit', (req, res) => {
     msgType: 'success',
     msg: "Your link is created successfully!",
     title: 'Edit',
-    linkname: 'fake_qr',
+    golink: 'fake_qr',
     addLogo: true,
     caption: 'Hello World!',
     oldDest: 'http://old.example.com',

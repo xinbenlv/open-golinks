@@ -3,26 +3,26 @@ const rp = require('request-promise');
 
 const mongoose = require('mongoose');
 
-export const getLinksWithCache = async (linkname) => {
-  let value = myCache.get(linkname);
+export const getLinksWithCache = async (golink) => {
+  let value = myCache.get(golink);
   if (value !== undefined) {
-    myLogger.debug(`cache hit for ${linkname}`);
+    myLogger.debug(`cache hit for ${golink}`);
     return value;
   } else {
-    myLogger.debug(`cache missed for ${linkname}`);
+    myLogger.debug(`cache missed for ${golink}`);
     // handle miss!
-    let originalValue = getLinksFromDBByLinknameAsync(linkname);
-    myCache.set(linkname, originalValue);
-    myLogger.debug(`cache set for ${linkname}`);
+    let originalValue = getLinksFromDBByLinknameAsync(golink);
+    myCache.set(golink, originalValue);
+    myLogger.debug(`cache set for ${golink}`);
     return originalValue;
   }
 };
 
-export const getLinksFromDBByLinknameAsync = async (linkname) => {
+export const getLinksFromDBByLinknameAsync = async (golink) => {
   const collection = mongoose.connections[0].db.collection('shortlinks');
-  let ret = await collection.findOne({linkname: linkname}, {
+  let ret = await collection.findOne({golink: golink}, {
     projection: {
-      linkname: true,
+      golink: true,
       dest: true,
       author: true,
       createdTime: true,
@@ -31,7 +31,7 @@ export const getLinksFromDBByLinknameAsync = async (linkname) => {
       caption: true
     }
   });
-  myLogger.debug(`getLinksFromDBByLinknameAsync linkname = ${linkname}, ret = ${JSON.stringify(ret, null, 2)}`);
+  myLogger.debug(`getLinksFromDBByLinknameAsync golink = ${golink}, ret = ${JSON.stringify(ret, null, 2)}`);
   return ret == null ? [] : [ret];
 
 };
@@ -41,7 +41,7 @@ export const getLinksByEmailAsync = async function (emails) {
   myLogger.debug(`emails ${JSON.stringify(emails, null, 2)}`);
   let ret = await collection.find({author: {'$in': emails}}, {
     projection: {
-      linkname: true,
+      golink: true,
       dest: true,
       author: true,
       createdTime: true,
@@ -58,7 +58,7 @@ export const getAllLinks = async function () {
   const collection = mongoose.connections[0].db.collection('shortlinks');
   return (await collection.find({}, {
     projection: {
-      linkname: true,
+      golink: true,
       dest: true,
       author: true,
       createdTime: true,
@@ -69,18 +69,18 @@ export const getAllLinks = async function () {
 };
 
 
-export const upsertLinkAsync = async function (linkname, dest, author, addLogo, caption) {
-  myLogger.debug(`Updating ${linkname}`);
-  myCache.del(linkname);
-  myLogger.debug(`Removed cahce for ${linkname}`);
+export const upsertLinkAsync = async function (golink, dest, author, addLogo, caption) {
+  myLogger.debug(`Updating ${golink}`);
+  myCache.del(golink);
+  myLogger.debug(`Removed cahce for ${golink}`);
 
   const collection = mongoose.connections[0].db.collection('shortlinks');
   let now = new Date();
   return await collection.updateOne(
-    {linkname: linkname},
+    {golink: golink},
     {
       $set: {
-        linkname: linkname,
+        golink: golink,
         dest: dest,
         author: author,
         addLogo: addLogo,
@@ -120,7 +120,7 @@ export const getLinksWithMetrics = async (links) => {
       {
        "operator": "IN_LIST",
        "dimensionName": "ga:pagePath",
-       "expressions": ${JSON.stringify(links.map(l => '/' + l['linkname']))}
+       "expressions": ${JSON.stringify(links.map(l => '/' + l['golink']))}
       }
      ]
     }
@@ -153,7 +153,7 @@ export const getLinksWithMetrics = async (links) => {
   }
 
   links.forEach(l => {
-    l['pageViews'] = urlToPageviewMap['/' + l['linkname']]
+    l['pageViews'] = urlToPageviewMap['/' + l['golink']]
   });
   return links;
 };

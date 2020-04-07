@@ -29,16 +29,16 @@ block content
                     button#btn_updatet_short_url.btn.btn-outline-secondary(type='button')
                       i.fas.fa-pen
               div.form-group
-                label(for='linkname') Short Url
+                label(for='golink') Short Url
                 .input-group
                   .input-group-prepend
                     span.input-group-text.text-primary #{siteHost}/
-                  input#linkname.text-primary.form-control(
+                  input#golink.text-primary.form-control(
                     type='text',
-                    name='linkname'
+                    name='golink'
                     disabled=oldDest ? true : false
                     placeholder= "Input the short url here"
-                    value= linkname,
+                    value= golink,
                   )
                   .input-group-append
                     button#btn_copy_short_url.btn.btn-primary(type='button' style="width:120px") Copy URL
@@ -46,7 +46,7 @@ block content
               .qr-code-section.d-flex.my-2
                 div
                   if oldDest
-                    img#qr_code.border(src= "/qr/" + linkname + '.png')
+                    img#qr_code.border(src= "/qr/" + golink + '.png')
                   else
                     div#qr_code.border.bg-white
                 div.ml-3.flex-grow-1
@@ -74,7 +74,7 @@ block content
                     )
                     label.ml-2.form-check-label(for='checkbox_qrcode_logo') Add ZaiGeZaiGu logo
                   div
-                    a.btn.btn-outline-secondary.btn-sm(href='/qr/d/' + linkname + '.png') Download
+                    a.btn.btn-outline-secondary.btn-sm(href='/qr/d/' + golink + '.png') Download
               div.d-flex.justify-content-between.align-self-center
                 div#owner
                   if author

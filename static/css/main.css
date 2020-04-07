@@ -1,8 +1,3 @@
-#qr_code {
-  width: 128px;
-  height: 128px;
-}
-
-#owner {
-  line-height: 31px;
+#__nuxt,#__layout,body,html {
+  height: 100%;
 }
