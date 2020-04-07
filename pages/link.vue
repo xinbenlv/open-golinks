@@ -34,28 +34,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="qr-code-section d-flex my-2">
-                  <div>
-                    <img v-if="hasQRCode" class="border qr_code" :src="`/qr/${goLink}.png`"/>
-                    <div v-else class="border bg-white qr_code"></div>
-                  </div>
-                  <div class="ml-3 flex-grow-1">
-                    <div>
-                      <div class="input-group"><input class="form-control" id="qrcode_caption" type="text"
-                                                      placeholder="add a description" name="caption"/>
-                        <div class="input-group-append">
-                          <button class="btn btn-outline-secondary" id="btn_update_caption" type="button"><i
-                            class="fas fa-pen"></i></button>
-                        </div>
-                      </div>
-                    </div>
-                    <div><span class="text-secondary"><small>20 character or less</small></span></div>
-                    <div class="my-1 form-check mt-1"><input class="form-check-input" id="checkbox_qrcode_logo"
-                                                             type="checkbox" name="addLogo"/><label
-                      class="ml-2 form-check-label" for="checkbox_qrcode_logo">Add ZaiGeZaiGu logo</label></div>
-                    <div><a class="btn btn-outline-secondary btn-sm" href="/qr/d/undefined.png">Download</a></div>
-                  </div>
-                </div>
+                <qr-code-editor :goLink="goLink" :hasQrCode="hasQrCode"></qr-code-editor>
                 <div class="d-flex justify-content-between align-self-center">
                   <div id="owner"><span><b>Owner: </b>{{goOwner || 'anonymous'}}</span></div>
                   <div class="btn-group">
@@ -74,8 +53,13 @@
 </template>
 
 <script>
+
+  import QrCodeEditor from '~/components/QrCodeEditor.vue';
+
   export default {
-    name: "link.vue",
+    components: {
+      QrCodeEditor,
+    },
     data() {
       return {
         msg: `You have successfully created a shortlink!`,
@@ -84,7 +68,7 @@
         goLink: 'fake_qr',
         goDest: 'https://foo.com/bar',
         goOwner: null,
-        hasQRCode: true,
+        hasQrCode: true,
       }
     },
     created() {
@@ -93,11 +77,6 @@
 </script>
 
 <style scoped>
-  .qr_code {
-    width: 128px;
-    height: 128px;
-  }
-
   #owner {
     line-height: 38px;
   }
