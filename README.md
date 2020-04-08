@@ -10,10 +10,14 @@ This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`
 3. Create your Auth0 account and take down the client id, client secret, domain and callback url.
 4. Create `.env` file. You can use [heroku-dotenv](https://www.npmjs.com/package/heroku-dotenv) to push to your heroku instance if you are deploying on Heroku.
 
+## Security Rules
+1. A goLink could be created *without* login.
+2. A goLink could only be updated **with** login.
 
 ## Contributions
 We welcome contributions. Send us Pull Request.
 
+__
 ## TODO / Wishlist
 
 ### Features

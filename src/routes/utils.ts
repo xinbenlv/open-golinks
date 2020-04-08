@@ -1,5 +1,5 @@
 const NodeCache = require("node-cache");
-import { getLogger } from 'log4js';
+import {getLogger} from 'log4js';
 
 export const myLogger = (() => {
   let l = getLogger();
@@ -13,7 +13,6 @@ export const asyncHandler = fn => (req, res, next) =>
     .resolve(fn(req, res, next))
     .catch(next);
 
-export const LINKNAME_PATTERN = '[A-Za-z0-9-_]+';
 export const myCache = new NodeCache();
 
 export const isEditable = function (existingLinkAuthor, reqeustingUser) {

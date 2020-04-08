@@ -1,6 +1,7 @@
 // The fake routes for faster frontend development
 import {toDataURL} from 'qrcode';
-import {asyncHandler, LINKNAME_PATTERN} from "./utils";
+import {asyncHandler} from "./utils";
+import {GOLINK_PATTERN} from "../shared";
 
 const Jimp = require('jimp');
 const mongoose = require('mongoose');
@@ -89,11 +90,11 @@ let qrImageEndpoint = async (req, res, download) => {
   }
 };
 
-qrRouter.get(`/d/:golink(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
+qrRouter.get(`/d/:golink(${GOLINK_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, true);
 }));
 
-qrRouter.get(`/:golink(${LINKNAME_PATTERN}).png`, asyncHandler(async (req, res) => {
+qrRouter.get(`/:golink(${GOLINK_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, false);
 }));
 

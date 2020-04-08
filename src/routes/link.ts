@@ -1,9 +1,10 @@
-import {asyncHandler, isEditable, LINKNAME_PATTERN, myLogger} from "./utils";
+import {asyncHandler, isEditable, myLogger} from "./utils";
 import {getLinksFromDBByLinknameAsync, getLinksWithCache} from "../db";
+import {GOLINK_PATTERN} from "../shared";
 const express = require('express');
 const router = express.Router();
 
-router.get(`/:golink(${LINKNAME_PATTERN})`, asyncHandler(async function (req, res) {
+router.get(`/:golink(${GOLINK_PATTERN})`, asyncHandler(async function (req, res) {
   if (req.visitor) {
     myLogger.debug(`req.visitor is set to `, req.visitor, 'now logging pageview to ', req.originalUrl, req.query.nocache);
   }
