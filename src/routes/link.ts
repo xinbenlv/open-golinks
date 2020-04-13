@@ -22,7 +22,7 @@ router.get(`/:golink(${GOLINK_PATTERN})`, asyncHandler(async function (req, res)
     let link = links[0] as any;
     myLogger.info('redirect to golink:', link.dest);
 
-    res.render('redirect', {
+    res.send({
       msg: `In 2 seconds, you are going to be directed to ${link.dest}`,
       msgType: 'success',
       oldDest: link.dest,
