@@ -13,6 +13,7 @@ import indexRouter from "./routes/index";
 import authRouter from "./routes/auth";
 import qrRouter from "./routes/qr";
 import fakeRouter from "./routes/fake";
+import apiV2Router from "./routes/apiv2";
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 
@@ -131,10 +132,12 @@ const main = async () => {
   } else {
     myLogger.info(`NOT Running Nuxt Builder`);
   }
+
+  app.use('/api/v2', apiV2Router);
+  app.use('/', indexRouter);
   // Give nuxt middleware to express
   app.use(nuxt.render);
 
-  app.use('/', indexRouter);
   myLogger.debug('Start listening on ', PORT);
   app.listen(PORT);
 };

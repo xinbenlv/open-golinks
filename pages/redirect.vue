@@ -4,13 +4,13 @@
       <div class="">
         <div id="wait_text_box" class="text-center my-2">
           <p>Please wait. <a href="http://zgzg.link">OpenGoLinks<sup><i class="ml-1 fas fa-external-link-alt"></i></sup></a>
-            is sending you to the following page in {{countDown}} seconds...</p>
+            is sending you to the page in {{countDown}} seconds...</p>
         </div>
-        <div id="go_now_box" v-on:click="go()" class="justify-content-center d-flex mt-2 mb-4">
-          <div class="go-now-btn">
+        <div id="go_now_box" class="justify-content-center d-flex mt-2 mb-4">
+          <div class="go-now-btn btn" v-on:click="go()" >
             <div class="go-now-out">
               <div class="text-center" style="width: 80px; height: 80px; left:35px; top:35px; position: relative;">
-                <h2>{{countDown}}s</h2>
+                <div style="font-size: 36px;line-height: 49px">{{countDown}}s</div>
                 <div class="font-size-18 text-primary" style="font-width: 800; font-style: normal">Go now <i class="fas fa-chevron-right"></i></div>
               </div>
             </div>
@@ -26,8 +26,8 @@
           </div>
         </div>
         <div id="powered_by_box" class="border-top">
-          <p class="font-size-20 text-secondary text-center mt-3 mb-0">Powered by OpenGoLinks</p>
-          <p class="font-size-20 text-secondary text-center" mb-0>The best OpenSource golink software</p>
+          <p class="font-size-18 text-secondary text-center mt-3 mb-0">Powered by OpenGoLinks</p>
+          <p class="font-size-18 text-secondary text-center" mb-0>The best OpenSource golink software</p>
         </div>
         <div id="logo_box" class="d-flex justify-content-center w-100">
           <div class="logo bg-light m-1"
@@ -43,6 +43,8 @@
 
 </template>
 <script>
+  import {GOLINK_PATTERN} from "../src/shared";
+
   export default {
     layout: 'empty', // not using any layout
     data() {
@@ -65,7 +67,6 @@
       go() {
         window.location.href = this.goDest;
       },
-
     },
     mounted() {
       let intervalId = setInterval(() => {
@@ -76,15 +77,14 @@
           this.go();
         }
       }, 1000);
-
+    },
+    beforeMount() {
+      this.goLink = this.$store.state.linkItem.goLink;
+      this.goDest = this.$store.state.linkItem.goDest;
     }
   }
 </script>
 <style>
-  .font-size-20 {
-    font-size: 20px;
-    line-height: 28px;
-  }
 
   .font-size-18 {
     font-size:18px;

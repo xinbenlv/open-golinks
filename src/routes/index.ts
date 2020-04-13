@@ -32,15 +32,15 @@ indexRouter.get('/user', ensureLoggedIn, asyncHandler(async function (req, res) 
   return;
 }));
 
-indexRouter.get('/edit', asyncHandler((req, res) => {
-  res.render('link-detail', {
-    title: "Create New Link",
-    golink: '',
-    oldDest: '',
-    author: req.user ? req.user.emails[0].value : "anonymous",
-    editable: true
-  });
-}));
+// indexRouter.get('/edit', asyncHandler((req, res) => {
+//   res.render('link-detail', {
+//     title: "Create New Link",
+//     golink: '',
+//     oldDest: '',
+//     author: req.user ? req.user.emails[0].value : "anonymous",
+//     editable: true
+//   });
+// }));
 
 
 indexRouter.get(`/dashboard/:golink(${GOLINK_PATTERN})`, asyncHandler(async (req, res) => {

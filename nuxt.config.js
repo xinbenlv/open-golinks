@@ -1,5 +1,8 @@
+import {GOLINK_PATTERN} from "./src/shared";
+
 const pkg = require('./package');
 require(`dotenv`).config();
+
 
 export default {
   mode: 'universal',
@@ -76,6 +79,12 @@ export default {
     '@nuxtjs/axios',
     // Doc: https://bootstrap-vue.js.org/docs/
     'bootstrap-vue/nuxt',
+    ['nuxt-env', {
+      keys: [
+        'HOST',
+        'PORT',
+      ]
+    }],
   ],
   /*
    ** Axios module configuration
@@ -95,4 +104,29 @@ export default {
    ** Build configuration
    */
   build: {},
+
+  router: {
+    extendRoutes (routes, resolve) {
+      routes.push({
+        path: `/link/:goLink(${GOLINK_PATTERN})?`,
+        component: resolve(__dirname, 'pages/link.vue'),
+      });
+      routes.push({
+        path: `/edit/:goLink(${GOLINK_PATTERN})?`,
+        component: resolve(__dirname, 'pages/link.vue'),
+      });
+      routes.push({
+        path: `/:goLink(${GOLINK_PATTERN})?`,
+        component: resolve(__dirname, 'pages/redirect.vue'),
+      });
+    }
+  },
+
+  /*
+  ** Plugins to load before mounting the App
+  */
+  plugins: [
+    '@/plugins/axios.ts',
+  ],
+
 };

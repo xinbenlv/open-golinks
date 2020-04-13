@@ -1,4 +1,5 @@
 import {getJWTClientAccessToekn, myCache, myLogger} from "./routes/utils";
+
 const rp = require('request-promise');
 
 const mongoose = require('mongoose');
@@ -20,19 +21,27 @@ export const getLinksWithCache = async (golink) => {
 
 export const getLinksFromDBByLinknameAsync = async (golink) => {
   const collection = mongoose.connections[0].db.collection('shortlinks');
-  let ret = await collection.findOne({golink: golink}, {
-    projection: {
-      golink: true,
-      dest: true,
-      author: true,
-      createdTime: true,
-      updatedTime: true,
-      addLogo: true,
-      caption: true
-    }
-  });
+  let ret = await collection.aggregate([
+    {
+      $match: {linkname/*TODO change to goLink*/: golink}
+    },
+    {
+      $project: {
+        goLink: '$linkname',
+        goDest: '$dest',
+        linkname: true,
+        dest: true,
+        author: true,
+        createdTime: true,
+        updatedTime: true,
+        addLogo: true,
+        caption: true,
+        destHistory: true,
+      }
+    }, {$limit: 1}
+  ]).toArray();
   myLogger.debug(`getLinksFromDBByLinknameAsync golink = ${golink}, ret = ${JSON.stringify(ret, null, 2)}`);
-  return ret == null ? [] : [ret];
+  return ret == null ? [] : ret;
 
 };
 
@@ -41,7 +50,7 @@ export const getLinksByEmailAsync = async function (emails) {
   myLogger.debug(`emails ${JSON.stringify(emails, null, 2)}`);
   let ret = await collection.find({author: {'$in': emails}}, {
     projection: {
-      golink: true,
+      linkname: true,
       dest: true,
       author: true,
       createdTime: true,
@@ -58,7 +67,7 @@ export const getAllLinks = async function () {
   const collection = mongoose.connections[0].db.collection('shortlinks');
   return (await collection.find({}, {
     projection: {
-      golink: true,
+      linkname: true,
       dest: true,
       author: true,
       createdTime: true,
@@ -77,10 +86,10 @@ export const upsertLinkAsync = async function (golink, dest, author, addLogo, ca
   const collection = mongoose.connections[0].db.collection('shortlinks');
   let now = new Date();
   return await collection.updateOne(
-    {golink: golink},
+    {linkname: golink},
     {
       $set: {
-        golink: golink,
+        linkname: golink,
         dest: dest,
         author: author,
         addLogo: addLogo,
