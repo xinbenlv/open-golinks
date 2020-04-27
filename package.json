@@ -8,7 +8,8 @@
     "dev:node": "npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "dev": "nodemon",
     "nuxt": "nuxt",
-    "start": "npm run dev:node"
+    "start": "npm run dev:node",
+    "heroku-postbuild": "npm run build"
   },
   "repository": {
     "type": "git",
