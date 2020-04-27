@@ -6,6 +6,18 @@ const Auth0Strategy = require('passport-auth0'),
   passport = require('passport');
 const ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn();
 
+authRouter.use((req, res, next) => {
+  if (req.isAuthenticated() && req.user) {
+    res.locals.isAuthenticated = req.isAuthenticated();
+    res.locals.user = {
+      id: req.user.id,
+      username: req.user._json.username,
+      grants: req.user._json.grants
+    };
+  }
+  next();
+});
+
 // Perform the login, after login Auth0 will redirect to callback
 authRouter.get('/login',
 

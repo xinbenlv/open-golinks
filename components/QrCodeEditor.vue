@@ -2,8 +2,7 @@
 
   <div class="qr-code-section d-flex my-2">
     <div>
-      <img v-if="hasQrCode" class="border qr_code" :src="`/qr/${goLink}.png`"/>
-      <div v-else class="border bg-white qr_code"></div>
+      <img class="border qr_code" :src="`/qr/${goLink}.png`"/>
     </div>
     <div class="ml-3 flex-grow-1">
       <div>
@@ -29,15 +28,14 @@
   </div>
 </template>
 
-<script>
-  export default {
-    name: "qr-code-editor",
-    props: {
-      goLink: String,
-      hasQrCode: Boolean,
-      caption: String,
-      addLogo: Boolean,
-    },
+<script lang="ts">
+  import {Component, Prop, Vue} from 'vue-property-decorator';
+
+  @Component
+  export default class QrCodeEditor extends Vue {
+      @Prop({type: String, required: true}) readonly goLink: string;
+      @Prop({type: String, required: true}) readonly caption: string;
+      @Prop({type: Boolean, required: true}) readonly addLogo: boolean;
   }
 </script>
 

@@ -11,7 +11,7 @@ let composeQrCodePng = async function (qrDest, caption, addLogo) {
   let url = await toDataURL(
     qrDest,
     // @ts-ignore
-    {width: 800, height: 800, margin: 1}
+    {width: 800, height: 800, margin: 1} as object
   );
   let qrJimp = await Jimp.read(Buffer.from(url.replace(/.+,/, ''), 'base64'));
 
@@ -64,36 +64,44 @@ if (process.env.DEBUG === '1') {
 }
 
 let qrImageEndpoint = async (req, res, download) => {
-  let shortlinkItems = await mongoose.connections[0].db.collection('shortlinks').find({golink: req.params.golink}).toArray();
+  let shortlinkItems = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.golink}).toArray();
   let qrDeskUrl = `http://${req.app.locals.siteHost}/${req.params.golink}`;
   if (shortlinkItems.length == 0) {
-    res.status(404);
-    res.send(`Couldn't find ${qrDeskUrl}`);
-  } else {
-    let shortlinkItem = shortlinkItems[0];
-    let outputBuff = await composeQrCodePng(
-      qrDeskUrl,
-      shortlinkItem.caption ? shortlinkItem.caption : qrDeskUrl,
-      shortlinkItem.addLogo ? shortlinkItem.addLogo : false
-    );
-
-    let headers = {
-      'Content-Type': 'image/png',
-      'Content-Length': outputBuff.length
-    };
-    if (download) {
-      headers['Content-disposition'] = 'attachment; filename=' + `${req.params.golink}.png`;
-    }
-
-    res.writeHead(200, headers);
-    res.end(outputBuff);
+    shortlinkItems = [{
+      caption: req.params?.caption,
+      addLogo: req.params?.addLogo,
+    }]
   }
+  let shortlinkItem = shortlinkItems[0];
+  let outputBuff = await composeQrCodePng(
+    qrDeskUrl,
+    shortlinkItem.caption ? shortlinkItem.caption : qrDeskUrl,
+    shortlinkItem.addLogo ? shortlinkItem.addLogo : false
+  );
+
+  let headers = {
+    'Content-Type': 'image/png',
+    'Content-Length': outputBuff.length
+  };
+  if (download) {
+    headers['Content-disposition'] = 'attachment; filename=' + `${req.params.golink}.png`;
+  }
+
+  res.writeHead(200, headers);
+  res.end(outputBuff);
+
 };
 
+/**
+ * Endpoint for downloading QR code
+ */
 qrRouter.get(`/d/:golink(${GOLINK_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, true);
 }));
 
+/**
+ * Endpoint for fetching QR code
+ */
 qrRouter.get(`/:golink(${GOLINK_PATTERN}).png`, asyncHandler(async (req, res) => {
   qrImageEndpoint(req, res, false);
 }));

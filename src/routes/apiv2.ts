@@ -15,6 +15,7 @@ apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)
   }
   if (links.length > 0) {
     let link = links[0];
+    // TODO: migrate to use GoLinkProps
     res.send([{
       goLink: goLink,
       createdTime: link.createdTime,

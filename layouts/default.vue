@@ -11,10 +11,13 @@
             <li class="nav-item active"><a class="nav-link text-white" href="#"><span
               class="sr-only">(current)</span></a></li>
             <li class="nav-item"><a class="nav-link text-white" href="/dashboard">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link text-white" href="/user">My Links</a></li>
-            <li class="nav-item"><a class="nav-link text-white" href="/all-links">All Links</a></li>
-            <li class="nav-item"><a class="nav-link text-white" href="/logout">Log Out</a></li>
-            <li class="nav-item"><a class="nav-link text-white" href="/login">Log In</a></li>
+            <template v-if="loggedIn">
+              <li class="nav-item"><a class="nav-link text-white" href="/user">My Links</a></li>
+              <li class="nav-item"><a class="nav-link text-white" href="/logout">Log Out</a></li>
+            </template>
+            <template v-else >
+              <li class="nav-item"><a class="btn btn-primary btn-sm nav-link text-white" href="/login">Log In</a></li>
+            </template>
           </ul>
         </div>
       </nav>
@@ -25,13 +28,17 @@
 </template>
 
 <script>
-  export default {
-    data () {
-      return {
-        title: 'zgzg.link'
-      }
-    },
+
+  import {Component, Prop, Vue} from 'nuxt-property-decorator';
+  @Component({
+  })
+  export default class DefaultLayout extends Vue {
+    title = 'zgzg.link';
+    get loggedIn() {
+      return this.$store.state.user !== null;
+    }
   }
+
 </script>
 <style scoped>
 </style>

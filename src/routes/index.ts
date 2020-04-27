@@ -60,7 +60,6 @@ indexRouter.get('/dashboard', async (req, res) => {
   });
 });
 
-
 indexRouter.post('/edit', asyncHandler(async function (req, res) {
   const regexPattern = RegExp(`^${GOLINK_PATTERN}$`);
   if (!validator.isURL(req.body.dest)) {
@@ -107,45 +106,9 @@ indexRouter.post('/edit', asyncHandler(async function (req, res) {
       );
     } else {
       res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${golink} which belongs to user:${links[0].author}.`);
-
     }
   }
 
-}));
-
-indexRouter.get(`/edit/:golink(${GOLINK_PATTERN})`, asyncHandler(async function (req, res) {
-  let golink = req.params.golink;
-  let links = await getLinksWithCache(golink) as Array<object>; // must be lenght = 1 or 0 because golink is primary key
-  if (links.length == 0) {
-    res.render('link-detail', {
-      msg: "Create new link",
-      title: 'Create',
-      golink: golink,
-      oldDest: "",
-      author: req.user ? req.user.emails[0].value : "anonymous",
-      editable: true
-    });
-  } else {
-    let link = links[0];
-    res.render('link-detail', {
-      title: `Edit`,
-      golink: link['golink'], oldDest: link['dest'],
-      author: link['author'],
-      addLogo: link['addLogo'],
-      caption: link['caption'],
-      user: req.user,
-      editable: isEditable(link['author'], req.user)
-    });
-
-    let params = {
-      ec: `Edit`,
-      ea: `Render`,
-      el: ``,
-      p: golink, // page
-      ev: 20,
-    };
-    req.visitor.event(params).send();
-  }
 }));
 
 indexRouter.get('/tencent5563221124109059836.txt', function (req, res) {

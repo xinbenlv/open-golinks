@@ -103,7 +103,17 @@ export default {
   /*
    ** Build configuration
    */
-  build: {},
+  build: {
+    babel: {
+      presets({ isServer }) {
+        return [
+          [
+            "@nuxt/babel-preset-app", { loose: true }
+          ]
+        ]
+      }
+    }
+  },
 
   router: {
     extendRoutes (routes, resolve) {

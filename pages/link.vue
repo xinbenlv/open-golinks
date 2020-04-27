@@ -24,8 +24,11 @@
                 <div class="input-group">
                   <div class="input-group-prepend"><span class="input-group-text text-primary">{{siteName}}/</span>
                   </div>
-                  <input class="text-primary form-control" id="golink" type="text" name="golink"
-                         v-model="goLink" placeholder="Input the short url here"/>
+                  <input ref="goLinkInput" class="text-primary form-control" id="golink" type="text" name="golink"
+                         v-model="goLink"
+                         placeholder="Input the short url here"
+                         :disabled="shouldLockGoLink"
+                         />
                   <div class="input-group-append">
                     <button class="btn btn-primary" id="btn_copy_short_url" type="button" style="width:120px;">Copy
                       URL
@@ -34,27 +37,29 @@
                 </div>
               </div>
               <qr-code-editor
-                :capation="caption"
+                :caption="caption"
                 :caption.sync='caption'
                 :addLogo.sync="addLogo"
                 :goLink="goLink"
-                :hasQrCode="hasQrCode"
               ></qr-code-editor>
               <div class="d-flex justify-content-between align-self-center">
-                <div id="owner"><span><b>Owner: </b>{{goOwner || 'anonymous'}}</span></div>
+                <div id="owner"><span><b>Owner: </b>{{author || 'anonymous'}}</span></div>
                 <div class="btn-group">
                   <!-- when it's in a link creation process, show a button to create a link -->
-                  <button v-if="status === `new`" class="btn btn-primary btn-sm" type="submit" value="Submit">Create
+                  <button v-if="status === `Creating`" class="btn btn-primary btn-sm"
+                          @click="submitBtn()">Create
                   </button>
                   <!-- if not in a creation process, for anonymously created link, allow anyone to claim" -->
-                  <button v-else-if="$store.state.userId && $store.state.userId === goOwner" class="btn btn-outline-primary btn-sm"
-                          type="submit" value="Submit">Update
+                  <button v-else-if="$store.state.userId && $store.state.userId === author" class="btn btn-primary btn-sm"
+                          @click="submitBtn()">Update
                   </button>
-                  <button v-else-if="$store.state.userId && !goOwner" class="btn btn-outline-primary btn-sm" href="/login"
+                  <button v-else-if="$store.state.userId && author === 'anonymous'" class="btn btn-primary btn-sm" href="/login"
+                          @click="submitBtn()"
                           style="width:120px;">Claim to update
                   </button>
-                  <button v-else-if="!$store.state.userId" class="btn btn-outline-primary btn-sm" href="/login"
-                          style="width:120px;">Login to claim
+                  <button v-else-if="!$store.state.userId" class="btn btn-primary btn-sm" href="/login"
+                          style="width:120px;"
+                          @click="login()">Login to claim
                   </button>
                 </div>
               </div>
@@ -68,39 +73,70 @@
 
 <script lang="ts">
     import QrCodeEditor from '~/components/QrCodeEditor.vue';
+
     import {GOLINK_PATTERN} from "~/src/shared";
+    import {Component, Prop, Vue} from 'nuxt-property-decorator';
+    const successMessage = `You have successfully created a shortlink!`;
+    enum Status {
+      Creating = 'Creating',
+      Editing = 'Editing'
+    }
 
-    export default {
+    @Component({
         components: {
-            QrCodeEditor,
-        },
-        data() {
-            return {
-                msg: `You have successfully created a shortlink!`,
-                msgType: 'success',
-                siteName: 'zgzg.link',
-                goLink: '',
-                goDest: '',
-                goOwner: null,
-                hasQrCode: true,
-                status: 'new',
-                caption: null,
-                addLogo: true,
-            }
-        },
+            QrCodeEditor
+        }
+    })
+    export default class LinkPage extends Vue {
+        msg:string = `Create`;
+        msgType:string = '';
+        siteName:string = 'zgzg.link';
+        goLink:string = '';
+        goDest:string = '';
+        author:string = '';
+        status:Status = Status.Creating;
+        caption:string = '';
+        addLogo:boolean = true;
+        editable:boolean = true;
+        async submitBtn() {
+          let result = this.$axios.$post(`/edit`/* old endpoint */, {
+              golink: this.goLink,
+              dest: this.goDest,
+              addLogo: this.addLogo,
+              caption: this.caption
+          });
+          this.msg = successMessage;
+          this.msgType = 'success';
+        }
+        get shouldLockGoLink () {
+          return this.status !== Status.Creating;
+        };
+        login() {
+          window.open(`/login`);
+        };
         async asyncData({ params, $axios }) {
-
             return { goLink: params.goLink || 'new' };
-        },
+        };
         validate({params}) {
           if (!params.goLink || RegExp(GOLINK_PATTERN).test(params.goLink)) return true;
           else throw new Error(
             `The link "${params.goLink}" doesn't match required pattern. It shall be 4 to 30 characters long, with lowercase letters, numbers and dash combined.`);
-        },
-        methods: {
-            updateCaption: (value) => {
-                this.caption = value;
-            }
+        };
+        created() {
+          if (this.$store.state.linkItem) {
+            let linkItem = this.$store.state.linkItem;
+            this.goLink = linkItem.goLink;
+            this.goDest = linkItem.goDest;
+            this.addLogo = linkItem.addLogo || false;
+            this.caption = linkItem.caption || "";
+            this.author = linkItem.author;
+            this.editable = linkItem.editable;
+            this.msg = 'Editing a Link';
+            this.status = Status.Editing;
+          } else {
+            this.status = Status.Creating;
+            this.msg = 'Creating a link';
+          }
         }
     }
 </script>
