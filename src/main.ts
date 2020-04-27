@@ -1,3 +1,5 @@
+
+require('dotenv').config();
 import {myLogger} from "./routes/utils";
 import config from '../nuxt.config';
 const {version, name} = require('./../package.json');
@@ -8,7 +10,6 @@ const express = require("express");
 import * as ua from "universal-analytics";
 import * as bodyParser from "body-parser";
 
-require('dotenv').config();
 import indexRouter from "./routes/index";
 import authRouter from "./routes/auth";
 import qrRouter from "./routes/qr";
@@ -25,10 +26,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set('view engine', 'pug');
 app.use(require('express-status-monitor')());
 
-console.assert(process.env.OPEN_GOLINKS_GA_ID, `$OPEN_GOLINKS_GA_ID is not set`);
+console.assert(process.env.OPEN_GOLINKS_GA_ID, `OPEN_GOLINKS_GA_ID is not set`);
 console.assert(process.env.MONGODB_URI, `MONGODB_URI is not set`);
-console.assert(process.env.AUTH0_DOMAIN, `$AUTH0_DOMAIN is not set`);
-console.assert(process.env.AUTH0_CLIENT_ID, `$AUTH0_CLIENT_ID is not set`);
+console.assert(process.env.AUTH0_DOMAIN, `AUTH0_DOMAIN is not set`);
+console.assert(process.env.AUTH0_CLIENT_ID, `AUTH0_CLIENT_ID is not set`);
 console.assert(process.env.AUTH0_CLIENT_SECRET, `AUTH0_CLIENT_SECRET is not set`);
 
 myLogger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
