@@ -29,6 +29,7 @@
   "homepage": "https://github.com/xinbenlv/open-golinks#readme",
   "dependencies": {
     "@jimp/plugin-print": "^0.9.8",
+    "@nuxt/typescript-build": "^0.6.2",
     "@nuxt/typescript-runtime": "^0.4.2",
     "@nuxtjs/axios": "^5.9.7",
     "@types/mongoose": "^5.7.14",
@@ -97,7 +98,6 @@
     "ext": "ts"
   },
   "devDependencies": {
-    "@nuxt/typescript-build": "^0.6.2",
     "@types/express": "^4.17.4",
     "@types/node": "^13.13.4",
     "@types/universal-analytics": "^0.4.4",
