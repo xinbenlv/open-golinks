@@ -1,8 +1,7 @@
-import {GOLINK_PATTERN} from "./src/shared";
+import {GOLINK_PATTERN} from './src/shared';
 
 const pkg = require('./package');
 require(`dotenv`).config();
-
 
 export default {
   mode: 'universal',
@@ -117,6 +116,7 @@ export default {
 
   router: {
     extendRoutes (routes, resolve) {
+
       routes.push({
         path: `/link/:goLink(${GOLINK_PATTERN})?`,
         component: resolve(__dirname, 'pages/link.vue'),
@@ -138,5 +138,6 @@ export default {
   plugins: [
     '@/plugins/axios.ts',
   ],
+
 
 };
