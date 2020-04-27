@@ -68,7 +68,8 @@
     "universal-analytics": "^0.4.20",
     "uuid": "^7.0.0",
     "validator": "^13.0.0",
-    "vue-property-decorator": "^8.4.2"
+    "vue-property-decorator": "^8.4.2",
+    "tsconfig-paths": "^3.9.0"
   },
   "engines": {
     "node": "12.16.1",
@@ -100,7 +101,6 @@
     "@types/node": "^13.13.4",
     "@types/universal-analytics": "^0.4.4",
     "nodemon": "^2.0.2",
-    "tsconfig-paths": "^3.9.0",
     "webpack-hot-middleware": "^2.25.0"
   }
 }
