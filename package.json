@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/xinbenlv/open-golinks#readme",
   "dependencies": {
-    "@jimp/plugin-print": "^0.9.8",
+    "@jimp/plugin-print": "^0.10.0",
     "@nuxt/typescript-build": "^0.6.2",
     "@nuxt/typescript-runtime": "^0.4.2",
     "@nuxtjs/axios": "^5.9.7",
