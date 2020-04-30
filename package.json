@@ -69,7 +69,7 @@
     "tsc": "^1.20150623.0",
     "typescript": "^3.8.3",
     "universal-analytics": "^0.4.20",
-    "uuid": "^7.0.0",
+    "uuid": "^8.0.0",
     "validator": "^13.0.0",
     "vue-property-decorator": "^8.4.2",
     "tsconfig-paths": "^3.9.0"
