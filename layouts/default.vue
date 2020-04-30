@@ -28,14 +28,16 @@
 </template>
 
 <script>
-
   import {Component, Prop, Vue} from 'nuxt-property-decorator';
   @Component({
   })
   export default class DefaultLayout extends Vue {
-    title = 'zgzg.link';
+    title = '';
     get loggedIn() {
       return this.$store.state.user !== null;
+    }
+    mounted () {
+      this.title = this.$env.OPEN_GOLINKS_SITE_HOST;
     }
   }
 

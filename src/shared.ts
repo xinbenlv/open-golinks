@@ -5,3 +5,5 @@
  *  TODO(xinbenlv): handle length too long issue.
  */
 export const GOLINK_PATTERN = `[a-z0-9][a-z0-9\-]{3,29}`;
+
+export const URL_PATTERN = `(https?|ftp)://(-\\.)?([^\\s/?\\.#-]+\\.?)+(/[^\\s]*)?`;

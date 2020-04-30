@@ -2,48 +2,14 @@
   <section>
     <div class="main d-flex flex-column justify-content-center h-100">
       <div class="row">
-        <div class="col-lg-6 offset-lg-3 col-md-8 offset-md-2">
+        <div class="col-12">
           <div class="card shadow">
-            <div class="card-header bg-light border-bottom-0 text-center">
-              <h5>
-                <i v-if="msgType==='success'" class="fas fa-check-circle text-lg pr-2 text-success"></i>
-                <span class="ml-1">{{msg}}</span>
+            <div class="card-header bg-ex-gray border-bottom-0 text-center d-flex justify-content-between">
+              <h5 style="height: 20px; line-height: 20px">
+                <i v-if="msgType=='success'" class="fas fa-check-circle text-lg pr-2 text-success mr-1"></i>
+                <span class="">{{msg}}</span>
               </h5>
-            </div>
-            <div class="card-body bg-light pt-0">
-              <div class="form-group"><label for="dest">Long Url</label>
-                <div class="input-group">
-                  <input v-model="goDest" class="form-control" id="dest" type="text" name="dest"/>
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" id="btn_updatet_short_url" type="button"><i
-                      class="fas fa-pen"></i></button>
-                  </div>
-                </div>
-              </div>
-              <div class="form-group"><label for="golink">Short Url</label>
-                <div class="input-group">
-                  <div class="input-group-prepend"><span class="input-group-text text-primary">{{siteName}}/</span>
-                  </div>
-                  <input ref="goLinkInput" class="text-primary form-control" id="golink" type="text" name="golink"
-                         v-model="goLink"
-                         placeholder="Input the short url here"
-                         :disabled="shouldLockGoLink"
-                         />
-                  <div class="input-group-append">
-                    <button class="btn btn-primary" id="btn_copy_short_url" type="button" style="width:120px;">Copy
-                      URL
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <qr-code-editor
-                :caption="caption"
-                :caption.sync='caption'
-                :addLogo.sync="addLogo"
-                :goLink="goLink"
-              ></qr-code-editor>
-              <div class="d-flex justify-content-between align-self-center">
-                <div id="owner"><span><b>Owner: </b>{{author || 'anonymous'}}</span></div>
+              <div style="height: 20px;">
                 <div class="btn-group">
                   <!-- when it's in a link creation process, show a button to create a link -->
                   <button v-if="status === `Creating`" class="btn btn-primary btn-sm"
@@ -64,6 +30,63 @@
                 </div>
               </div>
             </div>
+            <div class="card-body bg-ex-gray pt-0 d-flex">
+              <div class="mr-4 flex-grow-1">
+                <b-form-group style="height:80px"><label for="dest">Long Url <span class="label-small-note">REQUIRED</span></label>
+                  <validation-provider
+                    name="Long Url"
+                    :rules="{ required: true, goDestRule: true}"
+                    v-slot="goDestValidationContext"
+                  >
+                  <b-input-group class="input-group" >
+                    <b-form-input v-model="goDest"
+                      class="form-control" id="dest" type="text" name="dest"
+                      :state="getValidationState(goDestValidationContext)"
+                      />
+                    <b-form-invalid-feedback >{{ goDestValidationContext.errors[0] }}</b-form-invalid-feedback>
+                  </b-input-group>
+                  </validation-provider>
+                </b-form-group>
+                <b-form-group style="height:80px">
+                  <validation-provider
+                    name="Short Url"
+                    :rules="{ required:true, goLinkPattern: true, goLinkAvailable: true }"
+                    v-slot="goLinkValidationContext"
+                  >
+                    <label>Short Url <span class="label-small-note">REQUIRED</span></label>
+                    <b-input-group>
+                      <b-input-group-prepend><span class="input-group-text text-primary">{{siteHost}}/</span>
+                      </b-input-group-prepend>
+                      <b-form-input ref="goLinkInput" class="text-primary form-control" id="golink" type="text" name="golink"
+                             v-model="goLink"
+                             placeholder="short url here"
+                             :disabled="shouldLockGoLink"
+                             :state="getValidationState(goLinkValidationContext)"
+                             />
+                      <b-input-group-append>
+                        <button
+                          class="btn btn-primary rounded-right" id="btn_copy_short_url"
+                          type="button" style="width:120px;">Copy</button>
+                      </b-input-group-append>
+                      <b-form-invalid-feedback class="mr-1">{{ goLinkValidationContext.errors[0] }}</b-form-invalid-feedback>
+                    </b-input-group>
+                  </validation-provider>
+                </b-form-group>
+
+                <div class="d-flex justify-content-between align-self-center">
+                  <div id="owner"><span><b>Owner: </b>{{author || 'anonymous'}}</span></div>
+                </div>
+              </div>
+              <div class="border-right mr-4"></div>
+              <div class="mr-4">
+                <label for="qr_code_editor">QRCode<span class="ml-1 label-small-note">OPTIONAL</span></label>
+                <qr-code-editor id="qr_code_editor"
+                  :caption.sync='caption'
+                  :addLogo.sync="addLogo"
+                  :goLink="goLink"
+                ></qr-code-editor>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -73,9 +96,9 @@
 
 <script lang="ts">
     import QrCodeEditor from '~/components/QrCodeEditor.vue';
-
+    import { ValidationObserver, ValidationProvider } from "vee-validate";
     import {GOLINK_PATTERN} from "~/src/shared";
-    import {Component, Prop, Vue} from 'nuxt-property-decorator';
+    import {Component, Vue} from 'nuxt-property-decorator';
     const successMessage = `You have successfully created a shortlink!`;
     enum Status {
       Creating = 'Creating',
@@ -83,14 +106,17 @@
     }
 
     @Component({
-        components: {
-            QrCodeEditor
-        }
+      components: {
+        QrCodeEditor,
+        ValidationObserver: ValidationObserver,
+        ValidationProvider: ValidationProvider
+      }
     })
     export default class LinkPage extends Vue {
+        declare $env:any;
         msg:string = `Create`;
         msgType:string = '';
-        siteName:string = 'zgzg.link';
+        siteHost:string = 'open-go.link';
         goLink:string = '';
         goDest:string = '';
         author:string = '';
@@ -115,7 +141,7 @@
           window.open(`/login`);
         };
         async asyncData({ params, $axios }) {
-            return { goLink: params.goLink || 'new' };
+            return { goLink: params.goLink || '' };
         };
         validate({params}) {
           if (!params.goLink || RegExp(GOLINK_PATTERN).test(params.goLink)) return true;
@@ -138,11 +164,30 @@
             this.msg = 'Creating a link';
           }
         }
+        mounted () {
+          this.siteHost = this.$env.OPEN_GOLINKS_SITE_HOST;
+        }
+        getValidationState({ dirty, validated, valid = null }) {
+          return dirty || validated ? valid : null;
+        }
     }
 </script>
 
 <style scoped>
   #owner {
     line-height: 38px;
+  }
+  .label-small-note {
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 8px;
+    line-height: 11px;
+    text-align: center;
+    color: #6C6C6C;
+  }
+
+  .bg-ex-gray {
+    background: #EDEDED!important;
   }
 </style>

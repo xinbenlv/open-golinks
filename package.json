@@ -9,7 +9,8 @@
     "dev:node": "npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "dev": "nodemon",
     "nuxt": "nuxt",
-    "start": "npm run dev:node",
+    "start": "npm run prod",
+    "prod": "npm run build && npm run dev:node",
     "heroku-postbuild": "npm run build"
   },
   "repository": {
@@ -67,12 +68,12 @@
     "ts-mongoose": "0.0.21",
     "ts-node": "^8.8.1",
     "tsc": "^1.20150623.0",
+    "tsconfig-paths": "^3.9.0",
     "typescript": "^3.8.3",
     "universal-analytics": "^0.4.20",
     "uuid": "^7.0.0",
     "validator": "^13.0.0",
-    "vue-property-decorator": "^8.4.2",
-    "tsconfig-paths": "^3.9.0"
+    "vee-validate": "^3.3.0"
   },
   "engines": {
     "node": "12.16.1",

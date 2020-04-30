@@ -116,7 +116,7 @@ const main = async () => {
     next()
   });
   app.use('/', authRouter);
-  app.use('/qr/', qrRouter);
+  app.use('/qr', qrRouter);
   if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
   await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
 

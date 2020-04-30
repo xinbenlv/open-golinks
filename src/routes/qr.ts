@@ -43,7 +43,7 @@ let composeQrCodePng = async function (qrDest, caption, addLogo) {
 
 if (process.env.DEBUG === '1') {
   qrRouter.get('/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
-    let outputBuff = await composeQrCodePng('http://zgzg.link/fake_qr', 'hello world', true);
+    let outputBuff = await composeQrCodePng(`http://${process.env.OPEN_GOLINKS_SITE_HOST}/fake_qr`, 'hello world', true);
     res.writeHead(200, {
       'Content-Type': 'image/png',
       'Content-Length': outputBuff.length
@@ -52,7 +52,7 @@ if (process.env.DEBUG === '1') {
   });
 
   qrRouter.get('/d/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
-    let outputBuff = await composeQrCodePng('http://zgzg.link/fake_qr', 'hello world', true);
+    let outputBuff = await composeQrCodePng(`http://${process.env.OPEN_GOLINKS_SITE_HOST}/fake_qr`, 'hello world', true);
     res.set();
     res.writeHead(200, {
       'Content-disposition': 'attachment; filename=' + `fake_qr_downloaded.png`,
@@ -64,20 +64,16 @@ if (process.env.DEBUG === '1') {
 }
 
 let qrImageEndpoint = async (req, res, download) => {
-  let shortlinkItems = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.golink}).toArray();
+  let goLinkItems = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.golink}).toArray();
   let qrDeskUrl = `http://${req.app.locals.siteHost}/${req.params.golink}`;
-  if (shortlinkItems.length == 0) {
-    shortlinkItems = [{
-      caption: req.params?.caption,
-      addLogo: req.params?.addLogo,
-    }]
+  if (goLinkItems.length == 0) {
+    goLinkItems = [{}];
   }
-  let shortlinkItem = shortlinkItems[0];
-  let outputBuff = await composeQrCodePng(
-    qrDeskUrl,
-    shortlinkItem.caption ? shortlinkItem.caption : qrDeskUrl,
-    shortlinkItem.addLogo ? shortlinkItem.addLogo : false
-  );
+  let goLinkItem = goLinkItems[0];
+  let addLogo = req.query?.addLogo === 'true';
+  let caption = req.query?.caption || goLinkItem.caption;
+
+  let outputBuff = await composeQrCodePng(qrDeskUrl, caption, addLogo);
 
   let headers = {
     'Content-Type': 'image/png',

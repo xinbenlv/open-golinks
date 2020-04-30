@@ -82,6 +82,8 @@ export default {
       keys: [
         'HOST',
         'PORT',
+        'OPEN_GOLINKS_SITE_HOST',
+        'OPEN_GOLINKS_SITE_NAME',
       ]
     }],
   ],
@@ -111,7 +113,11 @@ export default {
           ]
         ]
       }
-    }
+    },
+    transpile: [
+      "vee-validate/dist/rules",
+      "vee-validate/dist/vee-validate.full.esm"
+      ],
   },
 
   router: {
@@ -137,7 +143,7 @@ export default {
   */
   plugins: [
     '@/plugins/axios.ts',
+    "@/plugins/vee-validate.ts"
   ],
-
 
 };

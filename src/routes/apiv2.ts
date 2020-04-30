@@ -1,8 +1,14 @@
 import {GOLINK_PATTERN} from "../shared";
 import {asyncHandler, isEditable, myLogger} from "./utils";
 import {getLinksFromDBByLinknameAsync, getLinksWithCache} from "../db";
+import * as mongoose from 'mongoose';
 const express = require('express');
 const apiV2Router = express.Router();
+
+apiV2Router.get(`/available/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)=> {
+  let ret = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.goLink}).toArray();
+  res.send(ret.length == 0);
+}));
 
 apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)=> {
   let links;

@@ -3,7 +3,7 @@
     <div class="col-lg-6 offset-lg-3">
       <div class="">
         <div id="wait_text_box" class="text-center my-2">
-          <p>Please wait. <a href="http://zgzg.link">OpenGoLinks<sup><i class="ml-1 fas fa-external-link-alt"></i></sup></a>
+          <p>Please wait. <a :href="`http://${$env.OPEN_GOLINKS_SITE_HOST}`">OpenGoLinks<sup><i class="ml-1 fas fa-external-link-alt"></i></sup></a>
             is sending you to the page in {{countDown}} seconds...</p>
         </div>
         <div id="go_now_box" class="justify-content-center d-flex mt-2 mb-4">
@@ -51,7 +51,7 @@
       return {
         countDown: 3,
         goDest: "https://www.youtube.com/channel/UCm5Xy3uOJU5aGZOtdKNxVqg",
-        goLink: "http://zgzg.link/cat",
+        goLink: `http://${this.$env.OPEN_GOLINKS}/cat`,
       }
     },
     head () {
