@@ -2,14 +2,17 @@
 
   <div class="qr-code-section d-flex bg-white p-3 rounded">
     <div class="mr-3">
-      <div><img class="border qr_code" :src="qrCodeApiUrl"/></div>
-      <div class="w-100 mt-2 "><a class="btn btn-outline-secondary btn-sm width-128" :href="`/qr/d/${goLink}.png`">Download</a></div>
+      <div>
+        <img v-if="isGoLinkValid" class="border qr_code" :src="qrCodeApiUrl"/>
+        <div v-else class="qr_code border bg-light"></div>
+      </div>
+      <div class="w-100 mt-2"><a class="btn btn-outline-secondary btn-sm width-128" :href="`/qr/d/${goLink}.png`">Download</a></div>
     </div>
     <div class="border-right mr-3"></div>
     <div >
       <div>
         <div class="input-group">
-          <b-form-textarea :value="caption" style="width: 200px;height: 100px"
+          <b-form-textarea :value="caption" style="width: 128px;height: 128px"
             @input="updateCaption($event)"
             class="form-control" id="qrcode_caption"  placeholder="add a description" name="caption"/>
         </div>
@@ -17,7 +20,7 @@
       <div>
         <span class="text-secondary"><small>20 character or less</small></span>
       </div>
-      <div class="my-1 form-check mt-1">
+      <div class="form-check">
         <input class="form-check-input" id="checkbox_qrcode_logo"
           :checked="addLogo"
           @input="$emit('update:addLogo', $event.target.checked)"
@@ -29,6 +32,7 @@
 
 <script lang="ts">
   import {Component, Prop, Vue} from 'vue-property-decorator';
+  import {GOLINK_PATTERN} from '~/src/shared';
 
   @Component
   export default class QrCodeEditor extends Vue {
@@ -41,6 +45,9 @@
       url += `?addLogo=${this.addLogo.toString()}`;
       if (this.caption) url += `&caption=${ this.caption}`;
       return encodeURI(url);
+    }
+    get isGoLinkValid() {
+      return new RegExp(`^${GOLINK_PATTERN}$`).test(this.goLink);
     }
     updateCaption = function(event) {
       this.$emit('update:caption', event)

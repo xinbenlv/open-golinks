@@ -30,61 +30,61 @@
                 </div>
               </div>
             </div>
-            <div class="card-body bg-ex-gray pt-0 d-flex">
-              <div class="mr-4 flex-grow-1">
-                <b-form-group style="height:80px"><label for="dest">Long Url <span class="label-small-note">REQUIRED</span></label>
-                  <validation-provider
-                    name="Long Url"
-                    :rules="{ required: true, goDestRule: true}"
-                    v-slot="goDestValidationContext"
-                  >
-                  <b-input-group class="input-group" >
-                    <b-form-input v-model="goDest"
-                      class="form-control" id="dest" type="text" name="dest"
-                      :state="getValidationState(goDestValidationContext)"
-                      />
-                    <b-form-invalid-feedback >{{ goDestValidationContext.errors[0] }}</b-form-invalid-feedback>
-                  </b-input-group>
-                  </validation-provider>
-                </b-form-group>
-                <b-form-group style="height:80px">
-                  <validation-provider
-                    name="Short Url"
-                    :rules="{ required:true, goLinkPattern: true, goLinkAvailable: true }"
-                    v-slot="goLinkValidationContext"
-                  >
-                    <label>Short Url <span class="label-small-note">REQUIRED</span></label>
-                    <b-input-group>
-                      <b-input-group-prepend><span class="input-group-text text-primary">{{siteHost}}/</span>
-                      </b-input-group-prepend>
-                      <b-form-input ref="goLinkInput" class="text-primary form-control" id="golink" type="text" name="golink"
-                             v-model="goLink"
-                             placeholder="short url here"
-                             :disabled="shouldLockGoLink"
-                             :state="getValidationState(goLinkValidationContext)"
-                             />
-                      <b-input-group-append>
-                        <button
-                          class="btn btn-primary rounded-right" id="btn_copy_short_url"
-                          type="button" style="width:120px;">Copy</button>
-                      </b-input-group-append>
-                      <b-form-invalid-feedback class="mr-1">{{ goLinkValidationContext.errors[0] }}</b-form-invalid-feedback>
+            <div class="card-body bg-ex-gray pt-0">
+              <div class="row">
+                <div class="col-md-6 col-sm-12 border-right">
+                  <b-form-group style="height:80px"><label for="dest">Long Url <span class="label-small-note">REQUIRED</span></label>
+                    <validation-provider
+                      name="Long Url"
+                      :rules="{ required: true, goDestRule: true}"
+                      v-slot="goDestValidationContext"
+                    >
+                    <b-input-group class="input-group" >
+                      <b-form-input v-model="goDest"
+                        class="form-control" id="dest" type="text" name="dest"
+                        :state="getValidationState(goDestValidationContext)"
+                        />
+                      <b-form-invalid-feedback >{{ goDestValidationContext.errors[0] }}</b-form-invalid-feedback>
                     </b-input-group>
-                  </validation-provider>
-                </b-form-group>
-
-                <div class="d-flex justify-content-between align-self-center">
-                  <div id="owner"><span><b>Owner: </b>{{author || 'anonymous'}}</span></div>
+                    </validation-provider>
+                  </b-form-group>
+                  <b-form-group style="height:80px">
+                    <validation-provider
+                      name="Short Url"
+                      :rules="{ required:true, goLinkPattern: true, goLinkAvailable: true }"
+                      v-slot="goLinkValidationContext"
+                    >
+                      <label>Short Url <span class="label-small-note">REQUIRED</span></label>
+                      <b-input-group>
+                        <b-input-group-prepend><span class="input-group-text text-primary">{{siteHost}}/</span>
+                        </b-input-group-prepend>
+                        <b-form-input ref="goLinkInput" class="text-primary form-control" id="golink" type="text" name="golink"
+                               v-model="goLink"
+                               placeholder="short url here"
+                               :disabled="shouldLockGoLink"
+                               :state="getValidationState(goLinkValidationContext)"
+                               />
+                        <b-input-group-append>
+                          <button
+                            class="btn btn-primary rounded-right" id="btn_copy_short_url"
+                            type="button" style="width:120px;">Copy</button>
+                        </b-input-group-append>
+                        <b-form-invalid-feedback class="mr-1">{{ goLinkValidationContext.errors[0] }}</b-form-invalid-feedback>
+                      </b-input-group>
+                    </validation-provider>
+                  </b-form-group>
+                  <div class="d-flex justify-content-between align-self-center">
+                    <div id="owner"><span><b>Owner: </b>{{author || 'anonymous'}}</span></div>
+                  </div>
                 </div>
-              </div>
-              <div class="border-right mr-4"></div>
-              <div class="mr-4">
-                <label for="qr_code_editor">QRCode<span class="ml-1 label-small-note">OPTIONAL</span></label>
-                <qr-code-editor id="qr_code_editor"
-                  :caption.sync='caption'
-                  :addLogo.sync="addLogo"
-                  :goLink="goLink"
-                ></qr-code-editor>
+                <div class="col-md-6 col-sm-12">
+                  <label for="qr_code_editor">QRCode<span class="ml-1 label-small-note">OPTIONAL</span></label>
+                  <qr-code-editor id="qr_code_editor"
+                    :caption.sync='caption'
+                    :addLogo.sync="addLogo"
+                    :goLink="goLink"
+                  ></qr-code-editor>
+                </div>
               </div>
             </div>
           </div>

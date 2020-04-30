@@ -65,15 +65,14 @@ if (process.env.DEBUG === '1') {
 
 let qrImageEndpoint = async (req, res, download) => {
   let goLinkItems = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.golink}).toArray();
-  let qrDeskUrl = `http://${req.app.locals.siteHost}/${req.params.golink}`;
+  let qrBaseUrl = `http://${req.app.locals.siteHost}/${req.params.golink}`;
   if (goLinkItems.length == 0) {
     goLinkItems = [{}];
   }
   let goLinkItem = goLinkItems[0];
   let addLogo = req.query?.addLogo === 'true';
-  let caption = req.query?.caption || goLinkItem.caption;
-
-  let outputBuff = await composeQrCodePng(qrDeskUrl, caption, addLogo);
+  let caption = req.query?.caption || goLinkItem.caption || qrBaseUrl;
+  let outputBuff = await composeQrCodePng(qrBaseUrl, caption, addLogo);
 
   let headers = {
     'Content-Type': 'image/png',
