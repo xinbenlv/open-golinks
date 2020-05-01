@@ -1,6 +1,7 @@
 <template>
   <section>
     <div class="main d-flex flex-column justify-content-center h-100">
+      <ValidationObserver v-slot="{ invalid, valid, dirty, pristine }">
       <div class="row">
         <div class="col-12">
           <div class="card shadow">
@@ -18,6 +19,7 @@
                 <div class="btn-group">
                   <!-- when it's in a link creation process, show a button to create a link -->
                   <button v-if="status === `Creating`" class="btn btn-primary btn-sm"
+                          :disabled="pristine || invalid"
                           @click="submitBtn()">Create
                   </button>
                   <!-- if not in a creation process, for anonymously created link, allow anyone to claim" -->
@@ -98,6 +100,7 @@
           </div>
         </div>
       </div>
+      </ValidationObserver>
     </div>
   </section>
 </template>
@@ -177,6 +180,7 @@
         }
         mounted () {
           this.siteHost = this.$env.OPEN_GOLINKS_SITE_HOST;
+
         }
         getValidationState({ dirty, validated, valid = null }) {
           return dirty || validated ? valid : null;
