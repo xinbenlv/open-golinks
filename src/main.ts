@@ -125,7 +125,7 @@ const main = async () => {
   await nuxt.ready();
 
   // Build only in dev mode
-  if (config.dev) {
+  if (process.env.BUILD_CLIENT === '1' && config.dev) {
     myLogger.info(`Running Nuxt Builder ... `);
     const builder = new Builder(nuxt);
     await builder.build();

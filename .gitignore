@@ -3,3 +3,5 @@ src/**/*.js
 .env
 oauth2.key.json
 .nuxt
+.cache
+.fonts
