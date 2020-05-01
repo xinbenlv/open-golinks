@@ -3,18 +3,18 @@
   <div class="qr-code-section d-flex bg-white p-3 rounded">
     <div class="mr-3">
       <div>
-        <img v-if="isGoLinkValid" class="border qr_code" :src="qrCodeApiUrl"/>
-        <div v-else class="qr_code border bg-light"></div>
+        <img v-if="isGoLinkValid" class="border qr-code-canvas" :src="qrCodeApiUrl"/>
+        <div v-else class="qr-code-canvas border bg-light"></div>
       </div>
-      <div class="w-100 mt-2"><a class="btn btn-outline-secondary btn-sm width-128" :href="`/qr/d/${goLink}.png`">Download</a></div>
+      <div class="w-100 mt-2"><a class="btn btn-outline-secondary btn-sm download-btn" :href="`/qr/d/${goLink}.png`">Download</a></div>
     </div>
     <div class="border-right mr-3"></div>
     <div >
       <div>
         <div class="input-group">
-          <b-form-textarea :value="caption" style="width: 128px;height: 128px"
+          <b-form-textarea :value="caption"
             @input="updateCaption($event)"
-            class="form-control" id="qrcode_caption"  placeholder="add a description" name="caption"/>
+            class="caption-area form-control" id="qrcode_caption"  placeholder="add a description" name="caption"/>
         </div>
       </div>
       <div>
@@ -25,7 +25,7 @@
           :checked="addLogo"
           @input="$emit('update:addLogo', $event.target.checked)"
           type="checkbox" name="addLogo"/><label
-        class="ml-2 form-check-label" for="checkbox_qrcode_logo">Add logo</label></div>
+        class="ml-2 form-check-label" for="checkbox_qrcode_logo">logo</label></div>
     </div>
   </div>
 </template>
@@ -55,12 +55,17 @@
   }
 </script>
 
-<style scoped>
-  .width-128 {
-    width: 128px;
+<style>
+  .download-btn {
+    width: 200px;
   }
-  .qr_code {
-    width: 128px;
-    height: 128px;
+  .caption-area {
+    width: 200px;
+    height: 100px;
+  }
+
+  .qr-code-canvas {
+    width: 200px;
+    height: 260px;
   }
 </style>

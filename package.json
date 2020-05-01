@@ -39,6 +39,7 @@
     "body-parser": "^1.18.3",
     "bootstrap": "^4.4.1",
     "bootstrap-vue": "^2.10.1",
+    "canvas": "^2.6.1",
     "connect-ensure-login": "^0.1.1",
     "cookie-parser": "^1.4.3",
     "core-js": "^2.6.11",
