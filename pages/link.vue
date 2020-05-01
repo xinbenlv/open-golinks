@@ -6,7 +6,12 @@
           <div class="card shadow">
             <div class="card-header bg-ex-gray border-bottom-0 text-center d-flex justify-content-between">
               <h5 style="height: 20px; line-height: 20px">
-                <i v-if="msgType=='success'" class="fas fa-check-circle text-lg pr-2 text-success mr-1"></i>
+                <i :class="{
+                  'fa-check-circle': msgType === 'success',
+                  'text-success': msgType === 'success',
+                  'fa-pencil-alt': msgType === 'editing',
+                  'fa-plus': msgType === 'creating'
+                }" class="fas text-lg mr-1"></i>
                 <span class="">{{msg}}</span>
               </h5>
               <div style="height: 20px;">
@@ -67,7 +72,10 @@
                         <b-input-group-append>
                           <button
                             class="btn btn-primary rounded-right" id="btn_copy_short_url"
-                            type="button" style="width:120px;">Copy</button>
+                            type="button"
+                            v-clipboard:copy="`http://${siteHost}/${goLink}`"
+                            v-clipboard:success="onCopy"
+                            style="width:120px;">Copy</button>
                         </b-input-group-append>
                         <b-form-invalid-feedback class="mr-1">{{ goLinkValidationContext.errors[0] }}</b-form-invalid-feedback>
                       </b-input-group>
@@ -114,6 +122,7 @@
     })
     export default class LinkPage extends Vue {
         declare $env:any;
+        declare $bvToast:any;
         msg:string = `Create`;
         msgType:string = '';
         siteHost:string = 'open-go.link';
@@ -158,9 +167,11 @@
             this.author = linkItem.author;
             this.editable = linkItem.editable;
             this.msg = 'Editing a Link';
+            this.msgType = 'editing';
             this.status = Status.Editing;
           } else {
             this.status = Status.Creating;
+            this.msgType = 'creating';
             this.msg = 'Creating a link';
           }
         }
@@ -170,6 +181,14 @@
         getValidationState({ dirty, validated, valid = null }) {
           return dirty || validated ? valid : null;
         }
+
+        onCopy (e) {
+          this.$bvToast.toast(`${e.text}`, {
+            title: 'Copied to clipboard',
+            toaster: `b-toaster-bottom-center`
+          });
+        }
+
     }
 </script>
 

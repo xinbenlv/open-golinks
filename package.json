@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "nuxt-ts build",
-    "dev:node": "cross-env NODE_ENV=development npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
+    "dev:node": "npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "dev": "nodemon",
     "nuxt": "nuxt",
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
@@ -75,7 +75,8 @@
     "universal-analytics": "^0.4.20",
     "uuid": "^7.0.0",
     "validator": "^13.0.0",
-    "vee-validate": "^3.3.0"
+    "vee-validate": "^3.3.0",
+    "vue-clipboard2": "^0.3.1"
   },
   "engines": {
     "node": "12.16.3",
