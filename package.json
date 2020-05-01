@@ -6,10 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "nuxt-ts build",
-    "dev:node": "npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
+    "dev:node": "cross-env NODE_ENV=development npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "dev": "nodemon",
     "nuxt": "nuxt",
-    "start": "npm run prod",
+    "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
     "heroku-postbuild": "npm run build"
   },
@@ -43,6 +43,7 @@
     "connect-ensure-login": "^0.1.1",
     "cookie-parser": "^1.4.3",
     "core-js": "^2.6.11",
+    "cross-env": "^7.0.2",
     "date-fns": "^2.0.0",
     "dotenv": "^8.0.0",
     "express": "^4.16.3",
