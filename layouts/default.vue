@@ -32,12 +32,9 @@
   @Component({
   })
   export default class DefaultLayout extends Vue {
-    title = '';
+    title = this.$env.OPEN_GOLINKS_SITE_NAME;
     get loggedIn() {
       return this.$store.state.user !== null;
-    }
-    mounted () {
-      this.title = this.$env.OPEN_GOLINKS_SITE_HOST;
     }
   }
 

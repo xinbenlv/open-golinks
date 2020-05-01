@@ -6,7 +6,7 @@
         <img v-if="isGoLinkValid" class="border qr-code-canvas" :src="qrCodeApiUrl"/>
         <div v-else class="qr-code-canvas border bg-light"></div>
       </div>
-      <div class="w-100 mt-2"><a class="btn btn-outline-secondary btn-sm download-btn" :href="`/qr/d/${goLink}.png`">Download</a></div>
+      <div class="w-100 mt-2"><a class="btn btn-outline-secondary btn-sm download-btn" :href="qrCodeDownloadApiUrl">Download</a></div>
     </div>
     <div class="border-right mr-3"></div>
     <div >
@@ -40,6 +40,12 @@
       @Prop({type: String, required: true}) readonly caption: string;
       @Prop({type: Boolean, required: true}) readonly addLogo: boolean;
 
+    get qrCodeDownloadApiUrl() {
+      let url = `/qr/d/${this.goLink}.png`;
+      url += `?addLogo=${this.addLogo.toString()}`;
+      if (this.caption) url += `&caption=${ this.caption}`;
+      return encodeURI(url);
+    }
     get qrCodeApiUrl() {
       let url = `/qr/${this.goLink}.png`;
       url += `?addLogo=${this.addLogo.toString()}`;
