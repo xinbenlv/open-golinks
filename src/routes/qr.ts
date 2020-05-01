@@ -26,13 +26,13 @@ let addLineBreak = function(caption) {
 }
 let composeQrCodePng2 = async function(qrDest, caption, addLogo) {
   const { createCanvas, registerFont } = require('canvas')
-  registerFont( '.fonts/NotoSansCJKsc-Regular.otf', { family: "Noto Sans CJK SC Regular" } );
+  registerFont( './static/fonts/NotoSansCJKsc-Regular.otf', { family: "Noto Sans CJK SC Regular" } );
   const canvas = createCanvas(1000, 1300)
   const ctx = canvas.getContext('2d')
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0,0, 1000, 1300);
 
-  let textContent = '测试测试 厉害了'|| addLineBreak(caption) || 'Hi, 世界!';
+  let textContent = addLineBreak(caption) || 'Hi, 世界!';
   ctx.fillStyle = "#000000";
   ctx.font = `40px 'Noto Sans CJK SC Regular'`
   ctx.textAlign = "center";
