@@ -11,7 +11,9 @@
     "nuxt": "nuxt",
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
-    "heroku-postbuild": "npm run build"
+    "heroku-postbuild": "npm run build",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -76,7 +78,8 @@
     "uuid": "^7.0.0",
     "validator": "^13.0.0",
     "vee-validate": "^3.3.0",
-    "vue-clipboard2": "^0.3.1"
+    "vue-clipboard2": "^0.3.1",
+    "snyk": "^1.316.2"
   },
   "engines": {
     "node": "12.16.3",
@@ -108,5 +111,6 @@
     "@types/universal-analytics": "0.4.4",
     "nodemon": "2.0.3",
     "webpack-hot-middleware": "2.25.0"
-  }
+  },
+  "snyk": true
 }
