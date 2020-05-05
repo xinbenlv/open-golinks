@@ -103,7 +103,7 @@
     "ext": "ts"
   },
   "devDependencies": {
-    "@types/express": "4.17.4",
+    "@types/express": "4.17.6",
     "@types/node": "13.13.4",
     "@types/universal-analytics": "0.4.4",
     "nodemon": "2.0.3",
