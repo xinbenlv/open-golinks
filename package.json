@@ -73,7 +73,7 @@
     "tsconfig-paths": "^3.9.0",
     "typescript": "^3.8.3",
     "universal-analytics": "^0.4.20",
-    "uuid": "^7.0.0",
+    "uuid": "^7.0.3",
     "validator": "^13.0.0",
     "vee-validate": "^3.3.0",
     "vue-clipboard2": "^0.3.1"
