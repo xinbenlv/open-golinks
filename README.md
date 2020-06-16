@@ -26,5 +26,4 @@ __
  - [ ] One Button Deploy to Heroku. -  Will make this repository extremely useful.
  
 ### Productionization
- - [X] Cache Mechanism
  - [ ] DDoS Prevention (reCAPTCHA)?
