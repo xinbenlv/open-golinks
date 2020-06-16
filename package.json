@@ -15,6 +15,11 @@
     "snyk-protect": "snyk protect",
     "prepare": "npm run snyk-protect"
   },
+  "husky": {
+    "hooks": {
+      "commit-msg": "npx commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xinbenlv/open-golinks.git"
@@ -50,7 +55,7 @@
     "dotenv": "^8.0.0",
     "express": "^4.16.3",
     "express-session": "^1.15.6",
-    "express-status-monitor": "^1.1.5",
+    "express-status-monitor": "^1.2.11",
     "google-auth-library": "^6.0.0",
     "jimp": "^0.13.0",
     "log4js": "^6.0.0",
@@ -106,9 +111,12 @@
     "ext": "ts"
   },
   "devDependencies": {
+    "@commitlint/cli": "^8.3.5",
+    "@commitlint/config-conventional": "^8.3.4",
     "@types/express": "4.17.6",
     "@types/node": "13.13.12",
     "@types/universal-analytics": "0.4.4",
+    "husky": "^4.2.5",
     "nodemon": "2.0.4",
     "webpack-hot-middleware": "2.25.0"
   },
