@@ -1,6 +1,6 @@
 {
   "name": "open-golinks",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An web app providing go-links service.",
   "main": "src/main.ts",
   "scripts": {
@@ -13,7 +13,8 @@
     "prod": "npm run build && npm run dev:node",
     "heroku-postbuild": "npm run build",
     "snyk-protect": "snyk protect",
-    "prepare": "npm run snyk-protect"
+    "prepare": "npm run snyk-protect",
+    "release": "HUSKY_SKIP_HOOKS=1 standard-version"
   },
   "husky": {
     "hooks": {
@@ -120,6 +121,7 @@
     "cz-conventional-changelog": "^3.2.0",
     "husky": "^4.2.5",
     "nodemon": "2.0.4",
+    "standard-version": "^8.0.0",
     "webpack-hot-middleware": "2.25.0"
   },
   "snyk": true,
