@@ -104,16 +104,16 @@ let composeQrCodePng2 = async function(qrDest, caption, addLogo) {
 }
 
 if (process.env.DEBUG === '1') {
-  qrRouter.get('/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
+  qrRouter.get('/fake_qr.png', asyncHandler(async /* TODO use asyncHanlder */(req, res) => {
     let outputBuff = await composeQrCodePng2(`http://${process.env.OPEN_GOLINKS_SITE_HOST}/fake_qr`, 'hello world', true);
     res.writeHead(200, {
       'Content-Type': 'image/png',
       'Content-Length': outputBuff.length
     });
     res.end(outputBuff);
-  });
+  }));
 
-  qrRouter.get('/d/fake_qr.png', async /* TODO use asyncHanlder */(req, res) => {
+  qrRouter.get('/d/fake_qr.png', asyncHandler(async /* TODO use asyncHanlder */(req, res) => {
     let outputBuff = await composeQrCodePng2(`http://${process.env.OPEN_GOLINKS_SITE_HOST}/fake_qr`, 'hello world', true);
     res.set();
     res.writeHead(200, {
@@ -122,7 +122,7 @@ if (process.env.DEBUG === '1') {
       'Content-Length': outputBuff.length
     });
     res.end(outputBuff);
-  });
+  }));
 }
 
 let qrImageEndpoint = async (req, res, download) => {
