@@ -55,7 +55,7 @@
     "jimp": "^0.13.0",
     "log4js": "^6.0.0",
     "mongodb": "^3.5.5",
-    "mongoose": "^5.7.14",
+    "mongoose": "^5.9.7",
     "node-cache": "^5.0.0",
     "nuxt": "^2.12.2",
     "nuxt-env": "^0.1.0",
