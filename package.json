@@ -12,7 +12,9 @@
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
     "heroku-postbuild": "npm run build",
-    "release": "HUSKY_SKIP_HOOKS=1 standard-version"
+    "release": "HUSKY_SKIP_HOOKS=1 standard-version",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "husky": {
     "hooks": {
@@ -73,7 +75,7 @@
     "request-promise": "^4.2.4",
     "request-promise-native": "^1.0.7",
     "sharp": "^0.25.2",
-    "snyk": "^1.341.1",
+    "snyk": "^1.342.2",
     "ts-mongoose": "0.0.21",
     "ts-node": "^8.8.1",
     "tsc": "^1.20150623.0",
@@ -129,5 +131,6 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
-  }
+  },
+  "snyk": true
 }
