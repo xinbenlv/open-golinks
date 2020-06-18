@@ -1,9 +1,6 @@
-This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`
-
+This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`.
 
 ## Deploy your own instance
-
-[![Greenkeeper badge](https://badges.greenkeeper.io/xinbenlv/open-golinks.svg)](https://greenkeeper.io/)
 
 1. Create and config your MongoDB instance. We recommend using [mLab](https://mlab.com/) from Heroku Credentials
 2. Create your Google Analytics instance, take down Tracking ID
@@ -16,15 +13,3 @@ This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`
 
 ## Contributions
 We welcome contributions. Send us Pull Request.
-
-__
-## TODO / Wishlist
-
-### Features
- - [ ] Ability to delete link
- - [ ] Show stats direcly along with links (from Google Analytics)
- - [ ] One Button Deploy to Heroku. -  Will make this repository extremely useful.
- 
-### Productionization
- - [X] Cache Mechanism
- - [ ] DDoS Prevention (reCAPTCHA)?
