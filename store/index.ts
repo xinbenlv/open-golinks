@@ -22,7 +22,7 @@ export const mutations = {
 
 export const actions = {
   async nuxtServerInit({ commit, state, }, ctx2) {
-    if (ctx2.route.path == 'edit') {
+    if (['/edit','/dashboard2'].indexOf(ctx2.route.path) >= 0) {
       return;
     }
     let goLink = ctx2.params.goLink;

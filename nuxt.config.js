@@ -122,7 +122,10 @@ export default {
 
   router: {
     extendRoutes (routes, resolve) {
-
+      routes.push({
+        path: `/dashboard2`,
+        component: resolve(__dirname, "pages/dashboard2.vue")
+      });
       routes.push({
         path: `/link/:goLink(${GOLINK_PATTERN})?`,
         component: resolve(__dirname, 'pages/link.vue'),
