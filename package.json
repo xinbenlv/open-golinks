@@ -56,7 +56,7 @@
     "express-session": "^1.15.6",
     "express-status-monitor": "^1.2.11",
     "google-auth-library": "^6.0.0",
-    "jimp": "^0.13.0",
+    "jimp": "^0.14.0",
     "log4js": "^6.0.0",
     "mongodb": "^3.5.5",
     "mongoose": "^5.9.7",
