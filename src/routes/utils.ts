@@ -46,7 +46,6 @@ export const getJWTClientAccessToekn = async function () {
         reject(err);
       } else
         resolve(result.access_token);
-
     });
   });
 };
