@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/xinbenlv/open-golinks/compare/v1.0.5...v1.1.0) (2020-07-12)
+
+
+### Features
+
+* **dashboard2:** add dashboard2 vue file and route ([bda6a2a](https://github.com/xinbenlv/open-golinks/commit/bda6a2aecfaeb4555ed2da038737b8068e6d59e9)), closes [#152](https://github.com/xinbenlv/open-golinks/issues/152)
+
 ### [1.0.5](https://github.com/xinbenlv/open-golinks/compare/v1.0.4...v1.0.5) (2020-06-18)
 
 ### [1.0.4](https://github.com/xinbenlv/open-golinks/compare/v1.0.0-release...v1.0.4) (2020-06-18)
