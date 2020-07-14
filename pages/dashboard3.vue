@@ -99,10 +99,10 @@ export default class Dashboard3Page extends Vue {
       var tableChart, pieChart, lineChart;
       var charts;
 
-      var lockedUrl = "";
+      var lockedUrl = $(`#regex-input`).val();
       if (lockedUrl) {
         $(`#regex-input`)
-          .val(`#{lockedUrl}`)
+          .val(lockedUrl)
           .prop("disabled", true);
       }
 

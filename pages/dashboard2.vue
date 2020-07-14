@@ -1,34 +1,44 @@
 <template>
-  <section class="bg-dark" >
+  <section class="bg-dark">
     <div class="input-group mb-3">
-      <div class="btn-group btn-group-toggle mr-2" data-toggle="buttons" role="group" aria-label="First group">
+      <div
+        class="btn-group btn-group-toggle mr-2"
+        data-toggle="buttons"
+        role="group"
+        aria-label="First group"
+      >
         <label class="btn btn-secondary" @click="updateQuery(-1)">
-          <input type="radio" autocomplete="off"> 全部
+          <input type="radio" autocomplete="off" /> 全部
         </label>
         <label class="btn btn-secondary" @click="updateQuery(180)">
-          <input type="radio" autocomplete="off" > 180天
+          <input type="radio" autocomplete="off" /> 180天
         </label>
         <label class="btn btn-secondary " @click="updateQuery(90)">
-          <input type="radio" autocomplete="off"> 90天
+          <input type="radio" autocomplete="off" /> 90天
         </label>
-        <label class="btn btn-secondary"  @click="updateQuery(30)">
-          <input type="radio" autocomplete="off"> 30天
+        <label class="btn btn-secondary" @click="updateQuery(30)">
+          <input type="radio" autocomplete="off" /> 30天
         </label>
         <label class="btn btn-secondary active" @click="updateQuery(14)">
-          <input type="radio" autocomplete="off" checked > 14天
+          <input type="radio" autocomplete="off" checked /> 14天
         </label>
         <label class="btn btn-secondary" @click="updateQuery(1)">
-          <input type="radio" autocomplete="off" > 1天
+          <input type="radio" autocomplete="off" /> 1天
         </label>
       </div>
-      <input class="form-control" v-model="regExpression" type="text" placeholder="RegEx" />
+      <input
+        class="form-control"
+        v-model="regExpression"
+        type="text"
+        placeholder="RegEx"
+      />
       <button class="btn btn-secondary" id="btn-update" @click="refreshQuery()">
-          刷新 <i class="fas fa-sync-alt"></i>
+        刷新 <i class="fas fa-sync-alt"></i>
       </button>
     </div>
     <GChart type="PieChart" :data="pieData" :options="pieOptions"></GChart>
     <GChart type="AreaChart" :data="lineData" :options="lineOptions"></GChart>
-    <GChart type="Table" :data="tableData" :options="tableOptions" ></GChart>
+    <GChart type="Table" :data="tableData" :options="tableOptions"></GChart>
   </section>
 </template>
 
@@ -72,13 +82,13 @@ export default {
       endDate: "2020-07-06"
     };
     const pielinks = await $axios.$get(
-      `api/v2/link?limit=7&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&dimensions=ga:pagePath`
+      `api/v2/get?limit=7&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&dimensions=ga:pagePath`
     );
     const linelinks = await $axios.$get(
-      `api/v2/link?limit=10&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&dimensions=ga:date`
+      `api/v2/get?limit=10&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&dimensions=ga:date`
     );
     const tablelinks = await $axios.$get(
-      `api/v2/link?limit=30&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&dimensions=ga:pagePath`
+      `api/v2/get?limit=30&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&dimensions=ga:pagePath`
     );
     return { pielinks, linelinks, tablelinks };
   },
@@ -202,35 +212,35 @@ export default {
       this.days = days;
       if (this.regExpression != "") {
         this.pielinks = await this.$axios.$get(
-          `api/v2/link/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
+          `api/v2/get/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
         );
         this.linelinks = await this.$axios.$get(
-          `api/v2/link/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=${this.dimensions}`
+          `api/v2/get/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=${this.dimensions}`
         );
         this.tablelinks = await this.$axios.$get(
-          `api/v2/link/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
+          `api/v2/get/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
         );
       } else {
         this.pielinks = await this.$axios.$get(
-          `api/v2/link?limit=7&startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
+          `api/v2/get?limit=7&startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
         );
         this.linelinks = await this.$axios.$get(
-          `api/v2/link?limit=10&startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=${this.dimensions}`
+          `api/v2/get?limit=10&startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=${this.dimensions}`
         );
         this.tablelinks = await this.$axios.$get(
-          `api/v2/link?limit=30&startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
+          `api/v2/get?limit=30&startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
         );
       }
     },
     refreshQuery: async function() {
       this.pielinks = await this.$axios.$get(
-        `api/v2/link/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
+        `api/v2/get/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
       );
       this.linelinks = await this.$axios.$get(
-        `api/v2/link/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=${this.dimensions}`
+        `api/v2/get/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=${this.dimensions}`
       );
       this.tablelinks = await this.$axios.$get(
-        `api/v2/link/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
+        `api/v2/get/${this.regExpression}?startDate=${this.dateRange.startDate}&endDate=${this.dateRange.endDate}&dimensions=ga:pagePath`
       );
     }
   },
@@ -238,5 +248,4 @@ export default {
 };
 </script>
 
-<style>
-</style>
+<style></style>
