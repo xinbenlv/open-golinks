@@ -45,7 +45,7 @@ import $ from 'jquery'
 import axios from 'axios'
 
 @Component
-export default class Dashboard3Page extends Vue {
+export default class DashboardPage extends Vue {
   /*   declare gapi: any; // try to access window member: https://stackoverflow.com/questions/54166847/how-to-access-the-window-object-in-vue-js
    */
   mounted() {

@@ -4,6 +4,7 @@ const pkg = require('./package');
 require(`dotenv`).config();
 
 export default {
+  telemetry: false, // https://github.com/nuxt/telemetry
   mode: 'universal',
 
   /*
@@ -123,8 +124,8 @@ export default {
   router: {
     extendRoutes (routes, resolve) {
       routes.push({
-        path: `/dashboard3`,
-        component: resolve(__dirname, "pages/dashboard3.vue")
+        path: `/dashboard`,
+        component: resolve(__dirname, "pages/dashboard.vue")
       });
       routes.push({
         path: `/link/:goLink(${GOLINK_PATTERN})?`,

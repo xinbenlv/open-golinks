@@ -22,9 +22,9 @@ export const mutations = {
 
 export const actions = {
   async nuxtServerInit({ commit, state, }, ctx2) {
-    if (['/edit','/dashboard3'].indexOf(ctx2.route.path) >= 0) {
+    if (['/edit','/dashboard'].indexOf(ctx2.route.path) >= 0) {
       return;
-    }
+    } // TODO(xinbenlv@): This is pretty buggy, we shall find better solution
     let goLink = ctx2.params.goLink;
     if (goLink && new RegExp(GOLINK_PATTERN).test(goLink)) {
       let linkItems = await this.$axios.$get(`/api/v2/link/${goLink}`);
