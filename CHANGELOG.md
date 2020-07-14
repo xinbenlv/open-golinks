@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/xinbenlv/open-golinks/compare/v1.1.0...v2.0.0) (2020-07-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **pug:** /dashboard is not currently active
+
+### Bug Fixes
+
+* bring back /dashboard end point, re: [#153](https://github.com/xinbenlv/open-golinks/issues/153). ([8ac84f1](https://github.com/xinbenlv/open-golinks/commit/8ac84f1e68d07fbcc51be0f94d78758a3229ca50))
+* dashboard3 fixed ([b5a95b3](https://github.com/xinbenlv/open-golinks/commit/b5a95b35b09621fed850dfb0264e8abb1d6dc5ee))
+* package.json ([39b16a5](https://github.com/xinbenlv/open-golinks/commit/39b16a5cfe2af34026f4049a4feb593d846d4007))
+* **deps:** update dependency @nuxt/typescript-runtime to v1 ([7c09c8f](https://github.com/xinbenlv/open-golinks/commit/7c09c8f09da3e1dd5ea7c5475b4166ce157cbef5))
+
+
+* **pug:** remove all pug dependencies ([9140fa0](https://github.com/xinbenlv/open-golinks/commit/9140fa0152c7eaea2e673a88e4e3e590267e4202)), closes [#153](https://github.com/xinbenlv/open-golinks/issues/153)
+
 ## [1.1.0](https://github.com/xinbenlv/open-golinks/compare/v1.0.5...v1.1.0) (2020-07-12)
 
 
