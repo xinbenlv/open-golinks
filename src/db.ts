@@ -1,4 +1,4 @@
-import {getJWTClientAccessToekn, myCache, myLogger} from "./routes/utils";
+import {myCache, myLogger} from "./routes/utils";
 
 const rp = require('request-promise');
 
@@ -103,66 +103,4 @@ export const upsertLinkAsync = async function (golink, dest, author, addLogo, ca
     },
     {upsert: true});
 
-};
-
-export const getLinksWithMetrics = async (links) => {
-  if (links.length == 0) return links;
-  let access_token = await getJWTClientAccessToekn();
-  const baseUrlV4 = `https://analyticsreporting.googleapis.com/v4/reports:batchGet?`;
-  let queryV4 = `{
- "reportRequests": [
-  {
-   "viewId": "${process.env.GA_VIEW_ID}",
-   "dimensions": [
-    {
-     "name": "ga:pagePath"
-    }
-   ],
-   "metrics": [
-    {
-     "expression": "ga:pageviews"
-    }
-   ],
-   "dimensionFilterClauses": [
-    {
-     "filters": [
-      {
-       "operator": "IN_LIST",
-       "dimensionName": "ga:pagePath",
-       "expressions": ${JSON.stringify(links.map(l => '/' + l['golink']))}
-      }
-     ]
-    }
-   ],
-   "dateRanges": [
-    {
-     "startDate": "2005-12-31",
-     "endDate": "2019-09-28"
-    }
-   ]
-  }
- ]
-}`;
-
-  let optionV4 = {
-    uri: baseUrlV4 + `access_token=${access_token}`,
-    method: 'POST',
-    body: JSON.parse(queryV4),
-    json: true
-  };
-  let retV4 = await rp(optionV4);
-
-  let urlToPageviewMap = {};
-  if (retV4['reports'][0]['data']['rows']) {
-    retV4['reports'][0]['data']['rows'].forEach(d => {
-      let url = d['dimensions'][0];
-      let pageViews = d['metrics'][0]['values'][0];
-      urlToPageviewMap[url] = pageViews;
-    });
-  }
-
-  links.forEach(l => {
-    l['pageViews'] = urlToPageviewMap['/' + l['golink']]
-  });
-  return links;
 };

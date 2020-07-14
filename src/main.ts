@@ -13,7 +13,6 @@ import * as bodyParser from "body-parser";
 import indexRouter from "./routes/index";
 import authRouter from "./routes/auth";
 import qrRouter from "./routes/qr";
-import fakeRouter from "./routes/fake";
 import apiV2Router from "./routes/apiv2";
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
@@ -23,7 +22,6 @@ let app = express();
 app.use('/static', express.static('static'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-app.set('view engine', 'pug');
 app.use(require('express-status-monitor')());
 
 console.assert(process.env.OPEN_GOLINKS_GA_ID, `OPEN_GOLINKS_GA_ID is not set`);
@@ -117,7 +115,6 @@ const main = async () => {
   });
   app.use('/', authRouter);
   app.use('/qr', qrRouter);
-  if (process.env.DEBUG === '1') app.use('/fake/', fakeRouter);
   await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
 
   myLogger.debug('Connected');
