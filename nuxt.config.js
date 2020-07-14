@@ -70,15 +70,7 @@ export default {
   css: [`@/static/css/main.css`],
 
   // Define your configuration with auto-completion & type checking
-  buildModules: [
-    ["@nuxt/typescript-build"],
-    [
-      "@nuxtjs/google-analytics",
-      {
-        id: process.env.OPEN_GOLINKS_GA_ID
-      }
-    ]
-  ],
+  buildModules: [["@nuxt/typescript-build"]],
   /*
    ** Nuxt.js modules
    */
@@ -133,6 +125,10 @@ export default {
       routes.push({
         path: `/dashboard2`,
         component: resolve(__dirname, "pages/dashboard2.vue")
+      });
+      routes.push({
+        path: `/dashboard3`,
+        component: resolve(__dirname, "pages/dashboard3.vue")
       });
       routes.push({
         path: `/link/:goLink(${GOLINK_PATTERN})?`,

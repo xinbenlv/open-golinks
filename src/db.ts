@@ -130,7 +130,6 @@ export const upsertLinkAsync = async function(
 export const getLinksWithMetrics = async (links, dateRange, dimensions) => {
   if (links.length == 0) return links;
   let access_token = await getJWTClientAccessToekn();
-
   const baseUrlV4 = `https://analyticsreporting.googleapis.com/v4/reports:batchGet?`;
   let queryV4 = `{
    "reportRequests": [
