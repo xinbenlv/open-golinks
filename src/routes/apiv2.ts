@@ -1,5 +1,5 @@
 import {GOLINK_PATTERN} from "../shared";
-import {asyncHandler, isEditable, myLogger} from "./utils";
+import {asyncHandler, isEditable, myLogger, getJWTClientAccessToekn} from "./utils";
 import {getLinksFromDBByLinknameAsync, getLinksWithCache} from "../db";
 import * as mongoose from 'mongoose';
 const express = require('express');
@@ -39,5 +39,13 @@ apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)
   }
 }));
 
+apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
+    return res.send(await getJWTClientAccessToekn())
+  })
+)
+apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
+    return res.send(process.env.GA_VIEW_ID)
+  })
+)
 export default apiV2Router;
 
