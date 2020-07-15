@@ -119,6 +119,11 @@ export default {
       "vee-validate/dist/rules",
       "vee-validate/dist/vee-validate.full.esm"
       ],
+    extend (config, {isDev}) {
+      if (isDev) {
+        config.devtool = ctx.isClient ? 'source-map' : 'inline-source-map';
+      }
+    },
   },
 
   router: {

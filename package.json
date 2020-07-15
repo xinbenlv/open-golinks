@@ -8,6 +8,7 @@
     "build": "nuxt-ts build",
     "dev:node": "npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "dev": "nodemon",
+    "debug": "nodemon",
     "nuxt": "nuxt",
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
