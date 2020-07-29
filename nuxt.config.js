@@ -119,9 +119,9 @@ export default {
       "vee-validate/dist/rules",
       "vee-validate/dist/vee-validate.full.esm"
       ],
-    extend (config, {isDev}) {
+    extend (config, {isDev, isClient}) {
       if (isDev) {
-        config.devtool = ctx.isClient ? 'source-map' : 'inline-source-map';
+        config.devtool = isClient ? 'source-map' : 'inline-source-map';
       }
     },
   },
