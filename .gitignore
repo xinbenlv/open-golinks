@@ -1,6 +1,7 @@
 node_modules
 src/**/*.js
 .env
+.env.*
 oauth2.key.json
 .nuxt
 .cache
