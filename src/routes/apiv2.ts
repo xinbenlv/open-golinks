@@ -44,6 +44,7 @@ apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
   })
 )
 apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
+    // https://ibb.co/xCJrNJ0
     return res.send(process.env.GA_VIEW_ID)
   })
 )

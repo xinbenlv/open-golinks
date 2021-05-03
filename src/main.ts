@@ -24,11 +24,21 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(require('express-status-monitor')());
 
-console.assert(process.env.OPEN_GOLINKS_GA_ID, `OPEN_GOLINKS_GA_ID is not set`);
-console.assert(process.env.MONGODB_URI, `MONGODB_URI is not set`);
-console.assert(process.env.AUTH0_DOMAIN, `AUTH0_DOMAIN is not set`);
-console.assert(process.env.AUTH0_CLIENT_ID, `AUTH0_CLIENT_ID is not set`);
-console.assert(process.env.AUTH0_CLIENT_SECRET, `AUTH0_CLIENT_SECRET is not set`);
+[
+  "OPEN_GOLINKS_GA_ID",
+  "OPEN_GOLINKS_SITE_NAME",
+  "OPEN_GOLINKS_SITE_HOST",
+  "MONGODB_URI",
+  "AUTH0_DOMAIN",
+  "AUTH0_CLIENT_ID",
+  "AUTH0_CLIENT_SECRET",
+  "GOOGLE_JSON_KEY",
+  "ALLOW_OVERRIDE_ANONYMOUS",
+  "GA_VIEW_ID",
+  "HOST",
+].forEach((i)=>{
+  console.assert(`Env var process.env.${i} is required but not set.`)
+});
 
 myLogger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_GOLINKS_GA_ID);
 app.locals.siteName = process.env.OPEN_GOLINKS_SITE_NAME || `Open GoLinks`;
@@ -42,7 +52,7 @@ const strategy = new Auth0Strategy({
     domain: process.env.AUTH0_DOMAIN,
     clientID: process.env.AUTH0_CLIENT_ID,
     clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-    callbackURL: `http://${process.env.OPEN_GOLINKS_SITE_HOST}/callback` || `http://localhost:${PORT}/callback`,
+    callbackURL: `http://${process.env.OPEN_GOLINKS_SITE_HOST}/callback`, // TODO: callback HTTPS instead of HTTP
   },
   function (accessToken, refreshToken, extraParams, profile, done) {
     // accessToken is the token to call Auth0 API (not needed in the most cases)
@@ -101,7 +111,7 @@ const main = async () => {
     myLogger.debug(`Result:`, res.locals.loggedIn);
     next();
   });
-
+  
   app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
   app.use((req: any, res: any, next: any) => {
     if (req.user && req.user.emails) {
