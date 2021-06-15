@@ -74,7 +74,7 @@
     "request-promise-native": "^1.0.8",
     "sharp": "^0.25.4",
     "snyk": "^1.361.3",
-    "ts-mongoose": "0.0.21",
+    "ts-mongoose": "0.0.24",
     "ts-node": "^8.10.2",
     "tsc": "^1.20150623.0",
     "tsconfig-paths": "^3.9.0",
