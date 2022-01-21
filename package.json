@@ -58,7 +58,7 @@
     "google-auth-library": "^6.0.5",
     "jimp": "^0.14.0",
     "jquery": "^3.5.1",
-    "log4js": "^6.3.0",
+    "log4js": "^6.4.0",
     "mongodb": "^3.5.9",
     "mongoose": "^5.9.24",
     "node-cache": "^5.1.2",
