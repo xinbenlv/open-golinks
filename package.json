@@ -73,7 +73,7 @@
     "request-promise": "^4.2.5",
     "request-promise-native": "^1.0.8",
     "sharp": "^0.25.4",
-    "snyk": "^1.361.3",
+    "snyk": "^1.996.0",
     "ts-mongoose": "0.0.21",
     "ts-node": "^8.10.2",
     "tsc": "^1.20150623.0",
