@@ -142,8 +142,7 @@ const main = async () => {
   }
 
   app.use('/api/v2', apiV2Router);
-  app.use('/', indexRouter);
-  // Give nuxt middleware to express
+
   app.use(nuxt.render);
 
   myLogger.debug('Start listening on ', PORT);
@@ -152,5 +151,4 @@ const main = async () => {
 
 main().then(() => {
   console.log(`Main done!`);
-//process.exit(-1);
 });

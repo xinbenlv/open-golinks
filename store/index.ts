@@ -22,20 +22,6 @@ export const mutations = {
 
 export const actions = {
   async nuxtServerInit({ commit, state, }, ctx2) {
-    if (['/edit','/dashboard'].indexOf(ctx2.route.path) >= 0) {
-      return;
-    } // TODO(xinbenlv@): This is pretty buggy, we shall find better solution
-    let goLink = ctx2.params.goLink;
-    if (goLink && new RegExp(GOLINK_PATTERN).test(goLink)) {
-      let linkItems = await this.$axios.$get(`/api/v2/link/${goLink}`);
-      if (linkItems.length == 1) {
-        commit('setLinkItem', linkItems[0]);
-      } else {
-        ctx2.redirect(`/edit/${goLink}`);
-      }
-    } else {
-      ctx2.redirect(`/edit`);
-    }
     if(ctx2.req.user) {
       commit('setUser', ctx2.req.user);
       commit('setUserId', ctx2.req.user.emails[0].value)

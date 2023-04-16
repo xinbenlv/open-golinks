@@ -1,4 +1,6 @@
-import {asyncHandler} from "./utils";
+import {asyncHandler, myLogger} from "./utils";
+import {getLinksFromDBByLinknameAsync, getLinksWithCache} from "../db";
+import {GOLINK_PATTERN} from '../shared';
 
 const express = require('express');
 const indexRouter = express.Router();
@@ -13,5 +15,43 @@ indexRouter.get('/tencent5563221124109059836.txt', function (req, res) {
   res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'tencent5563221124109059836.txt\"');
   res.send(`12849895376138040179`);
 });
+
+const addRouteForRedirect = () => {
+  // Exclude things in the `nuxt.config.js` router
+  indexRouter.get(`/:goLink(${GOLINK_PATTERN})?`, asyncHandler(async (req, res, next) => {
+    let links;
+    let goLink = req.params.goLink;
+    if (goLink == 'edit') {
+      console.log(`XXX Redirecting to /edit`);
+      next();
+      return;
+    } else if (goLink == 'dashboard') {
+      console.log(`XXX Redirecting to /login`);
+      next();
+    }
+    if (req.query.nocache) {
+      myLogger.info(`Forced nocache for ${goLink}`);
+      links = await getLinksFromDBByLinknameAsync(goLink) as Array<object>;
+    } else {
+      links = await getLinksWithCache(goLink) as Array<object>;
+    }
+    if (links.length > 0) {
+      let link = links[0];
+      console.log(`Redirecting to ${link['url']}`);
+      res.redirect(link.goDest);
+
+    } else {
+      res.redirect(`/edit/${goLink}`);
+    }
+  }));
+}
+
+myLogger.info(`Redirect mode is ${process.env.REDIRECT_MODE}`);
+
+if (process.env.REDIRECT_MODE === 'direct') {
+  addRouteForRedirect();
+} else { 
+  // Doing nothing for other modes
+}
 
 export default indexRouter;

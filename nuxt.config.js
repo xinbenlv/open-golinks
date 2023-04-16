@@ -133,20 +133,15 @@ export default {
         component: resolve(__dirname, "pages/dashboard.vue")
       });
       routes.push({
-        path: `/link/:goLink(${GOLINK_PATTERN})?`,
-        component: resolve(__dirname, 'pages/link.vue'),
-      });
-      routes.push({
         path: `/edit/:goLink(${GOLINK_PATTERN})?`,
         component: resolve(__dirname, 'pages/link.vue'),
       });
-      routes.push({
-        path: `/:goLink(${GOLINK_PATTERN})?`,
-        component: resolve(__dirname, 'pages/redirect.vue'),
-      });
     }
   },
-
+  serverMiddleware: [
+    // Will register file from project server-middleware directory to handle /server-middleware/* requires
+    { path: '/', handler: '~/src/routes/index.ts' },
+  ],
   /*
   ** Plugins to load before mounting the App
   */
