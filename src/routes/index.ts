@@ -5,6 +5,20 @@ import {GOLINK_PATTERN} from '../shared';
 const express = require('express');
 const indexRouter = express.Router();
 
+function shouldSkipWarning(req): boolean { 
+  myLogger.info(
+    `ShouldSkipWarning process.env.DEFAULT_SKIPTTL = `, process.env.DEFAULT_SKIP_TTL, 
+    "req.session.skipTTL = ", req.session.skipTTL);
+  
+  if (req.session.skipTTL > 0) {
+    req.session.skipTTL -= 1;
+    return true;
+  } else {
+    req.session.skipTTL = process.env.DEFAULT_SKIP_TTL;
+    return false;
+  }
+}
+
 indexRouter.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler(async (req, res) => {
   res.send(`loaderio-0d9781efd2af91d08df854c1d6d90e7d`);
 }));
@@ -31,8 +45,10 @@ const addRouteForRedirect = () => {
       return;
     } else if (goLink == 'dashboard') {
       next();
+      return;
     } else if (goLink == '') {
       res.redirect(`/edit`);
+      return;
     }
 
     if (req.query.nocache) {
@@ -41,23 +57,29 @@ const addRouteForRedirect = () => {
     } else {
       links = await getLinksWithCache(goLink) as Array<object>;
     }
+
     if (links.length > 0) {
       let link = links[0];
       console.log(`Redirecting to ${link['url']}`);
-      res.redirect(link.goDest);
 
+      // show user
+      if (shouldSkipWarning(req)) {
+        res.redirect(link.goDest);
+        return;
+      } else {
+        next(); // fall through to the nuxt router
+        return;
+      }
+      return;
     } else {
       res.redirect(`/edit/${goLink}`);
+      return;
     }
   }));
 }
 
-myLogger.info(`Redirect mode is ${process.env.REDIRECT_MODE}`);
+myLogger.info(`DEFAULT_SKIP_TTL is ${process.env.DEFAULT_SKIP_TTL}`);
 
-if (process.env.REDIRECT_MODE === 'direct') {
-  addRouteForRedirect();
-} else { 
-  // Doing nothing for other modes
-}
+addRouteForRedirect();
 
 export default indexRouter;

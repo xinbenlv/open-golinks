@@ -137,6 +137,10 @@ export default {
         path: `/edit/:goLink(${GOLINK_PATTERN})?`,
         component: resolve(__dirname, 'pages/link.vue'),
       });
+      routes.push({
+        path: `/:goLink(${GOLINK_PATTERN})?`,
+        component: resolve(__dirname, 'pages/redirect.vue'),
+      });
     }
   },
   serverMiddleware: [
