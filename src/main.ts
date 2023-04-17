@@ -123,6 +123,13 @@ const main = async () => {
 
     next()
   });
+
+  if (process.env.LETS_ENCRYPT_URL_PART && process.env.LETS_ENCRYPT_CONTENT) {
+    app.get(process.env.LETS_ENCRYPT_URL_PART, function(req, res) {
+      return res.send(process.env.LETS_ENCRYPT_CONTENT)
+    });
+  }
+
   app.use('/', authRouter);
   app.use('/qr', qrRouter);
   await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
