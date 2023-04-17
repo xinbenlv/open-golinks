@@ -2,7 +2,7 @@ This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`.
 
 ## Development
 1. Install the right `nodejs` version (and right python version e.g. python3.10) and do `npm install`
-2. Run
+2. Run the following
 
 ```sh
 npm run build
