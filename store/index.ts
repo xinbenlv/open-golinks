@@ -26,5 +26,15 @@ export const actions = {
       commit('setUser', ctx2.req.user);
       commit('setUserId', ctx2.req.user.emails[0].value)
     }
+    let goLink = ctx2.params.goLink;
+    if (goLink && new RegExp(GOLINK_PATTERN).test(goLink)) {
+      let linkItems = await this.$axios.$get(`/api/v2/link/${goLink}`);
+      if (linkItems.length == 1) {
+        commit('setLinkItem', linkItems[0]);
+      } else {
+        ctx2.redirect(`/edit/${goLink}`);
+      }
+    }
+
   }
 };

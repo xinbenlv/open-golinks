@@ -137,12 +137,13 @@
         addLogo:boolean = true;
         editable:boolean = true;
         async submitBtn() {
-          let result = this.$axios.$post(`/edit`/* old endpoint */, {
+          let result = this.$axios.$post(`/api/v2/edit`, {
               golink: this.goLink,
               dest: this.goDest,
               addLogo: this.addLogo,
               caption: this.caption
           });
+
           this.msg = successMessage;
           this.msgType = 'success';
         }

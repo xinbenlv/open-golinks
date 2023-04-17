@@ -21,14 +21,15 @@ const addRouteForRedirect = () => {
   indexRouter.get(`/:goLink(${GOLINK_PATTERN})?`, asyncHandler(async (req, res, next) => {
     let links;
     let goLink = req.params.goLink;
+
+    // TODO: this is a hack to avoid redirecting to the dashboard or edit earler than the nuxt router
     if (goLink == 'edit') {
-      console.log(`XXX Redirecting to /edit`);
       next();
       return;
     } else if (goLink == 'dashboard') {
-      console.log(`XXX Redirecting to /login`);
       next();
     }
+
     if (req.query.nocache) {
       myLogger.info(`Forced nocache for ${goLink}`);
       links = await getLinksFromDBByLinknameAsync(goLink) as Array<object>;

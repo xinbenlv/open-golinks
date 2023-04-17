@@ -1,9 +1,62 @@
 import {GOLINK_PATTERN} from "../shared";
 import {asyncHandler, isEditable, myLogger, getJWTClientAccessToekn} from "./utils";
-import {getLinksFromDBByLinknameAsync, getLinksWithCache} from "../db";
+import {getLinksFromDBByLinknameAsync, getLinksWithCache, upsertLinkAsync} from "../db";
 import * as mongoose from 'mongoose';
 const express = require('express');
+const validator = require('validator');
 const apiV2Router = express.Router();
+
+apiV2Router.post('/edit', asyncHandler(async function (req, res) {
+  myLogger.info(`APIv2 received an Edit request: ${JSON.stringify(req.body)}`);
+  const regexPattern = RegExp(`^${GOLINK_PATTERN}$`);
+  if (!validator.isURL(req.body.dest)) {
+    res.status(400).send(`Bad Request, invalid URL: ${req.body.dest}`);
+  } else if (!regexPattern.test(req.body.golink)) {
+    res.status(400).send(`Bad Request, invalid golink: ${req.body.golink}`);
+  } else {
+    let golink = req.body.golink;
+    let dest = req.body.dest;
+    let addLogo = req.body.addLogo;
+    let caption = req.body.caption;
+    let author = req.user ? req.user.emails[0].value : 'anonymous';
+    // Check if links can be updated. // also need to worry about trace
+    let links = await getLinksWithCache(golink) as Array<any>;
+    if (links.length == 0/*link doen't exist*/ || isEditable(links[0].author, req.user)) {
+      await upsertLinkAsync(
+        golink,
+        dest,
+        author,
+        addLogo,
+        caption);
+      myLogger.info(`Done`);
+
+      let params = {
+        ec: `Edit`,
+        ea: `Submit`,
+        el: `OK`,
+        p: golink, // page
+        ev: 10,
+      };
+      req.visitor.event(params).send();
+      res.send({
+          title: `Edit`,
+          msg: 'Your link is created/updated successsfully!',
+          msgType: "success",
+          golink: golink,
+          oldDest: dest,
+          author: author,
+          addLogo: addLogo,
+          caption: caption,
+          user: req.user,
+          editable: isEditable(author, req.user)
+        }
+      );
+    } else {
+      res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${golink} which belongs to user:${links[0].author}.`);
+    }
+  }
+
+}));
 
 apiV2Router.get(`/available/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)=> {
   let ret = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.goLink}).toArray();
