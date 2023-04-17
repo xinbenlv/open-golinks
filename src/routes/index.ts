@@ -17,6 +17,9 @@ indexRouter.get('/tencent5563221124109059836.txt', function (req, res) {
 });
 
 const addRouteForRedirect = () => {
+  indexRouter.get('/', asyncHandler(async (req, res) => {
+    res.redirect(`/edit`);
+  }));
   // Exclude things in the `nuxt.config.js` router
   indexRouter.get(`/:goLink(${GOLINK_PATTERN})?`, asyncHandler(async (req, res, next) => {
     let links;
@@ -28,6 +31,8 @@ const addRouteForRedirect = () => {
       return;
     } else if (goLink == 'dashboard') {
       next();
+    } else if (goLink == '') {
+      res.redirect(`/edit`);
     }
 
     if (req.query.nocache) {

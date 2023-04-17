@@ -83,7 +83,8 @@ export default {
       keys: [
         'HOST',
         'PORT',
-        'OPEN_GOLINKS_SITE_HOST',
+        'OPEN_GOLINKS_SITE_HOST_AND_PORT',
+        'OPEN_GOLINKS_SITE_PROTOCOL',
         'OPEN_GOLINKS_SITE_NAME',
       ]
     }],

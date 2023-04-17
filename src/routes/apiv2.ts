@@ -52,7 +52,7 @@ apiV2Router.post('/edit', asyncHandler(async function (req, res) {
         }
       );
     } else {
-      res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST}/${golink} which belongs to user:${links[0].author}.`);
+      res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST_AND_PORT}/${golink} which belongs to user:${links[0].author}.`);
     }
   }
 

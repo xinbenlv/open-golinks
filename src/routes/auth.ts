@@ -48,7 +48,7 @@ authRouter.get('/callback',
       req.visitor.event(params).send();
       throw new Error('user null');
     } else {
-      res.redirect("/user");
+      res.redirect(req.originalUrl);
       let params = {
         ec: `Login`,
         ea: `Success`,

@@ -75,7 +75,7 @@
                           <button
                             class="btn btn-primary rounded-right" id="btn_copy_short_url"
                             type="button"
-                            v-clipboard:copy="`http://${siteHost}/${goLink}`"
+                            v-clipboard:copy="`${siteProtocol}://${siteHost}/${goLink}`"
                             v-clipboard:success="onCopy"
                             style="width:120px;">Copy</button>
                         </b-input-group-append>
@@ -129,6 +129,7 @@
         msg:string = `Create`;
         msgType:string = '';
         siteHost:string = 'open-go.link';
+        siteProtocol:string = 'http';
         goLink:string = '';
         goDest:string = '';
         author:string = '';
@@ -180,7 +181,8 @@
           }
         }
         mounted () {
-          this.siteHost = this.$env.OPEN_GOLINKS_SITE_HOST;
+          this.siteHost = this.$env.OPEN_GOLINKS_SITE_HOST_AND_PORT;
+          this.siteProtocol = this.$env.OPEN_GOLINKS_SITE_PROTOCOL;
 
         }
         getValidationState({ dirty, validated, valid = null }) {
