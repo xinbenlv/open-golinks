@@ -122,7 +122,7 @@
     "commitizen": "4.1.2",
     "cz-conventional-changelog": "3.2.0",
     "husky": "4.2.5",
-    "nodemon": "2.0.4",
+    "nodemon": "2.0.22",
     "standard-version": "8.0.2",
     "webpack-hot-middleware": "2.25.0"
   },
