@@ -8,15 +8,10 @@ const indexRouter = express.Router();
 function shouldShowWarning(req): boolean { 
   let dice = Math.random();
   let ratio = parseFloat(process.env.REDIRECT_WARNING_RATIO);
-
+  let shouldShow = dice < ratio;
   myLogger.info(
-    `REDIRECT_WARNING_RATIO=${ratio}, ${dice}, dice < ratio = ${dice < ratio}`);
-  
-  if (dice < ratio) {
-    return false;
-  } else {
-    return true;
-  }
+    `REDIRECT_WARNING_RATIO=${ratio}, ${dice}, dice < ratio = ${dice < ratio}, shouldShow = ${shouldShow}`);
+  return shouldShow;
 }
 
 indexRouter.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler(async (req, res) => {
