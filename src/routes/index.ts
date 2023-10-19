@@ -5,17 +5,17 @@ import {GOLINK_PATTERN} from '../shared';
 const express = require('express');
 const indexRouter = express.Router();
 
-function shouldSkipWarning(req): boolean { 
+function shouldShowWarning(req): boolean { 
+  let dice = Math.random();
+  let ratio = parseFloat(process.env.REDIRECT_WARNING_RATIO);
+
   myLogger.info(
-    `ShouldSkipWarning process.env.DEFAULT_SKIPTTL = `, process.env.DEFAULT_SKIP_TTL, 
-    "req.session.skipTTL = ", req.session.skipTTL);
+    `REDIRECT_WARNING_RATIO=${ratio}, ${dice}, dice < ratio = ${dice < ratio}`);
   
-  if (req.session.skipTTL > 0) {
-    req.session.skipTTL -= 1;
-    return true;
-  } else {
-    req.session.skipTTL = process.env.DEFAULT_SKIP_TTL;
+  if (dice < ratio) {
     return false;
+  } else {
+    return true;
   }
 }
 
@@ -63,11 +63,11 @@ const addRouteForRedirect = () => {
       console.log(`Redirecting to ${link['url']}`);
 
       // show user
-      if (shouldSkipWarning(req)) {
-        res.redirect(link.goDest);
+      if (shouldShowWarning(req)) {
+        next(); // fall through to the nuxt router to show the warning
         return;
       } else {
-        next(); // fall through to the nuxt router
+        res.redirect(link.goDest); // directly redirect to the destination
         return;
       }
       return;
@@ -78,7 +78,7 @@ const addRouteForRedirect = () => {
   }));
 }
 
-myLogger.info(`DEFAULT_SKIP_TTL is ${process.env.DEFAULT_SKIP_TTL}`);
+myLogger.info(`REDIRECT_WARNING_RATIO is ${process.env.REDIRECT_WARNING_RATIO}`);
 
 addRouteForRedirect();
 
