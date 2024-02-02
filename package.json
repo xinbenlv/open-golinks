@@ -124,7 +124,7 @@
     "husky": "4.2.5",
     "nodemon": "2.0.4",
     "standard-version": "8.0.2",
-    "webpack-hot-middleware": "2.25.0"
+    "webpack-hot-middleware": "2.26.1"
   },
   "config": {
     "commitizen": {
