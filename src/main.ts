@@ -114,12 +114,14 @@ const main = async () => {
   });
   // Initialize GA4 client
   const ga4client = new GA4MPClient(
-    process.env.GA_MEASUREMENT_ID,
     process.env.GA_API_SECRET,
-    process.env.NODE_ENV !== 'production'
+    process.env.GA_MEASUREMENT_ID,
+    null
   );
 
   app.use(async (req: any, res: any, next: any) => {
+
+    myLogger.debug(`Start GA4 tracking for ${req.originalUrl}`);
     try {
       // Get or generate client ID
       let clientId = req.cookies._ga?.replace(/^GA\d\.\d\./, '');
