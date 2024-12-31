@@ -151,12 +151,13 @@ const main = async () => {
           name: 'visit',
           params: {
             page_location: `${app.locals.siteProtocol}://${app.locals.siteHost}${req.originalUrl}`,
+            page_path: req.originalUrl,
             page_title: req.originalUrl,
             engagement_time_msec: "100"
           }
         }]
       };
-      myLogger.debug(`Sending event data:`, eventData);
+      myLogger.info(`Sending event data: ${JSON.stringify(eventData)}`);
 
       await axios.post(
         `https://www.google-analytics.com/mp/collect?measurement_id=${process.env.GA4_MEASUREMENT_ID}&api_secret=${process.env.GA4_API_SECRET}`,
