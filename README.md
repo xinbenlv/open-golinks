@@ -22,3 +22,7 @@ npm run dev
 ## Contributions
 We welcome contributions. Send us Pull Request.
 
+
+## Log
+
+2024-12-31: GA4 tracking is added.
