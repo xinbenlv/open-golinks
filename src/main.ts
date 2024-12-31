@@ -6,9 +6,9 @@ myLogger.debug(`App: ${name}, version ${version}`);
 
 const {Nuxt, Builder} = require('nuxt');
 const express = require("express");
-import { GA4MPClient } from 'ga4-mp';
 import * as bodyParser from "body-parser";
 import * as crypto from 'crypto';
+import axios from 'axios';
 
 import indexRouter from "./routes/index";
 import authRouter from "./routes/auth";
@@ -112,14 +112,18 @@ const main = async () => {
     myLogger.debug(`Result:`, res.locals.loggedIn);
     next();
   });
-  // Initialize GA4 client
-  const ga4client = new GA4MPClient(
-    process.env.GA_API_SECRET,
-    process.env.GA_MEASUREMENT_ID,
-    null
-  );
 
   app.use(async (req: any, res: any, next: any) => {
+    // Skip the following routes
+    const skipRoutes = [
+      '/_nuxt/.*',
+      '/__webpack_hmr',
+      '/api/.*'
+    ];
+    if (skipRoutes.some(route => new RegExp(route).test(req.originalUrl))) {
+      myLogger.debug(`Skipping GA4 tracking for ${req.originalUrl}`);
+      return next();
+    }
 
     myLogger.debug(`Start GA4 tracking for ${req.originalUrl}`);
     try {
@@ -144,7 +148,7 @@ const main = async () => {
         client_id: clientId,
         user_id: req.user?.emails?.[0],
         events: [{
-          name: 'page_view',
+          name: 'visit',
           params: {
             page_location: `${app.locals.siteProtocol}://${app.locals.siteHost}${req.originalUrl}`,
             page_title: req.originalUrl,
@@ -153,8 +157,12 @@ const main = async () => {
         }]
       };
       myLogger.debug(`Sending event data:`, eventData);
-      // Send event
-      await ga4client.send(eventData);
+
+      await axios.post(
+        `https://www.google-analytics.com/mp/collect?measurement_id=${process.env.GA4_MEASUREMENT_ID}&api_secret=${process.env.GA4_API_SECRET}`,
+        eventData
+      ); // TODO do not wait for response in production
+
       next();
     } catch (error) {
       myLogger.error('GA4 tracking error:', error);

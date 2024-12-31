@@ -139,6 +139,7 @@ export default {
       });
       routes.push({
         path: `/:goLink(${GOLINK_PATTERN})?`,
+        // TODO add GA4 tracking when miss or hit
         component: resolve(__dirname, 'pages/redirect.vue'),
       });
     }
