@@ -131,7 +131,10 @@ export default {
     extendRoutes (routes, resolve) {
       routes.push({
         path: `/dashboard`,
-        component: resolve(__dirname, "pages/dashboard.vue")
+        // TODO temporary redirect to GA dashboard
+        redirect: 'https://analytics.google.com/analytics/web/?utm_source=marketingplatform.google.com&utm_medium=et&utm_campaign=marketingplatform.google.com%2Fabout%2Fanalytics%2F#/p392371036/realtime/pages?params=_u..nav%3Dmaui&collectionId=life-cycle'
+        // TODO remove temporary redirect when we update the dashboard
+        // component: resolve(__dirname, "pages/dashboard.vue")
       });
       routes.push({
         path: `/edit/:goLink(${GOLINK_PATTERN})?`,

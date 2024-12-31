@@ -116,6 +116,7 @@ const main = async () => {
   app.use(async (req: any, res: any, next: any) => {
     // Skip the following routes
     const skipRoutes = [
+      '/favicon.ico',
       '/_nuxt/.*',
       '/__webpack_hmr',
       '/api/.*'
