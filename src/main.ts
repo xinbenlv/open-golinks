@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 import {myLogger} from "./routes/utils";
 import config from '../nuxt.config';
@@ -7,8 +6,9 @@ myLogger.debug(`App: ${name}, version ${version}`);
 
 const {Nuxt, Builder} = require('nuxt');
 const express = require("express");
-import * as ua from "universal-analytics";
+import { GA4MPClient } from 'ga4-mp';
 import * as bodyParser from "body-parser";
+import * as crypto from 'crypto';
 
 import indexRouter from "./routes/index";
 import authRouter from "./routes/auth";
@@ -25,7 +25,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(require('express-status-monitor')());
 
 [
-  "OPEN_GOLINKS_GA_ID",
+  "GA_MEASUREMENT_ID",
+  "GA_API_SECRET",
   "OPEN_GOLINKS_SITE_NAME",
   "OPEN_GOLINKS_SITE_HOST_AND_PORT",
   "MONGODB_URI",
@@ -111,17 +112,52 @@ const main = async () => {
     myLogger.debug(`Result:`, res.locals.loggedIn);
     next();
   });
-  
-  app.use(ua.middleware(process.env.OPEN_GOLINKS_GA_ID, {cookieName: '_ga'}));
-  app.use((req: any, res: any, next: any) => {
-    if (req.user && req.user.emails) {
-      req.visitor.set('uid', req.user.emails[0]); // TODO(zzn): consider use a HASH fucntion instead
-      myLogger.debug(`set uid for req.visitor`, req.visitor);
-    }
-    // Log pageview for all requests
-    req.visitor.pageview(req.originalUrl).send();
+  // Initialize GA4 client
+  const ga4client = new GA4MPClient(
+    process.env.GA_MEASUREMENT_ID,
+    process.env.GA_API_SECRET,
+    process.env.NODE_ENV !== 'production'
+  );
 
-    next()
+  app.use(async (req: any, res: any, next: any) => {
+    try {
+      // Get or generate client ID
+      let clientId = req.cookies._ga?.replace(/^GA\d\.\d\./, '');
+      
+      // If no client ID exists, generate one and set the cookie
+      if (!clientId) {
+        // Generate a random UUID-like string
+        clientId = crypto.randomBytes(16).toString('hex');
+        // Set cookie with 2 year expiration (similar to GA's default)
+        res.cookie('_ga', `GA1.1.${clientId}`, {
+          maxAge: 63072000000, // 2 years in milliseconds
+          httpOnly: true,
+          secure: app.locals.siteProtocol === 'https',
+          sameSite: 'lax'
+        });
+      }
+
+      // Prepare event data
+      const eventData = {
+        client_id: clientId,
+        user_id: req.user?.emails?.[0],
+        events: [{
+          name: 'page_view',
+          params: {
+            page_location: `${app.locals.siteProtocol}://${app.locals.siteHost}${req.originalUrl}`,
+            page_title: req.originalUrl,
+            engagement_time_msec: "100"
+          }
+        }]
+      };
+      myLogger.debug(`Sending event data:`, eventData);
+      // Send event
+      await ga4client.send(eventData);
+      next();
+    } catch (error) {
+      myLogger.error('GA4 tracking error:', error);
+      next();
+    }
   });
 
   if (process.env.LETS_ENCRYPT_URL_PART && process.env.LETS_ENCRYPT_CONTENT) {
