@@ -1,7 +1,11 @@
-import {GOLINK_PATTERN} from "../shared";
-import {asyncHandler, isEditable, myLogger, getJWTClientAccessToekn} from "./utils";
-import {getLinksFromDBByLinknameAsync, getLinksWithCache, upsertLinkAsync} from "../db";
+import { GOLINK_PATTERN } from "../shared";
+import { asyncHandler, isEditable, myLogger } from "./utils";
+import { getLinksFromDBByLinknameAsync, getLinksWithCache, upsertLinkAsync } from "../db";
 import * as mongoose from 'mongoose';
+const { BetaAnalyticsDataClient } = require("@google-analytics/data");
+const analyticsDataClient = new BetaAnalyticsDataClient({
+  universe_domain: 'googleapis.com',
+});
 const express = require('express');
 const validator = require('validator');
 const apiV2Router = express.Router();
@@ -39,17 +43,17 @@ apiV2Router.post('/edit', asyncHandler(async function (req, res) {
       };
       req.visitor.event(params).send();
       res.send({
-          title: `Edit`,
-          msg: 'Your link is created/updated successsfully!',
-          msgType: "success",
-          golink: golink,
-          oldDest: dest,
-          author: author,
-          addLogo: addLogo,
-          caption: caption,
-          user: req.user,
-          editable: isEditable(author, req.user)
-        }
+        title: `Edit`,
+        msg: 'Your link is created/updated successsfully!',
+        msgType: "success",
+        golink: golink,
+        oldDest: dest,
+        author: author,
+        addLogo: addLogo,
+        caption: caption,
+        user: req.user,
+        editable: isEditable(author, req.user)
+      }
       );
     } else {
       res.status(403).send(`You don't have permission to edit ${process.env.OPEN_GOLINKS_SITE_HOST_AND_PORT}/${golink} which belongs to user:${links[0].author}.`);
@@ -58,12 +62,12 @@ apiV2Router.post('/edit', asyncHandler(async function (req, res) {
 
 }));
 
-apiV2Router.get(`/available/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)=> {
-  let ret = await mongoose.connections[0].db.collection('shortlinks').find({linkname: req.params.goLink}).toArray();
+apiV2Router.get(`/available/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req, res) => {
+  let ret = await mongoose.connections[0].db.collection('shortlinks').find({ linkname: req.params.goLink }).toArray();
   res.send(ret.length == 0);
 }));
 
-apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)=> {
+apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req, res) => {
   let links;
   let goLink = req.params.goLink;
   if (req.query.nocache) {
@@ -91,15 +95,27 @@ apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)
     res.send([]);
   }
 }));
-
-apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
-    return res.send(await getJWTClientAccessToekn())
-  })
-)
+// GA4 不再需要这个认证了
+// apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
+//     return res.send(await getJWTClientAccessToekn())
+//   })
+// )
 apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
-    // https://ibb.co/xCJrNJ0
-    return res.send(process.env.GA_VIEW_ID)
-  })
+  // https://ibb.co/xCJrNJ0
+  return res.send(process.env.GA_VIEW_ID)
+})
 )
+
+apiV2Router.post(`/analyticesDataClientReport/:propertyId`, asyncHandler(async (req, res) => {
+  let propertyId = req.params.propertyId;
+  console.log(req.body)
+  let params = req.body;
+  const [response] = await analyticsDataClient.runReport({
+    property: `properties/${propertyId}`,
+    ...params
+  });
+  return res.send(response);
+}))
+
 export default apiV2Router;
 

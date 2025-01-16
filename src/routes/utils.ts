@@ -1,5 +1,5 @@
 const NodeCache = require("node-cache");
-import {getLogger} from 'log4js';
+import { getLogger } from 'log4js';
 
 export const myLogger = (() => {
   let l = getLogger();
@@ -28,26 +28,26 @@ export const isEditable = function (existingLinkAuthor, reqeustingUser) {
   return false;
 };
 
-export const getJWTClientAccessToekn = async function () {
-  const {JWT} = require('google-auth-library');
-  // An Base64 encoded version of Google Cloud Console service account json key private credentials
-  let decoded = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString();
-  const keys = JSON.parse(decoded);
-  const client = new JWT(
-    keys.client_email,
-    null,
-    keys.private_key,
-    [
-      `https://www.googleapis.com/auth/analytics.readonly`
-    ],
-  );
-  return new Promise((resolve, reject) => {
-    client.authorize((err, result) => {
-      if (err) {
-        reject(err);
-      } else
-        resolve(result.access_token);
+// export const getJWTClientAccessToekn = async function () {
+//   const {JWT} = require('google-auth-library');
+//   // An Base64 encoded version of Google Cloud Console service account json key private credentials
+//   let decoded = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString();
+//   const keys = JSON.parse(decoded);
+//   const client = new JWT(
+//     keys.client_email,
+//     null,
+//     keys.private_key,
+//     [
+//       `https://www.googleapis.com/auth/analytics.readonly`
+//     ],
+//   );
+//   return new Promise((resolve, reject) => {
+//     client.authorize((err, result) => {
+//       if (err) {
+//         reject(err);
+//       } else
+//         resolve(result.access_token);
 
-    });
-  });
-};
+//     });
+//   });
+// };
