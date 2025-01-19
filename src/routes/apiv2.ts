@@ -1,5 +1,5 @@
 import {GOLINK_PATTERN} from "../shared";
-import {asyncHandler, isEditable, myLogger, getJWTClientAccessToekn} from "./utils";
+import {asyncHandler, isEditable, myLogger} from "./utils";
 import {getLinksFromDBByLinknameAsync, getLinksWithCache, upsertLinkAsync} from "../db";
 import * as mongoose from 'mongoose';
 const { BetaAnalyticsDataClient } = require("@google-analytics/data");
