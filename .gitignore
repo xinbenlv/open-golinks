@@ -6,3 +6,4 @@ oauth2.key.json
 .nuxt
 .cache
 .fonts
+credentials.json

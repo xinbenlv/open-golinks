@@ -2,16 +2,79 @@
   <section>
     <div class="input-group mb-3">
       <div class="btn-group mr-2" role="group" aria-label="First group">
-        <button class="btn btn-secondary dash-duration" type="button" data-value="-1">全部</button>
-        <button class="btn btn-secondary dash-duration" type="button" data-value="180">180天</button>
-        <button class="btn btn-secondary dash-duration" type="button" data-value="90">90天</button>
-        <button class="btn btn-secondary dash-duration" type="button" data-value="30">30天</button>
-        <button class="btn btn-secondary active dash-duration" type="button" data-value="14">14天</button>
-        <button class="btn btn-secondary dash-duration" type="button" data-value="1">1天</button>
+        <button
+          class="btn btn-secondary dash-duration"
+          type="button"
+          :data-value="-1"
+          :class="{ active: duration === -1 }"
+          @click="showView(-1)"
+        >
+          全部
+        </button>
+        <button
+          class="btn btn-secondary dash-duration"
+          type="button"
+          :data-value="180"
+          :class="{ active: duration === 180 }"
+          @click="showView(180)"
+        >
+          180天
+        </button>
+        <button
+          class="btn btn-secondary dash-duration"
+          type="button"
+          :data-value="90"
+          :class="{ active: duration === 90 }"
+          @click="showView(90)"
+        >
+          90天
+        </button>
+        <button
+          class="btn btn-secondary dash-duration"
+          type="button"
+          :data-value="30"
+          :class="{ active: duration === 30 }"
+          @click="showView(30)"
+        >
+          30天
+        </button>
+        <button
+          class="btn btn-secondary dash-duration"
+          type="button"
+          :data-value="14"
+          :class="{ active: duration === 14 }"
+          @click="showView(14)"
+        >
+          14天
+        </button>
+        <button
+          class="btn btn-secondary dash-duration"
+          type="button"
+          :data-value="1"
+          :class="{ active: duration === 1 }"
+          @click="showView(1)"
+        >
+          1天
+        </button>
       </div>
-      <input class="form-control" id="regex-input" type="text" placeholder="RegEx" aria-label="Regular Expression for Search" aria-describedby="button-addon2" />
+      <input
+        class="form-control"
+        id="regex-input"
+        type="text"
+        placeholder="RegEx"
+        aria-label="Regular Expression for Search"
+        aria-describedby="button-addon2"
+        v-model="regex"
+      />
       <div class="input-group-append">
-        <button class="btn btn-secondary" id="btn-update" type="button">刷新 <i class="fas fa-sync-alt"></i></button>
+        <button
+          class="btn btn-secondary"
+          id="btn-update"
+          type="button"
+          @click="fresh"
+        >
+          刷新 <i class="fas fa-sync-alt"></i>
+        </button>
       </div>
     </div>
     <div id="pie-chart-container"></div>
@@ -21,186 +84,312 @@
 </template>
 
 <script lang="ts">
-if (process.browser) {
-  (function (w, d, s, g, js, fs) {
-          g = w['gapi'] || (w['gapi'] = {});
-          g.analytics = {
-              q: [], ready: function (f) {
-                  this.q.push(f);
-              }
-          };
-          js = d.createElement(s);
-          fs = d.getElementsByTagName(s)[0];
-          js.src = 'https://apis.google.com/js/platform.js';
-          fs.parentNode.insertBefore(js, fs);
-          js.onload = function () {
-              g.load('analytics');
-          };
-      }(window, document, 'script'));
+import { Component, Vue } from "nuxt-property-decorator";
+import { format, subDays } from "date-fns";
+import axios from "axios";
+import { GoogleCharts } from "google-charts";
+interface ReportParams {
+  dateRanges?: Array<{
+    startDate: string;
+    endDate: string;
+  }>;
+  dimensions?: Array<{
+    name: string;
+  }>;
+  metrics?: Array<{
+    name: string;
+  }>;
+  orderBys?: Array<{
+    metric?: {
+      metricName: string;
+    };
+    dimension?: {
+      orderType: string;
+      dimensionName: string;
+    };
+    desc: boolean;
+  }>;
+  limit?: number;
+  dimensionFilter?: {
+    filter: {
+      fieldName: string;
+      stringFilter: {
+        matchType: string;
+        value: string;
+        caseSensitive: boolean;
+      };
+    };
+    expression: string;
+  };
 }
-
-import { Component, Vue } from 'nuxt-property-decorator'
-import { format, subDays } from 'date-fns'
-import $ from 'jquery'
-import axios from 'axios'
-
 @Component
 export default class DashboardPage extends Vue {
-  /*   declare gapi: any; // try to access window member: https://stackoverflow.com/questions/54166847/how-to-access-the-window-object-in-vue-js
-   */
-  mounted() {
-    window['gapi'].analytics.ready(async function() {
-      var tableChart, pieChart, lineChart
-      var charts
-
-      var lockedUrl = $(`#regex-input`).val()
-      if (lockedUrl) {
-        $(`#regex-input`)
-          .val(lockedUrl)
-          .prop('disabled', true)
-      }
-      function refreshQuery() {
-        let dateRangeBtn = $('.active.dash-duration')
-        let lastNDay = parseInt(dateRangeBtn.attr('data-value'))
-        var endDate = new Date() // today
-        var startDate
-        if (lastNDay === -1) {
-          console.log(`Setting startDate`, `2018-08-01`)
-          startDate = new Date(2018, 8, 1, 0, 0, 0)
-        } else {
-          console.log(`Setting startDate`, `today - lastNdate`)
-          startDate = subDays(endDate, lastNDay)
-        }
-        var dateRange = {
-          'start-date': format(startDate, `yyyy-MM-dd`),
-          'end-date': format(endDate, `yyyy-MM-dd`)
-        }
-
-        let dimensions = 'ga:dateHour'
-        if (lastNDay === -1) {
-          dimensions = 'ga:isoYearIsoWeek'
-        } else if (lastNDay <= 1) {
-          dimensions = 'ga:dateHour'
-        } else if (lastNDay <= 7) {
-          dimensions = 'ga:date'
-        } else if (lastNDay <= 180) {
-          dimensions = 'ga:date'
-        } else {
-          dimensions = 'ga:isoYearIsoWeek'
-        }
-
-        lineChart.set({ query: { dimensions: dimensions } })
-        charts.forEach(function(chart) {
-          chart.set({ query: dateRange })
-        })
-
-        var reg = $(`#regex-input`).val()
-
-        if (lockedUrl) {
-          charts.forEach(function(chart) {
-            chart.set({
-              query: { filters: `ga:pagePathLevel1=~^/${lockedUrl}$` }
-            })
-          })
-        } else if (reg) {
-          charts.forEach(function(chart) {
-            chart.set({ query: { filters: `ga:pagePathLevel1=~${reg}` } })
-          })
-        } else {
-          charts.forEach(function(chart) {
-            chart.set({ query: { filters: 'ga:pagePathLevel1!=/' } })
-          })
-        }
-        charts.forEach(function(chart) {
-          chart.execute()
-        })
-      }
-
-      $(`.dash-duration`).click(function() {
-        $(`.active`).removeClass(`active`)
-        $(this).addClass(`active`)
-        refreshQuery()
-      })
-      $(`#btn-update`).click(function() {
-        refreshQuery()
-      })
-
-      const viewId = (await axios.get(`api/v2/getviewId`)).data
-
-      window['gapi'].analytics.auth.authorize({
-        container: 'embed-api-auth-container',
-        serverAuth: {
-          access_token: (await axios.get(`api/v2/gettoken`)).data
-        }
-      })
-
-      /**
-       * Create a new DataChart instance with the given query parameters
-       * and Google chart options. It will be rendered inside an element
-       * with the id "chart-container".
-       */
-      pieChart = new window['gapi'].analytics.googleCharts.DataChart({
-        query: {
-          ids: viewId,
-          metrics: 'ga:pageviews',
-          dimensions: 'ga:pagePathLevel1',
-          sort: '-ga:pageviews',
-          filters: 'ga:pagePathLevel1!=/',
-          'max-results': 7
-        },
-        chart: {
-          container: 'pie-chart-container',
-          type: 'PIE',
-          options: {
-            width: '100%',
-            pieHole: 4 / 9
-          }
-        }
-      })
-
-      /**
-       * Create a table chart showing top browsers for users to interact with.
-       * Clicking on a row in the table will update a second timeline chart with
-       * data from the selected browser.
-       */
-      tableChart = new window['gapi'].analytics.googleCharts.DataChart({
-        query: {
-          ids: viewId, // <-- Replace with the ids value for your view.
-          dimensions: 'ga:pagePathLevel1',
-          metrics: 'ga:sessions,ga:pageviews,ga:users',
-          sort: '-ga:sessions',
-          filters: `ga:pagePathLevel1!=/`,
-          'max-results': '30'
-        },
-        chart: {
-          type: 'TABLE',
-          container: 'table-chart-container',
-          options: {
-            width: '100%'
-          }
-        }
-      })
-
-      lineChart = new window['gapi'].analytics.googleCharts.DataChart({
-        query: {
-          ids: viewId, // <-- Replace with the ids value for your view.
-          metrics: 'ga:sessions,ga:pageviews,ga:users',
-          dimensions: 'ga:isoYearIsoWeek',
-          filters: `ga:pagePathLevel1!=/`
-        },
-        chart: {
-          type: 'LINE',
-          container: 'line-chart-container',
-          options: {
-            width: '100%'
-          }
-        }
-      })
-
-      charts = [tableChart, pieChart, lineChart]
-      refreshQuery()
-    })
+  duration: number = -1;
+  regex: string = "";
+  async mounted() {
+    this.renderCharts();
   }
+  showView(duration: number) {
+    this.duration = duration;
+    this.renderCharts();
+  }
+  renderCharts() {
+    // 渲染图表
+    GoogleCharts.load(() => {
+      this.drawChartPie();
+    });
+    GoogleCharts.load(() => {
+      this.drawChartLine();
+    });
+    GoogleCharts.load(() => {
+      this.drawChartTable();
+    });
+  }
+  /**
+   * pieChart 饼状图
+   * 访问量前 5 的链接
+   */
+  async drawChartPie() {
+    const reportParmas: ReportParams = {
+      dateRanges: [this.getRange(this.duration)],
+      dimensions: [
+        {
+          name: "pagePathPlusQueryString",
+        },
+      ],
+      metrics: [
+        {
+          name: "screenPageViews",
+        },
+      ],
+      orderBys: [
+        {
+          metric: {
+            metricName: "screenPageViews",
+          },
+          desc: true,
+        },
+      ],
+      limit: 5,
+    };
+    if (this.regex) {
+      reportParmas.dimensionFilter = {
+        filter: {
+          fieldName: "pagePath",
+          stringFilter: {
+            matchType: "FULL_REGEXP",
+            value: `/${this.regex}.*`,
+            caseSensitive: true,
+          },
+        },
+        expression: this.regex,
+      };
+    }
+    const response = (
+      await axios.post(
+        `api/v2/analyticsDataClientReport`,
+        reportParmas
+      )
+    ).data;
+    const rows = response.rows.map((row: any) => {
+      return [
+        row.dimensionValues[0].value,
+        parseInt(row.metricValues[0].value),
+      ];
+    });
+    const data = GoogleCharts.api.visualization.arrayToDataTable([
+      ["links", "pageviews"],
+      ...rows,
+    ]);
+    const options = {
+      title: "Top 5 links",
+      is3D: false,
+    };
+    const chart = new GoogleCharts.api.visualization.PieChart(
+      document.getElementById("pie-chart-container")
+    );
+    chart.draw(data, options);
+  }
+  /**
+   * lineChart 折线图
+   * 访问量随时间变化
+   * pv uv 趋势
+   */
+  async drawChartLine() {
+    let dimensionName = "isoYearIsoWeek";
+
+    if (this.duration === -1) {
+      dimensionName = "isoYearIsoWeek";
+    } else if (this.duration <= 1) {
+      dimensionName = "dateHour";
+    } else if (this.duration <= 14) {
+      dimensionName = "date";
+    } else if (this.duration <= 180) {
+      dimensionName = "date";
+    } else {
+      dimensionName = "isoYearIsoWeek";
+    }
+
+    const reportParam: ReportParams = {
+      dateRanges: [this.getRange(this.duration)],
+      dimensions: [{ name: dimensionName }],
+      metrics: [
+        { name: "activeUsers" },
+        { name: "screenPageViews" },
+        { name: "sessions" },
+      ],
+      orderBys: [
+        {
+          dimension: {
+            orderType: "NUMERIC",
+            dimensionName: dimensionName,
+          },
+          desc: false,
+        },
+      ],
+    };
+    const response = (
+      await axios.post(
+        `api/v2/analyticsDataClientReport`,
+        reportParam
+      )
+    ).data;
+    const rows = response.rows.map((row: any) => {
+      return [
+        row.dimensionValues[0].value,
+        parseInt(row.metricValues[0].value),
+        parseInt(row.metricValues[1].value),
+        parseInt(row.metricValues[2].value),
+      ];
+    });
+    const data = GoogleCharts.api.visualization.arrayToDataTable([
+      ["isoYearIsoWeek", "activeUsers", "screenPageViews", "sessions"],
+      ...rows,
+    ]);
+    const options = {
+      title: "Active Users, Screen Page Views, and Sessions",
+      curveType: "function",
+      legend: { position: "top" },
+    };
+    const chart = new GoogleCharts.api.visualization.LineChart(
+      document.getElementById("line-chart-container")
+    );
+    chart.draw(data, options);
+  }
+  /**
+   * tableChart 表格
+   */
+  async drawChartTable() {
+    const reportParam: ReportParams = {
+      dateRanges: [this.getRange(this.duration)],
+      dimensions: [
+        {
+          name: "pagePathPlusQueryString",
+        },
+      ],
+      metrics: [
+        { name: "sessions" },
+        {
+          name: "screenPageViews",
+        },
+        {
+          name: "activeUsers",
+        },
+      ],
+      orderBys: [
+        {
+          metric: {
+            metricName: "sessions",
+          },
+          desc: true,
+        },
+      ],
+      limit: 30,
+    };
+    const response = (
+      await axios.post(
+        `api/v2/analyticsDataClientReport`,
+        reportParam
+      )
+    ).data;
+    const rows = response.rows.map((row: any) => {
+      return [
+        row.dimensionValues[0].value,
+        parseInt(row.metricValues[0].value),
+        parseInt(row.metricValues[1].value),
+        parseInt(row.metricValues[2].value),
+      ];
+    });
+    const data = GoogleCharts.api.visualization.arrayToDataTable([
+      ["links", "sessions", "screenPageViews", "activeUsers"],
+      ...rows,
+    ]);
+    const options = {
+      title: "",
+      width: "100%",
+      height: "100%",
+    };
+    const chart = new GoogleCharts.api.visualization.Table(
+      document.getElementById("table-chart-container")
+    );
+    chart.draw(data, options);
+  }
+  getRange(days: number) {
+    const endDate = new Date();
+    let startDate = new Date(2018, 8, 1, 0, 0, 0);
+    switch (days) {
+      case 180:
+        startDate = subDays(endDate, 180);
+        break;
+      case 90:
+        startDate = subDays(endDate, 90);
+        break;
+      case 30:
+        startDate = subDays(endDate, 30);
+        break;
+      case 14:
+        startDate = subDays(endDate, 14);
+        break;
+      default:
+        break;
+    }
+    return {
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+    };
+  }
+  async fresh() {
+    this.renderCharts();
+  }
+  // async runReport(propertyId: string, duration: number, regex: string) {
+  //   const response = (
+  //     await axios.post(`api/v2/analyticsDataClientReport/${propertyId}`, {
+  //       duration,
+  //       regex,
+  //     })
+  //   ).data;
+  //   console.log("Report result:", response);
+
+  //   // 使用google-charts 展示饼状图
+  //   GoogleCharts.load(() => {
+  //     const rows = response.rows;
+  //     // runReport 返回值 转成chart 数据
+  //     const chartData = rows.map((row: any) => {
+  //       return [
+  //         row.dimensionValues[0].value,
+  //         parseInt(row.metricValues[0].value),
+  //       ];
+  //     });
+  //     const dataTable = GoogleCharts.api.visualization.arrayToDataTable([
+  //       ["Chart thing", "Chart amount"],
+  //       ...chartData,
+  //     ]);
+  //     const pie_1_chart = new GoogleCharts.api.visualization.PieChart(
+  //       document.getElementById("pie-chart-container")
+  //     );
+  //     pie_1_chart.draw(dataTable);
+  //   });
+  // }
 }
 </script>
 

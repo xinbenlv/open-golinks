@@ -1,7 +1,11 @@
 import {GOLINK_PATTERN} from "../shared";
-import {asyncHandler, isEditable, myLogger, getJWTClientAccessToekn} from "./utils";
+import {asyncHandler, isEditable, myLogger} from "./utils";
 import {getLinksFromDBByLinknameAsync, getLinksWithCache, upsertLinkAsync} from "../db";
 import * as mongoose from 'mongoose';
+const { BetaAnalyticsDataClient } = require("@google-analytics/data");
+const analyticsDataClient = new BetaAnalyticsDataClient({
+  universe_domain: 'googleapis.com',
+});
 const express = require('express');
 const validator = require('validator');
 const apiV2Router = express.Router();
@@ -91,15 +95,25 @@ apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)
     res.send([]);
   }
 }));
+// GA4 不再需要这个认证了
+// apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
+//     return res.send(await getJWTClientAccessToekn())
+//   })
+// )
+// apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
+//   // https://ibb.co/xCJrNJ0
+//   return res.send(process.env.GA_VIEW_ID)
+// })
+// )
 
-apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
-    return res.send(await getJWTClientAccessToekn())
-  })
-)
-apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
-    // https://ibb.co/xCJrNJ0
-    return res.send(process.env.GA_VIEW_ID)
-  })
-)
+apiV2Router.post(`/analyticsDataClientReport`, asyncHandler(async (req,res)=> {
+  const params = req.body;
+  const [response] = await analyticsDataClient.runReport({
+    property: `properties/${process.env.GA_VIEW_ID}`,
+    ...params
+  });
+  return res.send(response);
+}))
+
 export default apiV2Router;
 

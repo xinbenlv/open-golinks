@@ -130,7 +130,7 @@ const main = async () => {
     try {
       // Get or generate client ID
       let clientId = req.cookies._ga?.replace(/^GA\d\.\d\./, '');
-      
+
       // If no client ID exists, generate one and set the cookie
       if (!clientId) {
         // Generate a random UUID-like string
