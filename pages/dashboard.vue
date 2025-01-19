@@ -126,9 +126,7 @@ interface ReportParams {
 export default class DashboardPage extends Vue {
   duration: number = -1;
   regex: string = "";
-  viewId: string = "";
   async mounted() {
-    this.viewId = (await axios.get(`api/v2/getviewId`)).data;
     this.renderCharts();
   }
   showView(duration: number) {
@@ -189,7 +187,7 @@ export default class DashboardPage extends Vue {
     }
     const response = (
       await axios.post(
-        `api/v2/analyticesDataClientReport/${this.viewId}`,
+        `api/v2/analyticsDataClientReport`,
         reportParmas
       )
     ).data;
@@ -252,7 +250,7 @@ export default class DashboardPage extends Vue {
     };
     const response = (
       await axios.post(
-        `api/v2/analyticesDataClientReport/${this.viewId}`,
+        `api/v2/analyticsDataClientReport`,
         reportParam
       )
     ).data;
@@ -310,7 +308,7 @@ export default class DashboardPage extends Vue {
     };
     const response = (
       await axios.post(
-        `api/v2/analyticesDataClientReport/${this.viewId}`,
+        `api/v2/analyticsDataClientReport`,
         reportParam
       )
     ).data;
@@ -365,7 +363,7 @@ export default class DashboardPage extends Vue {
   }
   // async runReport(propertyId: string, duration: number, regex: string) {
   //   const response = (
-  //     await axios.post(`api/v2/analyticesDataClientReport/${propertyId}`, {
+  //     await axios.post(`api/v2/analyticsDataClientReport/${propertyId}`, {
   //       duration,
   //       regex,
   //     })

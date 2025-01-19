@@ -1,5 +1,5 @@
 const NodeCache = require("node-cache");
-import { getLogger } from 'log4js';
+import {getLogger} from 'log4js';
 
 export const myLogger = (() => {
   let l = getLogger();

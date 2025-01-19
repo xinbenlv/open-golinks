@@ -1,10 +1,10 @@
 require('dotenv').config();
-import { myLogger } from "./routes/utils";
+import {myLogger} from "./routes/utils";
 import config from '../nuxt.config';
-const { version, name } = require('./../package.json');
+const {version, name} = require('./../package.json');
 myLogger.debug(`App: ${name}, version ${version}`);
 
-const { Nuxt, Builder } = require('nuxt');
+const {Nuxt, Builder} = require('nuxt');
 const express = require("express");
 import * as bodyParser from "body-parser";
 import * as crypto from 'crypto';
@@ -21,7 +21,7 @@ let PORT = process.env.PORT || 3000;
 let app = express();
 app.use('/static', express.static('static'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(require('express-status-monitor')());
 
 [
@@ -37,7 +37,7 @@ app.use(require('express-status-monitor')());
   "ALLOW_OVERRIDE_ANONYMOUS",
   "GA_VIEW_ID",
   "HOST",
-].forEach((i) => {
+].forEach((i)=>{
   console.assert(`Env var process.env.${i} is required but not set.`)
 });
 
@@ -50,11 +50,11 @@ const Auth0Strategy = require('passport-auth0'),
 
 //passport-auth0
 const strategy = new Auth0Strategy({
-  domain: process.env.AUTH0_DOMAIN,
-  clientID: process.env.AUTH0_CLIENT_ID,
-  clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-  callbackURL: `${app.locals.siteProtocol}://${app.locals.siteHost}/callback`, // TODO: callback HTTPS instead of HTTP
-},
+    domain: process.env.AUTH0_DOMAIN,
+    clientID: process.env.AUTH0_CLIENT_ID,
+    clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
+    callbackURL: `${app.locals.siteProtocol}://${app.locals.siteHost}/callback`, // TODO: callback HTTPS instead of HTTP
+  },
   function (accessToken, refreshToken, extraParams, profile, done) {
     // accessToken is the token to call Auth0 API (not needed in the most cases)
     // extraParams.id_token has the JSON Web Token
@@ -70,7 +70,7 @@ passport.use(strategy);
 const session = require('express-session');
 
 const main = async () => {
-  //session-related stuff
+//session-related stuff
   var sess = {
     secret: 'some cool secret', // TODO use another one
     cookie: {},
@@ -78,15 +78,15 @@ const main = async () => {
     saveUninitialized: true
   };
 
-  // If enable, it will fail and login again and again
-  // if (app.get('env') === 'production') {
-  //   sess.cookie['secure'] = true; // serve secure cookies, requires https
-  // }
+// If enable, it will fail and login again and again
+// if (app.get('env') === 'production') {
+//   sess.cookie['secure'] = true; // serve secure cookies, requires https
+// }
 
-  // app.js
+// app.js
   config.dev = !(process.env.NODE_ENV === 'production');
   const nuxt = new Nuxt(config);
-  const { host, port } = nuxt.options.server;
+  const {host, port} = nuxt.options.server;
 
   app.use(cookieParser());
 
@@ -102,7 +102,7 @@ const main = async () => {
     done(null, user);
   });
 
-  // Look up session to know if user is logged in
+// Look up session to know if user is logged in
   app.use(function (req: any, res: any, next) {
     myLogger.debug(`Query if it's logged in`, req.session);
     res.locals.loggedIn = false;
@@ -173,19 +173,19 @@ const main = async () => {
   });
 
   if (process.env.LETS_ENCRYPT_URL_PART && process.env.LETS_ENCRYPT_CONTENT) {
-    app.get(process.env.LETS_ENCRYPT_URL_PART, function (req, res) {
+    app.get(process.env.LETS_ENCRYPT_URL_PART, function(req, res) {
       return res.send(process.env.LETS_ENCRYPT_CONTENT)
     });
   }
 
   app.use('/', authRouter);
   app.use('/qr', qrRouter);
-  // await mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
+  await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
 
   myLogger.debug('Connected');
 
   await nuxt.ready();
-  myLogger.info(`NOT Running Nuxt Builder`, process.env.BUILD_CLIENT, config.dev);
+
   // Build only in dev mode
   if (process.env.BUILD_CLIENT === '1' && config.dev) {
     myLogger.info(`Running Nuxt Builder ... `);
