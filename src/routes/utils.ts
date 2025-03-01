@@ -31,6 +31,10 @@ export const isEditable = function (existingLinkAuthor, reqeustingUser) {
 export const getJWTClientAccessToekn = async function () {
   const {JWT} = require('google-auth-library');
   // An Base64 encoded version of Google Cloud Console service account json key private credentials
+  // To generate it, go to https://console.cloud.google.com/apis/credentials/serviceaccountkey?project=quickstart-1736470757079
+  // and click on the service account name, then click on the `JSON` button.
+  // Then, run shell `cat credentials.json | base64` to get the base64 encoded version.
+  // Then, set it in the environment variable GOOGLE_JSON_KEY
   let decoded = Buffer.from(process.env.GOOGLE_JSON_KEY, 'base64').toString();
   const keys = JSON.parse(decoded);
   const client = new JWT(
