@@ -13,7 +13,9 @@
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
     "heroku-postbuild": "npm run build",
-    "release": "HUSKY_SKIP_HOOKS=1 standard-version"
+    "release": "HUSKY_SKIP_HOOKS=1 standard-version",
+    "with-infisical": "infisical run --token $INFISICAL_SERVICE_TOKEN -- bun run",
+    "postinstall": "bun rebuild canvas --update-binary"
   },
   "husky": {
     "hooks": {
@@ -37,6 +39,7 @@
   },
   "homepage": "https://github.com/xinbenlv/open-golinks#readme",
   "dependencies": {
+    "@infisical/cli": "^0.35.0",
     "@jimp/plugin-print": "^0.14.0",
     "@nuxt/types": "^2.16.3",
     "@nuxt/typescript-build": "^2.1.0",
@@ -86,8 +89,8 @@
     "vue-clipboard2": "^0.3.3"
   },
   "engines": {
-    "node": "18",
-    "npm": "9"
+    "node": "22",
+    "bun": "1.2.4"
   },
   "nodemonConfig": {
     "ignore": [
