@@ -60,7 +60,7 @@
     "jquery": "^3.6.4",
     "log4js": "^6.9.1",
     "mongodb": "^3.7.3",
-    "mongoose": "^5.13.17",
+    "mongoose": "^5.13.20",
     "node-cache": "^5.1.2",
     "nuxt": "^2.16.3",
     "nuxt-env": "^0.1.0",
