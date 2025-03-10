@@ -121,7 +121,7 @@
     "@types/universal-analytics": "0.4.4",
     "commitizen": "4.1.2",
     "cz-conventional-changelog": "3.2.0",
-    "husky": "4.2.5",
+    "husky": "4.3.8",
     "nodemon": "2.0.4",
     "standard-version": "8.0.2",
     "webpack-hot-middleware": "2.25.0"
