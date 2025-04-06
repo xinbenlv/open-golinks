@@ -180,7 +180,10 @@ const main = async () => {
 
   app.use('/', authRouter);
   app.use('/qr', qrRouter);
-  await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
+  await mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  });
 
   myLogger.debug('Connected');
 
