@@ -1,3 +1,5 @@
+[![CI](https://github.com/xinbenlv/open-golinks/actions/workflows/ci.yml/badge.svg)](https://github.com/xinbenlv/open-golinks/actions/workflows/ci.yml)
+
 This is a Go-Link service built on top with `NodeJS`, `HTML5/CSS/Bootstrap`.
 
 ## Development

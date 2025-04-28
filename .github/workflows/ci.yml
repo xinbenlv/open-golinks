@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Lint commit messages
+      run: npx commitlint --from=HEAD~1 --to=HEAD --verbose
+      if: github.event_name == 'pull_request'
+    
+    - name: Build
+      run: npm run build
+    
+    - name: Test
+      run: |
+        echo "No tests specified yet. This is a placeholder for future tests."
+        # When tests are added, replace this with: npm test
