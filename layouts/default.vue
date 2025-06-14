@@ -16,7 +16,7 @@
               <li class="nav-item"><a class="nav-link text-white" href="/logout">Log Out</a></li>
             </template>
             <template v-else >
-              <li class="nav-item"><a class="btn btn-primary btn-sm nav-link text-white" href="/login">Log In</a></li>
+              <li class="nav-item"><a class="btn btn-primary btn-sm nav-link text-white" href="/login?returnTo=/">Log In</a></li>
             </template>
           </ul>
         </div>

@@ -45,25 +45,6 @@ myLogger.debug(`Setting Google Analytics with Tracking Id = `, process.env.OPEN_
 app.locals.siteName = process.env.OPEN_GOLINKS_SITE_NAME || `Open GoLinks`;
 app.locals.siteHost = process.env.OPEN_GOLINKS_SITE_HOST_AND_PORT || `localhost:3000`;
 app.locals.siteProtocol = process.env.OPEN_GOLINKS_SITE_PROTOCOL || `http`;
-const Auth0Strategy = require('passport-auth0'),
-  passport = require('passport');
-
-//passport-auth0
-const strategy = new Auth0Strategy({
-    domain: process.env.AUTH0_DOMAIN,
-    clientID: process.env.AUTH0_CLIENT_ID,
-    clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-    callbackURL: `${app.locals.siteProtocol}://${app.locals.siteHost}/callback`, // TODO: callback HTTPS instead of HTTP
-  },
-  function (accessToken, refreshToken, extraParams, profile, done) {
-    // accessToken is the token to call Auth0 API (not needed in the most cases)
-    // extraParams.id_token has the JSON Web Token
-    // profile has all the information from the user
-    return done(null, profile);
-  }
-);
-
-passport.use(strategy);
 
 // app.js
 
@@ -72,35 +53,72 @@ const session = require('express-session');
 const main = async () => {
 //session-related stuff
   var sess = {
-    secret: 'some cool secret', // TODO use another one
-    cookie: {},
+    secret: 'some cool secret',
+    cookie: {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 小时
+      sameSite: 'lax'  // 重要：防止 CSRF，同时允许 OAuth 回调
+    },
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    name: 'sessionId' // 明确指定 cookie 名称
   };
 
-// If enable, it will fail and login again and again
-// if (app.get('env') === 'production') {
-//   sess.cookie['secure'] = true; // serve secure cookies, requires https
-// }
+  if (app.get('env') === 'production') {
+    myLogger.debug(`[main.ts] [debug] ==> session cookie secure is true because app.get('env') === 'production'`);
+    sess.cookie['secure'] = true; // only enable in production
+  } else {
+    myLogger.debug(`[main.ts] [debug] ==> session cookie secure is false because app.get('env') !== 'production' but is ${app.get('env')}`);
+  }
 
-// app.js
+  // app.js
   config.dev = !(process.env.NODE_ENV === 'production');
   const nuxt = new Nuxt(config);
   const {host, port} = nuxt.options.server;
 
   app.use(cookieParser());
-
   app.use(session(sess));
-  app.use(passport.initialize());
-  app.use(passport.session());
 
+  app.use((req, res, next) => {
+    console.log('[main.ts] [debug] ==> session:', req.session);
+    next();
+  });
+
+  const passport = require('passport');
   passport.serializeUser(function (user, done) {
+    console.log('[main.ts] [debug] ==> passport.serializeUser called, user:', user);
     done(null, user);
   });
 
   passport.deserializeUser(function (user, done) {
+    console.log('[main.ts] [debug] ==> passport.deserializeUser called, user:', user);
     done(null, user);
   });
+  const Auth0Strategy = require('passport-auth0');
+
+  //passport-auth0
+  const strategy = new Auth0Strategy({
+      domain: process.env.AUTH0_DOMAIN,
+      clientID: process.env.AUTH0_CLIENT_ID,
+      clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
+      callbackURL: `${app.locals.siteProtocol}://${app.locals.siteHost}/callback`, // TODO: callback HTTPS instead of HTTP
+    },
+    function (accessToken, refreshToken, extraParams, profile, done) {
+      // accessToken is the token to call Auth0 API (not needed in the most cases)
+      // extraParams.id_token has the JSON Web Token
+      // profile has all the information from the user
+      console.log('[main.ts] [debug] ==> Auth0Strategy verify called');
+      console.log('[main.ts] [debug] ==> accessToken:', accessToken);
+      console.log('[main.ts] [debug] ==> profile:', profile);
+      return done(null, profile);
+    }
+  );
+
+  passport.use(strategy);
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+
 
 // Look up session to know if user is logged in
   app.use(function (req: any, res: any, next) {

@@ -37,7 +37,7 @@ apiV2Router.post('/edit', asyncHandler(async function (req, res) {
         p: golink, // page
         ev: 10,
       };
-      req.visitor.event(params).send();
+      req.visitor?.event(params)?.send();
       res.send({
           title: `Edit`,
           msg: 'Your link is created/updated successsfully!',

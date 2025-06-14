@@ -26,11 +26,11 @@
                   <button v-else-if="$store.state.userId && $store.state.userId === author" class="btn btn-primary btn-sm"
                           @click="submitBtn()">Update
                   </button>
-                  <button v-else-if="$store.state.userId && author === 'anonymous'" class="btn btn-primary btn-sm" href="/login"
+                  <button v-else-if="$store.state.userId && author === 'anonymous'" class="btn btn-primary btn-sm"
                           @click="submitBtn()"
                           style="width:120px;">Claim to update
                   </button>
-                  <button v-else-if="!$store.state.userId" class="btn btn-primary btn-sm" href="/login"
+                  <button v-else-if="!$store.state.userId" class="btn btn-primary btn-sm"
                           style="width:120px;"
                           @click="login()">Login to claim
                   </button>
@@ -152,7 +152,7 @@
           return this.status !== Status.Creating;
         };
         login() {
-          window.open(`/login`);
+          window.open(`/login?returnTo=${window.location.pathname}`);
         };
         async asyncData({ params, $axios }) {
             return { goLink: params.goLink || '' };
