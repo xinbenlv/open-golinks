@@ -36,6 +36,11 @@
     get loggedIn() {
       return this.$store.state.user !== null;
     }
+
+    mounted() {
+      console.log('[mounted][debug] this.$store.state.user:', this.$store.state.user);
+      console.log('[mounted][debug] this.$store.state.userId:', this.$store.state.userId);
+    }
   }
 
 </script>
