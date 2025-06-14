@@ -12,13 +12,7 @@
     "nuxt": "nuxt",
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
-    "heroku-postbuild": "npm run build",
-    "release": "HUSKY_SKIP_HOOKS=1 standard-version"
-  },
-  "husky": {
-    "hooks": {
-      "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
-    }
+    "heroku-postbuild": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -87,8 +81,7 @@
     "vue-clipboard2": "^0.3.3"
   },
   "engines": {
-    "node": "22",
-    "bun": "1.2.4"
+    "node": "18"
   },
   "nodemonConfig": {
     "ignore": [
