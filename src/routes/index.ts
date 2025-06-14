@@ -7,16 +7,15 @@ const indexRouter = express.Router();
 
 function shouldShowWarning(req): boolean { 
   let dice = Math.random();
-  let ratio = parseFloat(process.env.REDIRECT_WARNING_RATIO);
+  let warningRatio = parseFloat(process.env.REDIRECT_WARNING_RATIO);
+
+  // if dice < ratio, show warning, which is a small probability
+  const shouldShowWarning = dice < warningRatio;
 
   myLogger.info(
-    `REDIRECT_WARNING_RATIO=${ratio}, ${dice}, dice < ratio = ${dice < ratio}`);
+    `REDIRECT_WARNING_RATIO=${warningRatio}, ${dice}, dice < ratio = ${dice < warningRatio}, shouldShowWarning = ${shouldShowWarning}`);
   
-  if (dice < ratio) {
-    return false;
-  } else {
-    return true;
-  }
+  return shouldShowWarning;
 }
 
 indexRouter.get('/loaderio-0d9781efd2af91d08df854c1d6d90e7d', asyncHandler(async (req, res) => {
@@ -60,13 +59,14 @@ const addRouteForRedirect = () => {
 
     if (links.length > 0) {
       let link = links[0];
-      console.log(`Redirecting to ${link['url']}`);
 
       // show user
       if (shouldShowWarning(req)) {
+        console.log(`Showing warning for ${link.goDest}`);
         next(); // fall through to the nuxt router to show the warning
         return;
       } else {
+        console.log(`No warning, directly redirecting to ${link.goDest}`);
         res.redirect(link.goDest); // directly redirect to the destination
         return;
       }

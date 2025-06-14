@@ -13,9 +13,7 @@
     "start": "cross-env NODE_ENV=production npx ts-node -r tsconfig-paths/register --project tsconfig.json src/main.ts",
     "prod": "npm run build && npm run dev:node",
     "heroku-postbuild": "npm run build",
-    "release": "HUSKY_SKIP_HOOKS=1 standard-version",
-    "with-infisical": "infisical run --token $INFISICAL_SERVICE_TOKEN -- bun run",
-    "postinstall": "bun rebuild canvas --update-binary"
+    "release": "HUSKY_SKIP_HOOKS=1 standard-version"
   },
   "husky": {
     "hooks": {
