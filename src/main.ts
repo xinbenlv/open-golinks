@@ -179,6 +179,20 @@ const main = async () => {
   }
 
   app.use('/', authRouter);
+  app.use('/healthz', (req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      version,
+      name,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
+      cpuUsage: process.cpuUsage(),
+      os: process.platform,
+      osVersion: process.version,
+      nodeVersion: process.version,
+    });
+  });
   app.use('/qr', qrRouter);
   await mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser: true});
 
