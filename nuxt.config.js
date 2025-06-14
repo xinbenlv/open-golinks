@@ -137,6 +137,10 @@ export default {
         // component: resolve(__dirname, "pages/dashboard.vue")
       });
       routes.push({
+        path: `/user-links`,
+        component: resolve(__dirname, 'pages/user-links.vue'),
+      });
+      routes.push({
         path: `/edit/:goLink(${GOLINK_PATTERN})?`,
         component: resolve(__dirname, 'pages/link.vue'),
       });

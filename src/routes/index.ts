@@ -45,6 +45,9 @@ const addRouteForRedirect = () => {
     } else if (goLink == 'dashboard') {
       next();
       return;
+    } else if (goLink == 'user-links') {
+      next();
+      return;
     } else if (goLink == '') {
       res.redirect(`/edit`);
       return;

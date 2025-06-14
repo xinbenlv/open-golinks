@@ -12,7 +12,7 @@
               class="sr-only">(current)</span></a></li>
             <li class="nav-item"><a class="nav-link text-white" href="/dashboard">Dashboard</a></li>
             <template v-if="loggedIn">
-              <li class="nav-item"><a class="nav-link text-white" href="/user">My Links</a></li>
+              <li class="nav-item"><a class="nav-link text-white" href="/user-links">My Links</a></li>
               <li class="nav-item"><a class="nav-link text-white" href="/logout">Log Out</a></li>
             </template>
             <template v-else >

@@ -101,5 +101,16 @@ apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
     return res.send(process.env.GA_VIEW_ID)
   })
 )
+
+apiV2Router.get('/my-links', asyncHandler(async (req, res) => {
+  if (!req.user || !req.user.emails || !req.user.emails[0] || !req.user.emails[0].value) {
+    return res.status(401).send({ error: 'Unauthorized' });
+  }
+  const userEmail = req.user.emails[0].value;
+  // 查询所有 author 为 userEmail 的链接
+  const links = await mongoose.connections[0].db.collection('shortlinks').find({ author: userEmail }).toArray();
+  res.send(links);
+}));
+
 export default apiV2Router;
 
