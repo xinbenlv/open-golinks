@@ -57,6 +57,22 @@ app.locals.siteProtocol = process.env.OPEN_GOLINKS_SITE_PROTOCOL || `http`;
 
 const session = require('express-session');
 
+// Converts uptime in seconds to a human-readable string (e.g., 1d 2h 3m 4s)
+function formatUptime(seconds: number): string {
+  const d = Math.floor(seconds / (3600 * 24));
+  seconds -= d * 3600 * 24;
+  const h = Math.floor(seconds / 3600);
+  seconds -= h * 3600;
+  const m = Math.floor(seconds / 60);
+  seconds = Math.floor(seconds - m * 60);
+  let result = '';
+  if (d > 0) result += `${d}d `;
+  if (h > 0) result += `${h}h `;
+  if (m > 0) result += `${m}m `;
+  result += `${seconds}s`;
+  return result.trim();
+}
+
 const main = async () => {
 //session-related stuff
   var sess = {
@@ -211,6 +227,7 @@ const main = async () => {
       name,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      uptimeHumanReadable: formatUptime(process.uptime()),
       memoryUsage: process.memoryUsage(),
       cpuUsage: process.cpuUsage(),
       os: process.platform,
