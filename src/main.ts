@@ -26,6 +26,28 @@ let app = express();
 // It must be set BEFORE any middleware that relies on protocol or IP, such as session, cookieParser, or passport.
 app.enable('trust proxy');
 
+if (process.env.NODE_ENV === 'production') {
+  console.log('[main.ts] [debug] ==> Redirecting all requests to the canonical host if host is not as expected');
+  // Redirect all requests to the canonical host if host is not as expected
+  const CANONICAL_HOST = process.env.OPEN_GOLINKS_SITE_HOST_AND_PORT; // e.g. 'zgzg.li'
+  const CANONICAL_PROTOCOL = process.env.OPEN_GOLINKS_SITE_PROTOCOL; // e.g. 'https'
+
+  app.use((req, res, next) => {
+    // Only redirect if host is not the canonical one
+    if (req.headers.host && req.headers.host !== CANONICAL_HOST) {
+      console.log('[main.ts] [debug] ==> Redirecting to canonical host', req.headers.host, '->', CANONICAL_HOST);
+      // Build the new URL, preserving path and query
+      const redirectUrl = `${CANONICAL_PROTOCOL}://${CANONICAL_HOST}${req.originalUrl}`;
+      // 301 for permanent, 302 for temporary
+      return res.redirect(302, redirectUrl);
+    } else {
+      console.log('[main.ts] [debug] ==> Not redirecting to canonical host', req.headers.host, '->', CANONICAL_HOST);
+    }
+    next();
+  });
+} else {
+  console.log('[main.ts] [debug] ==> Not redirecting all requests to the canonical host if host is not as expected');
+}
 app.use('/static', express.static('static'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
