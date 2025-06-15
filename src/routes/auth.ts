@@ -30,6 +30,10 @@ authRouter.get('/login', (req, res, next) => {
     redirectUri: `${process.env.OPEN_GOLINKS_SITE_PROTOCOL}://${process.env.OPEN_GOLINKS_SITE_HOST_AND_PORT}/callback`
   })(req, res, next);
 }, function (req, res) {
+  console.log('[authRouter /login] [debug] ==> session:', req.session);
+  console.log('[authRouter /login] [debug] ==> req.query:', req.query);
+  console.log('[authRouter /login] [debug] ==> req.session.returnTo:', req.session.returnTo);
+  
   let params = {
     ec: `Login`,
     ea: `Initiated`,

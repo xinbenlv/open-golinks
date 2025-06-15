@@ -65,10 +65,10 @@ const main = async () => {
   };
 
   if (app.get('env') === 'production') {
-    myLogger.debug(`[main.ts] [debug] ==> session cookie secure is true because app.get('env') === 'production'`);
+    console.log(`[main.ts] [debug] ==> session cookie secure is true because app.get('env') === 'production'`);
     sess.cookie['secure'] = true; // only enable in production
   } else {
-    myLogger.debug(`[main.ts] [debug] ==> session cookie secure is false because app.get('env') !== 'production' but is ${app.get('env')}`);
+    console.log(`[main.ts] [debug] ==> session cookie secure is false because app.get('env') !== 'production' but is ${app.get('env')}`);
   }
 
   // app.js
@@ -105,6 +105,10 @@ const main = async () => {
       // accessToken is the token to call Auth0 API (not needed in the most cases)
       // extraParams.id_token has the JSON Web Token
       // profile has all the information from the user
+      console.log('[main.ts] [debug] ==> Auth0Strategy verify called');
+      console.log('[main.ts] [debug] ==> accessToken:', accessToken);
+      console.log('[main.ts] [debug] ==> profile:', profile);
+      console.log('[main.ts] [debug] ==> extraParams:', extraParams);
       return done(null, profile);
     }
   );
