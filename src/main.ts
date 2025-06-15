@@ -19,6 +19,13 @@ const mongoose = require('mongoose');
 
 let PORT = process.env.PORT || 3000;
 let app = express();
+// Enable 'trust proxy' so that Express correctly identifies the original protocol (HTTP/HTTPS)
+// when running behind a proxy or load balancer (such as Heroku, AWS ELB, Nginx, etc).
+// This is critical for correct handling of secure cookies, redirects, and authentication flows,
+// because Express will otherwise treat all requests as HTTP, even if the original request was HTTPS.
+// It must be set BEFORE any middleware that relies on protocol or IP, such as session, cookieParser, or passport.
+app.enable('trust proxy');
+
 app.use('/static', express.static('static'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
