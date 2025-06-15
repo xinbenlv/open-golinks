@@ -1,14 +1,27 @@
 <template>
-  <div class="container py-4">
-    <h1>My Links</h1>
-    <div v-if="links.length === 0">
-      <p>你还没有创建任何链接。</p>
+  <div class="container py-4 bg-dark text-light rounded">
+    <h1 class="mb-4">My Links</h1>
+    <div v-if="links.length === 0" class="alert alert-secondary bg-secondary text-light border-0">
+      <p class="mb-0">你还没有创建任何链接。</p>
     </div>
-    <ul v-else>
-      <li v-for="link in links" :key="link._id">
-        <strong>{{ link.linkname || link.goLink }}</strong> → {{ link.goDest }}
-      </li>
-    </ul>
+    <b-table
+      v-else
+      :items="links"
+      :fields="fields"
+      striped
+      dark
+      small
+      responsive
+      class="bg-dark text-light border-secondary rounded"
+      head-variant="dark"
+    >
+      <template #cell(linkname)="data">
+        <strong>{{ data.item.linkname || data.item.goLink }}</strong>
+      </template>
+      <template #cell(dest)="data">
+        <a :href="data.item.dest" target="_blank">{{ data.item.dest }}</a>
+      </template>
+    </b-table>
   </div>
 </template>
 
@@ -17,7 +30,11 @@ export default {
   name: 'UserPage',
   data() {
     return {
-      links: []
+      links: [],
+      fields: [
+        { key: 'linkname', label: 'Link Name' },
+        { key: 'dest', label: 'Destination' },
+      ]
     }
   },
   async mounted() {
@@ -32,4 +49,11 @@ export default {
 </script>
 
 <style scoped>
+/* 让滚动条也适配暗色 */
+.container::-webkit-scrollbar {
+  background: #222;
+}
+.container::-webkit-scrollbar-thumb {
+  background: #444;
+}
 </style> 
