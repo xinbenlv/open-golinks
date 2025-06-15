@@ -20,6 +20,9 @@ authRouter.use((req, res, next) => {
 authRouter.get('/login', (req, res, next) => {
   console.log('[authRouter /login] [debug] ==> sessionID:', req.sessionID);
   console.log('[authRouter /login] [debug] ==> session:', req.session);
+  console.log('[authRouter /login] host:', req.headers.host, 'protocol:', req.protocol, 'originalUrl:', req.originalUrl, 'sessionID:', req.sessionID, 'cookies:', req.headers.cookie);
+  const expectedRedirectUri = `${process.env.OPEN_GOLINKS_SITE_PROTOCOL}://${process.env.OPEN_GOLINKS_SITE_HOST_AND_PORT}/callback`;
+  console.log('[authRouter /login] expectedRedirectUri:', expectedRedirectUri);
   // 获取 returnTo 参数，默认为 '/'
   const returnTo = req.query.returnTo || '/';
   req.session.returnTo = returnTo;
@@ -33,7 +36,7 @@ authRouter.get('/login', (req, res, next) => {
   console.log('[authRouter /login] [debug] ==> session:', req.session);
   console.log('[authRouter /login] [debug] ==> req.query:', req.query);
   console.log('[authRouter /login] [debug] ==> req.session.returnTo:', req.session.returnTo);
-  
+
   let params = {
     ec: `Login`,
     ea: `Initiated`,
@@ -50,6 +53,15 @@ authRouter.get('/callback',
     console.log('[authRouter /callback] [debug] ==> /callback route hit, query:', req.query);
     console.log('[authRouter /callback] [debug] ==> sessionID:', req.sessionID);
     console.log('[authRouter /callback] [debug] ==> session:', req.session);
+    console.log('[authRouter /callback] actual callback info:', {
+      protocol: req.protocol,
+      host: req.headers.host,
+      originalUrl: req.originalUrl,
+      url: req.url,
+      sessionID: req.sessionID,
+      cookies: req.headers.cookie,
+      headers: req.headers
+    });
     next();
   },
   (req, res, next) => {

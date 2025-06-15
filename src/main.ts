@@ -80,7 +80,8 @@ const main = async () => {
   app.use(session(sess));
 
   app.use((req, res, next) => {
-    console.log('[main.ts] [debug] ==> session:', req.session);
+    console.log('[session debug] host:', req.headers.host, 'protocol:', req.protocol, 'originalUrl:', req.originalUrl, 'sessionID:', req.sessionID, 'cookies:', req.headers.cookie);
+    console.log('[main.ts] [debug] ==> sessionID:', req.sessionID, 'session:', req.session);
     next();
   });
 
