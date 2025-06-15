@@ -8,6 +8,7 @@
           class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
+            <li class="nav-item"><a class="text-white" href="/healthz">v{{ version }}</a></li>
             <li class="nav-item active"><a class="nav-link text-white" href="#"><span
               class="sr-only">(current)</span></a></li>
             <li class="nav-item"><a class="nav-link text-white" href="/dashboard">Dashboard</a></li>
@@ -33,13 +34,20 @@
   })
   export default class DefaultLayout extends Vue {
     title = this.$env.OPEN_GOLINKS_SITE_NAME;
+    version = 'v0.0.0'; // 添加这一行来初始化 version 属性
+  
     get loggedIn() {
       return this.$store.state.user !== null;
     }
 
-    mounted() {
+    async mounted() {
       console.log('[mounted][debug] this.$store.state.user:', this.$store.state.user);
       console.log('[mounted][debug] this.$store.state.userId:', this.$store.state.userId);
+      const res = await fetch('/healthz');
+      const data = await res.json();
+      console.log('[mounted][debug] data:', data);
+      this.version = data.version;
+      console.log('[mounted][debug] this.version:', this.version);
     }
   }
 

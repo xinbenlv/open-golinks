@@ -86,12 +86,10 @@ const main = async () => {
 
   const passport = require('passport');
   passport.serializeUser(function (user, done) {
-    console.log('[main.ts] [debug] ==> passport.serializeUser called, user:', user);
     done(null, user);
   });
 
   passport.deserializeUser(function (user, done) {
-    console.log('[main.ts] [debug] ==> passport.deserializeUser called, user:', user);
     done(null, user);
   });
   const Auth0Strategy = require('passport-auth0');
@@ -107,9 +105,6 @@ const main = async () => {
       // accessToken is the token to call Auth0 API (not needed in the most cases)
       // extraParams.id_token has the JSON Web Token
       // profile has all the information from the user
-      console.log('[main.ts] [debug] ==> Auth0Strategy verify called');
-      console.log('[main.ts] [debug] ==> accessToken:', accessToken);
-      console.log('[main.ts] [debug] ==> profile:', profile);
       return done(null, profile);
     }
   );
@@ -122,7 +117,6 @@ const main = async () => {
 
 // Look up session to know if user is logged in
   app.use(function (req: any, res: any, next) {
-    myLogger.debug(`Query if it's logged in`, req.session);
     res.locals.loggedIn = false;
     if (req.session.passport && typeof req.session.passport.user != 'undefined') {
       res.locals.loggedIn = true;
