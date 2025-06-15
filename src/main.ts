@@ -94,13 +94,14 @@ const main = async () => {
     done(null, user);
   });
   const Auth0Strategy = require('passport-auth0');
-
+  const callbackURL = `${app.locals.siteProtocol}://${app.locals.siteHost}/callback`;
+  console.log('[main.ts] [debug] ==> callbackURL:', callbackURL);
   //passport-auth0
   const strategy = new Auth0Strategy({
       domain: process.env.AUTH0_DOMAIN,
       clientID: process.env.AUTH0_CLIENT_ID,
       clientSecret: process.env.AUTH0_CLIENT_SECRET, // Replace this with the client secret for your app
-      callbackURL: `${app.locals.siteProtocol}://${app.locals.siteHost}/callback`, // TODO: callback HTTPS instead of HTTP
+      callbackURL: callbackURL,
     },
     function (accessToken, refreshToken, extraParams, profile, done) {
       // accessToken is the token to call Auth0 API (not needed in the most cases)
