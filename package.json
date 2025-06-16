@@ -1,6 +1,6 @@
 {
   "name": "open-golinks",
-  "version": "2.3.5",
+  "version": "2.3.6",
   "description": "An web app providing go-links service.",
   "main": "src/main.ts",
   "scripts": {
