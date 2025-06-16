@@ -1,8 +1,10 @@
 require('dotenv').config();
-import {myLogger} from "./routes/utils";
+import {loadGcpCredentials, myLogger} from "./routes/utils";
 import config from '../nuxt.config';
 const {version, name} = require('./../package.json');
 myLogger.debug(`App: ${name}, version ${version}`);
+
+loadGcpCredentials(); // 在应用启动时执行
 
 const {Nuxt, Builder} = require('nuxt');
 const express = require("express");
@@ -210,14 +212,21 @@ const main = async () => {
       // Prepare event data
       const eventData = {
         client_id: clientId,
-        user_id: req.user?.emails?.[0],
+        user_id: req.user?.emails?.[0] || "unknown user",
         events: [{
-          name: 'visit',
+          name: 'page_view',
           params: {
             page_location: `${app.locals.siteProtocol}://${app.locals.siteHost}${req.originalUrl}`,
             page_path: req.originalUrl,
             page_title: req.originalUrl,
-            engagement_time_msec: "100"
+            user_agent: req.headers['user-agent'],
+            ip_address: req.ip,
+            accept_language: req.headers['accept-language'],
+            accept_encoding: req.headers['accept-encoding'],
+            accept: req.headers['accept'],
+            connection: req.headers['connection'],
+            host: req.headers['host'],
+            referer: req.headers.referer,
           }
         }]
       };

@@ -1,10 +1,41 @@
 import {GOLINK_PATTERN} from "../shared";
-import {asyncHandler, isEditable, myLogger, getJWTClientAccessToekn} from "./utils";
+import {asyncHandler, isEditable, myLogger} from "./utils";
 import {getLinksFromDBByLinknameAsync, getLinksWithCache, upsertLinkAsync} from "../db";
 import * as mongoose from 'mongoose';
+import { BetaAnalyticsDataClient } from '@google-analytics/data';
 const express = require('express');
 const validator = require('validator');
 const apiV2Router = express.Router();
+
+// 因为凭据已在应用启动时加载，这里可以直接初始化
+const analyticsDataClient = new BetaAnalyticsDataClient();
+const propertyId = process.env.GA4_PROPERTY_ID;
+console.log('[apiv2.ts] [debug] ==> propertyId', propertyId);
+apiV2Router.post('/ga4/reports', asyncHandler(async function (req, res) {
+  if (!propertyId) {
+    return res.status(500).send('GA4_PROPERTY_ID not configured on server.');
+  }
+
+  // 从 req.body 获取前端传来的参数，例如 dateRanges, dimensions, metrics 等
+  const { dateRanges, dimensions, metrics, dimensionFilter } = req.body;
+
+  try {
+    const [response] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: dateRanges,
+      dimensions: dimensions,
+      metrics: metrics,
+      dimensionFilter: dimensionFilter // 接收前端的过滤条件
+    });
+
+    // 将 response 整理成前端需要的格式并返回
+    res.send(response);
+
+  } catch (error) {
+    myLogger.error('GA4 Data API request failed:', error);
+    res.status(500).send({ error: 'Failed to fetch GA4 data.' });
+  }
+}));
 
 apiV2Router.post('/edit', asyncHandler(async function (req, res) {
   myLogger.info(`APIv2 received an Edit request: ${JSON.stringify(req.body)}`);
@@ -91,16 +122,6 @@ apiV2Router.get(`/link/:goLink(${GOLINK_PATTERN})`, asyncHandler(async (req,res)
     res.send([]);
   }
 }));
-
-apiV2Router.get(`/gettoken`, asyncHandler(async (req, res) => {
-    return res.send(await getJWTClientAccessToekn())
-  })
-)
-apiV2Router.get(`/getviewId`, asyncHandler(async (req, res) => {
-    // https://ibb.co/xCJrNJ0
-    return res.send(process.env.GA_VIEW_ID)
-  })
-)
 
 apiV2Router.get('/my-links', asyncHandler(async (req, res) => {
   if (!req.user || !req.user.emails || !req.user.emails[0] || !req.user.emails[0].value) {
