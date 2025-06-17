@@ -1,9 +1,16 @@
-import {GOLINK_PATTERN} from './src/shared';
+// Prefer the original TypeScript source when available (dev / build time),
+// but fall back to the transpiled JS in `dist/` when running the compiled server code.
+let GOLINK_PATTERN;
+try {
+  ({ GOLINK_PATTERN } = require('./src/shared'));
+} catch (e) {
+  ({ GOLINK_PATTERN } = require('./dist/shared'));
+}
 
 const pkg = require('./package');
 require(`dotenv`).config();
 
-export default {
+module.exports = {
   telemetry: false, // https://github.com/nuxt/telemetry
   mode: 'universal',
 

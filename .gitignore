@@ -8,3 +8,6 @@ oauth2.key.json
 .fonts
 
 .cred
+logs
+
+dist

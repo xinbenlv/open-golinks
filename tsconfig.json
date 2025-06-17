@@ -9,10 +9,12 @@
       "dom"
     ],
     "esModuleInterop": true,
-    "allowJs": true,
+    "allowJs": false,
     "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
     // "strict": true,
-    "noEmit": true,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "~/*": [
@@ -27,19 +29,16 @@
       "@nuxt/types",
       "@nuxt/vue-app",
       "@nuxtjs/axios",
-      "@dicebear/avatars/typings/svgson"
     ],
     "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
     "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "nuxt.config.js"
   ],
   "include": [
-    "./**/*.ts",
-    "./**/*.vue"
-  ],
-  "files": [
+    "src/**/*.ts",
     "vue-shim.d.ts"
   ]
 }
