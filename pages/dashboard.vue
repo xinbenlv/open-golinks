@@ -18,44 +18,44 @@
         <button class="btn btn-primary" @click="fetchData">确认</button>
       </div>
     </div>
-    <div v-if="loading" class="text-center my-5">
-      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      <span> Loading...</span>
-    </div>
-    <div v-else>
-      <div class="row mb-4">
-        <div class="col-md-8">
-          <h5>Group by Path</h5>
-          <table class="table table-bordered table-sm">
-            <thead>
-              <tr>
-                <th>Path</th>
-                <th>Event Count</th>
-                <th>Active Users</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in tableRows" :key="row.path">
-                <td>{{ row.path }}</td>
-                <td>{{ row.eventCount }}</td>
-                <td>{{ row.activeUsers }}</td>
-              </tr>
-            </tbody>
-          </table>
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" id="toggleQueryString" v-model="usePathPlusQueryString">
+          <label class="form-check-label" for="toggleQueryString">
+            统计时包含 Query String
+          </label>
         </div>
-        <div class="col-md-4">
-          <h5>Percentage by Path</h5>
-          <client-only>
-            <v-chart :options="pieOptions" :autoresize="true" style="height: 300px; width: 100%" />
-          </client-only>
-        </div>
+        <h5>Group by Path</h5>
+        <table class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <th>Path</th>
+              <th>Event Count</th>
+              <th>Active Users</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in tableRows" :key="row.path">
+              <td>{{ row.path }}</td>
+              <td>{{ row.eventCount }}</td>
+              <td>{{ row.activeUsers }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div>
-        <h5>Time Visualization by Day</h5>
+      <div class="col-md-4">
+        <h5>Percentage by Path</h5>
         <client-only>
-          <v-chart :options="lineOptions" :autoresize="true" style="height: 400px; width: 100%" />
+          <v-chart :options="pieOptions" :autoresize="true" style="height: 300px; width: 100%" />
         </client-only>
       </div>
+    </div>
+    <div>
+      <h5>Time Visualization by Day</h5>
+      <client-only>
+        <v-chart :options="lineOptions" :autoresize="true" style="height: 400px; width: 100%" />
+      </client-only>
     </div>
   </section>
 </template>
@@ -92,14 +92,15 @@ export default {
     const today = getToday();
     return {
       pathRegex: '',
-      pathDoesNotMatchRegex: '(^/$|^/(healthz|test-uptimerobot|robots\\.txt|edit(\\/.*)?|ical|.*.php|\\..*|login|logout|edit|.*\\.html|.*\\.xml|images|.*php7|.*(/.*)+|.*\\.php\\d+|wordpress|wp|callback)$)',
+      pathDoesNotMatchRegex: '(^/$|^/test-uptimerobot|\\.|^/dashboard$|^/(healthz|test-uptimerobot|robots\\.txt|edit(\\/.*)?|ical|.*.php|\\..*|login|logout|edit|.*\\.html|.*\\.xml|images|.*php7|.*(/.*)+|.*\\.php\\d+|wordpress|wp|callback)$)',
       tableRows: [],
       pieOptions: {},
       lineOptions: {},
       resultLimit: 10, // 默认最大 10 条
       loading: false,
       selectedRange: '7',
-      today
+      today,
+      usePathPlusQueryString: false // 新增 toggle 状态
     }
   },
   mounted() {
@@ -122,7 +123,7 @@ export default {
       if (this.pathRegex) {
         dimensionFilter = {
           filter: {
-            fieldName: 'pagePath',
+            fieldName: this.usePathPlusQueryString ? 'pagePathPlusQueryString' : 'pagePath',
             stringFilter: {
               value: this.pathRegex,
               matchType: 'PARTIAL_REGEXP',
@@ -134,10 +135,10 @@ export default {
         dimensionFilter = {
           notExpression: {
             filter: {
-              fieldName: 'pagePath',
+              fieldName: this.usePathPlusQueryString ? 'pagePathPlusQueryString' : 'pagePath',
               stringFilter: {
                 value: this.pathDoesNotMatchRegex,
-                matchType: 'FULL_REGEXP'
+                matchType: 'PARTIAL_REGEXP'
               }
             }
           }
@@ -146,7 +147,7 @@ export default {
       // 1. 获取分组数据
       const groupByPathRes = await this.$axios.post('/api/v2/ga4/reports', {
         dateRanges,
-        dimensions: [{ name: 'pagePath' }],
+        dimensions: [{ name: this.usePathPlusQueryString ? 'pagePathPlusQueryString' : 'pagePath' }],
         metrics: [
           { name: 'eventCount' },
           { name: 'activeUsers' }
