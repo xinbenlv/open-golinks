@@ -125,7 +125,8 @@ export default {
             fieldName: 'pagePath',
             stringFilter: {
               value: this.pathRegex,
-              matchType: 'FULL_REGEXP'
+              matchType: 'PARTIAL_REGEXP',
+              caseSensitive: false
             }
           }
         }
