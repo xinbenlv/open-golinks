@@ -14,7 +14,7 @@ export const asyncHandler = fn => (req, res, next) =>
     .resolve(fn(req, res, next))
     .catch(next);
 
-export const myCache = new NodeCache();
+export const myCache = new NodeCache({ stdTTL: 60 });
 
 export const isEditable = function (existingLinkAuthor, reqeustingUser) {
   myLogger.debug(`Author: ${existingLinkAuthor}`, 'user', reqeustingUser);
