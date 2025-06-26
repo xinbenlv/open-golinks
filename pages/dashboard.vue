@@ -1,6 +1,18 @@
 <template>
   <section>
     <div class="input-group mb-3">
+      <select v-model="selectedRange" class="form-control mr-2" @change="onRangeChange">
+        <option value="7">Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+        <option value="90">Last 90 Days</option>
+        <option value="180">Last 180 Days</option>
+      </select>
+      <select v-model="resultLimit" class="form-control mr-2" @change="onLimitChange">
+        <option value="10">显示10条</option>
+        <option value="25">显示25条</option>
+        <option value="50">显示50条</option>
+        <option value="100">显示100条</option>
+      </select>
       <input v-model="pathRegex" class="form-control" type="text" placeholder="RegEx of Path (e.g. ^/2025f-yy)" />
       <div class="input-group-append">
         <button class="btn btn-primary" @click="fetchData">确认</button>
@@ -56,118 +68,127 @@ import 'echarts/lib/chart/line'
 import 'echarts/lib/component/tooltip'
 import 'echarts/lib/component/legend'
 import 'echarts/lib/component/grid'
+import { BFormDaterangepicker } from 'bootstrap-vue'
 
 Vue.component('v-chart', VChart)
+Vue.component('b-form-daterangepicker', BFormDaterangepicker)
 
-function getLastMonthRange() {
+function getToday() {
   const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
   const pad = n => n < 10 ? '0' + n : n;
-  const startDate = `${firstDay.getFullYear()}-${pad(firstDay.getMonth() + 1)}-${pad(firstDay.getDate())}`;
-  const endDate = `${lastDay.getFullYear()}-${pad(lastDay.getMonth() + 1)}-${pad(lastDay.getDate())}`;
-  return [{ startDate, endDate }];
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+function getNDaysAgo(n) {
+  const now = new Date();
+  now.setDate(now.getDate() - n);
+  const pad = x => x < 10 ? '0' + x : x;
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 export default {
   name: 'DashboardPage',
   data() {
+    const today = getToday();
     return {
       pathRegex: '',
-      pathDoesNotMatchRegex: '^/(healthz|test-uptimerobot|robots\\.txt|edit(\\/.*)?|ical|.*\.php|\\..*|login|logout|edit|.*\\.html|.*\.xml|images|.*php7|.*(/.*)+|.*\.php\d+)$',
-      //pathDoesNotMatchRegex: '^/$',
-      
+      pathDoesNotMatchRegex: '(^/$|^/(healthz|test-uptimerobot|robots\\.txt|edit(\\/.*)?|ical|.*.php|\\..*|login|logout|edit|.*\\.html|.*\\.xml|images|.*php7|.*(/.*)+|.*\\.php\\d+|wordpress|wp|callback)$)',
       tableRows: [],
       pieOptions: {},
       lineOptions: {},
-      resultLimit: 50, // 默认最大 50 条
-      loading: false
+      resultLimit: 10, // 默认最大 10 条
+      loading: false,
+      selectedRange: '7',
+      today
     }
   },
   mounted() {
     this.fetchData();
   },
   methods: {
+    onRangeChange() {
+      this.fetchData();
+    },
+    onLimitChange() {
+      this.fetchData();
+    },
     async fetchData() {
-      console.log('[dashboard] fetchData called, pathRegex =', this.pathRegex, 'pathDoesNotMatchRegex =', this.pathDoesNotMatchRegex)
-      this.loading = true;
-      try {
-        const dateRanges = getLastMonthRange();
-        // 构建 dimensionFilter
-        let dimensionFilter = undefined;
-        if (this.pathRegex) {
-          dimensionFilter = {
+      const days = parseInt(this.selectedRange, 10);
+      const endDate = this.today;
+      const startDate = getNDaysAgo(days);
+      const dateRanges = [{ startDate, endDate }];
+      // 构建 dimensionFilter
+      let dimensionFilter = undefined;
+      if (this.pathRegex) {
+        dimensionFilter = {
+          filter: {
+            fieldName: 'pagePath',
+            stringFilter: {
+              value: this.pathRegex,
+              matchType: 'FULL_REGEXP'
+            }
+          }
+        }
+      } else if (this.pathDoesNotMatchRegex) {
+        dimensionFilter = {
+          notExpression: {
             filter: {
               fieldName: 'pagePath',
               stringFilter: {
-                value: this.pathRegex,
+                value: this.pathDoesNotMatchRegex,
                 matchType: 'FULL_REGEXP'
               }
             }
           }
-        } else if (this.pathDoesNotMatchRegex) {
-          dimensionFilter = {
-            notExpression: {
-              filter: {
-                fieldName: 'pagePath',
-                stringFilter: {
-                  value: this.pathDoesNotMatchRegex,
-                  matchType: 'FULL_REGEXP'
-                }
-              }
-            }
-          }
         }
-        // 1. 获取分组数据
-        const groupByPathRes = await this.$axios.post('/api/v2/ga4/reports', {
-          dateRanges,
-          dimensions: [{ name: 'pagePath' }],
-          metrics: [
-            { name: 'eventCount' },
-            { name: 'activeUsers' }
-          ],
-          dimensionFilter,
-          limit: this.resultLimit
-        })
-        console.log('[dashboard] groupByPathRes', groupByPathRes)
-        const rows = groupByPathRes.data.rows || []
-        this.tableRows = rows.map(r => ({
-          path: r.dimensionValues[0].value,
-          eventCount: r.metricValues[0].value,
-          activeUsers: r.metricValues[1].value
-        }))
-        console.log('[dashboard] tableRows', this.tableRows)
-        this.updatePieChart()
-
-        // 2. 获取时间序列数据
-        const timeSeriesRes = await this.$axios.post('/api/v2/ga4/reports', {
-          dateRanges,
-          dimensions: [{ name: 'date' }],
-          metrics: [
-            { name: 'eventCount' },
-            { name: 'activeUsers' }
-          ],
-          dimensionFilter,
-          limit: this.resultLimit
-        })
-        console.log('[dashboard] timeSeriesRes', timeSeriesRes)
-        const timeRows = timeSeriesRes.data.rows || []
-        this.updateLineChart(timeRows)
-      } catch (error) {
-        console.error('[dashboard] fetchData error:', error)
-      } finally {
-        this.loading = false;
       }
+      // 1. 获取分组数据
+      const groupByPathRes = await this.$axios.post('/api/v2/ga4/reports', {
+        dateRanges,
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [
+          { name: 'eventCount' },
+          { name: 'activeUsers' }
+        ],
+        dimensionFilter,
+        limit: this.resultLimit
+      })
+      console.log('[dashboard] groupByPathRes', groupByPathRes)
+      const rows = groupByPathRes.data.rows || []
+      this.tableRows = rows.map(r => ({
+        path: r.dimensionValues[0].value,
+        eventCount: r.metricValues[0].value,
+        activeUsers: r.metricValues[1].value
+      }))
+      console.log('[dashboard] tableRows', this.tableRows)
+      this.updatePieChart()
+
+      // 2. 获取时间序列数据
+      const timeSeriesRes = await this.$axios.post('/api/v2/ga4/reports', {
+        dateRanges,
+        dimensions: [{ name: 'date' }],
+        metrics: [
+          { name: 'eventCount' },
+          { name: 'activeUsers' }
+        ],
+        dimensionFilter,
+        limit: this.resultLimit
+      })
+      console.log('[dashboard] timeSeriesRes', timeSeriesRes)
+      const timeRows = timeSeriesRes.data.rows || []
+      this.updateLineChart(timeRows)
     },
     updatePieChart() {
       this.pieOptions = {
         tooltip: {
           trigger: 'item',
-          formatter: '{b}: {c} ({d}%)'
+          formatter: '{b}: {c} ({d}%)',
+          textStyle: { color: '#fff' }
         },
         legend: {
-          orient: 'vertical',
-          left: 'left'
+          orient: 'horizontal',
+          bottom: 0,
+          textStyle: { color: '#fff' }
         },
         series: [{
           type: 'pie',
@@ -175,13 +196,15 @@ export default {
           avoidLabelOverlap: false,
           label: {
             show: false,
-            position: 'center'
+            position: 'center',
+            color: '#fff'
           },
           emphasis: {
             label: {
               show: true,
               fontSize: '20',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              color: '#fff'
             }
           },
           labelLine: {
@@ -200,10 +223,12 @@ export default {
       const activeUsers = timeRows.map(r => Number(r.metricValues[1].value))
       this.lineOptions = {
         tooltip: {
-          trigger: 'axis'
+          trigger: 'axis',
+          textStyle: { color: '#fff' }
         },
         legend: {
-          data: ['Event Count', 'Active Users']
+          data: ['Event Count', 'Active Users'],
+          textStyle: { color: '#fff' }
         },
         grid: {
           left: '3%',
@@ -214,23 +239,31 @@ export default {
         xAxis: {
           type: 'category',
           boundaryGap: false,
-          data: dates
+          data: dates,
+          axisLabel: { color: '#fff' },
+          axisLine: { lineStyle: { color: '#fff' } }
         },
         yAxis: {
-          type: 'value'
+          type: 'value',
+          axisLabel: { color: '#fff' },
+          axisLine: { lineStyle: { color: '#fff' } }
         },
         series: [
           {
             name: 'Event Count',
             type: 'line',
             data: eventCounts,
-            smooth: true
+            smooth: true,
+            lineStyle: { color: '#fff' },
+            itemStyle: { color: '#fff' }
           },
           {
             name: 'Active Users',
             type: 'line',
             data: activeUsers,
-            smooth: true
+            smooth: true,
+            lineStyle: { color: '#fff' },
+            itemStyle: { color: '#fff' }
           }
         ]
       }
