@@ -16,24 +16,21 @@ apiV2Router.post('/ga4/reports', asyncHandler(async function (req, res) {
     return res.status(500).send('GA4_PROPERTY_ID not configured on server.');
   }
 
-  // 从 req.body 获取前端传来的参数，例如 dateRanges, dimensions, metrics 等
-  const { dateRanges, dimensions, metrics, dimensionFilter } = req.body;
-
   try {
-    const [response] = await analyticsDataClient.runReport({
+    // 透传所有前端参数，只补充 property 字段
+    const reportRequest = {
       property: `properties/${propertyId}`,
-      dateRanges: dateRanges,
-      dimensions: dimensions,
-      metrics: metrics,
-      dimensionFilter: dimensionFilter // 接收前端的过滤条件
-    });
-
-    // 将 response 整理成前端需要的格式并返回
+      ...req.body
+    };
+    myLogger.info('GA4 API request:', JSON.stringify(reportRequest));
+    const [response] = await analyticsDataClient.runReport(reportRequest);
     res.send(response);
-
   } catch (error) {
     myLogger.error('GA4 Data API request failed:', error);
-    res.status(500).send({ error: 'Failed to fetch GA4 data.' });
+    res.status(500).send({ 
+      error: 'Failed to fetch GA4 data.',
+      details: error.message 
+    });
   }
 }));
 
