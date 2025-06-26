@@ -22,11 +22,13 @@ apiV2Router.post('/ga4/reports', asyncHandler(async function (req, res) {
       property: `properties/${propertyId}`,
       ...req.body
     };
-    myLogger.info('GA4 API request:', JSON.stringify(reportRequest));
+    console.log('[DBG][apiv2] Final reportRequest:', JSON.stringify(reportRequest));
+    myLogger.info('[DBG][apiv2] GA4 API request:', JSON.stringify(reportRequest));
     const [response] = await analyticsDataClient.runReport(reportRequest);
+    console.log('[DBG][apiv2] GA4 API response:', JSON.stringify(response));
     res.send(response);
   } catch (error) {
-    myLogger.error('GA4 Data API request failed:', error);
+    myLogger.error('[DBG][apiv2] GA4 Data API request failed:', error);
     res.status(500).send({ 
       error: 'Failed to fetch GA4 data.',
       details: error.message 

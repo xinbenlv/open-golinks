@@ -74,6 +74,9 @@ export default {
   data() {
     return {
       pathRegex: '',
+      pathDoesNotMatchRegex: '^/(healthz|test-uptimerobot|robots\\.txt|edit(\\/.*)?|ical|.*\.php|\\..*|login|logout|edit|.*\\.html|.*\.xml|images|.*php7|.*(/.*)+|.*\.php\d+)$',
+      //pathDoesNotMatchRegex: '^/$',
+      
       tableRows: [],
       pieOptions: {},
       lineOptions: {},
@@ -86,10 +89,35 @@ export default {
   },
   methods: {
     async fetchData() {
-      console.log('[dashboard] fetchData called, pathRegex =', this.pathRegex)
+      console.log('[dashboard] fetchData called, pathRegex =', this.pathRegex, 'pathDoesNotMatchRegex =', this.pathDoesNotMatchRegex)
       this.loading = true;
       try {
         const dateRanges = getLastMonthRange();
+        // 构建 dimensionFilter
+        let dimensionFilter = undefined;
+        if (this.pathRegex) {
+          dimensionFilter = {
+            filter: {
+              fieldName: 'pagePath',
+              stringFilter: {
+                value: this.pathRegex,
+                matchType: 'FULL_REGEXP'
+              }
+            }
+          }
+        } else if (this.pathDoesNotMatchRegex) {
+          dimensionFilter = {
+            notExpression: {
+              filter: {
+                fieldName: 'pagePath',
+                stringFilter: {
+                  value: this.pathDoesNotMatchRegex,
+                  matchType: 'FULL_REGEXP'
+                }
+              }
+            }
+          }
+        }
         // 1. 获取分组数据
         const groupByPathRes = await this.$axios.post('/api/v2/ga4/reports', {
           dateRanges,
@@ -98,15 +126,7 @@ export default {
             { name: 'eventCount' },
             { name: 'activeUsers' }
           ],
-          dimensionFilter: this.pathRegex ? {
-            filter: {
-              fieldName: 'pagePath',
-              stringFilter: {
-                value: this.pathRegex,
-                matchType: 'REGEXP'
-              }
-            }
-          } : undefined,
+          dimensionFilter,
           limit: this.resultLimit
         })
         console.log('[dashboard] groupByPathRes', groupByPathRes)
@@ -127,15 +147,7 @@ export default {
             { name: 'eventCount' },
             { name: 'activeUsers' }
           ],
-          dimensionFilter: this.pathRegex ? {
-            filter: {
-              fieldName: 'pagePath',
-              stringFilter: {
-                value: this.pathRegex,
-                matchType: 'REGEXP'
-              }
-            }
-          } : undefined,
+          dimensionFilter,
           limit: this.resultLimit
         })
         console.log('[dashboard] timeSeriesRes', timeSeriesRes)
