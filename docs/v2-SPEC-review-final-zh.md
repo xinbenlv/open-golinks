@@ -39,18 +39,8 @@
 
 **实施指导:**
 - 在 API 层和数据库层均实现验证。
-- 推荐 regex：`^[a-z][a-z-]{0,48}[a-z]$`（首尾必为字母，中间可含连字符）
+- 推荐 regex：首尾必为字母或者数字，中间可含连字符。例如：`^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$`
 - 在 Spec 中添加"Slug 验证规则"专章。
-
-### 3. IP 地址存储与显示（GDPR 合规）
-
-**问题:** 规范自相矛盾（历史页面声称显示掩码 IP，GDPR 章节声称仅存储 SHA-256 fingerprint）。
-
-**解决方案:**
-- 每次访问 redirect 时，计算 IP 的掩码版本（如 `192.168.1.xxx`）。
-- 在 `visit_logs` 中存储掩码 IP 和 SHA-256 fingerprint。
-- 掩码 IP 无法反推原始，符合 GDPR 匿名化要求。
-- 历史页面直接显示掩码 IP，无隐私顾虑。
 
 ### 4. DELETE Endpoint 和软删除策略
 
@@ -193,7 +183,6 @@
 
 - [ ] **Slug 验证规则:** 添加专章，明确最大长度、字符范围、完整保留字黑名单
 - [ ] **Race Condition 防护:** 在"数据模型"和"API 设计"章节添加原子操作 SQL 示例
-- [ ] **IP 掩码存储:** 更新 schema，添加 `ip_masked` 和 `ip_fingerprint` 字段
 - [ ] **DELETE Endpoint:** 添加 `DELETE /api/v1/links/{slug}` 定义，更新 links 表添加 `deleted_at`
 - [ ] **数据迁移章节:** 添加"v1 到 v2 迁移计划"高层阐述
 - [ ] **公开搜索功能:** 更新 links schema 添加 `isPublic` boolean，UI 添加 checkbox
