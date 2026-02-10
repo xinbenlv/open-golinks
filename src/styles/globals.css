@@ -11,15 +11,16 @@ html {
 
 body {
   font-family: var(--font-body);
-  background-color: var(--color-gray-50);
+  background-color: #ffffff;
   color: var(--color-gray-900);
   line-height: 1.5;
 }
 
 /* Focus visible for keyboard navigation */
 :focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-offset);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 /* Smooth transitions */
@@ -32,8 +33,26 @@ a {
   @apply focus-visible:outline-primary focus-visible:outline-offset-2;
 }
 
-/* Selection color */
+/* Selection color - brand cyan */
 ::selection {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-dark);
 }

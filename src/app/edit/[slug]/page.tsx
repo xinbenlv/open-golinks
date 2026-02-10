@@ -22,7 +22,7 @@ export default async function EditPage({ params }: { params: Promise<{ slug: str
     if (link.ownerId && link.ownerId !== user.id) {
       // Show permission error
       return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+        <div className="min-h-screen bg-white py-12 px-4">
           <div className="max-w-2xl mx-auto">
             <Alert variant="error" className="mb-8">
               <p className="font-semibold">你没有权限编辑这个链接</p>
@@ -47,7 +47,7 @@ export default async function EditPage({ params }: { params: Promise<{ slug: str
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+    <div className="min-h-screen bg-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <EditPageClient
           slug={slug}
