@@ -73,23 +73,11 @@
 
 在开始任务之前，如果任务涉及以往可能踩过坑的领域，**应先查阅 `docs/troubleshooting/` 下的相关文档**，避免重复踩坑。
 
-## 定期 README 检查与维护
+## React 代码规范
 
-在每次 git commit 之前，如果修改了任何文件夹内容，**必须检查该文件夹的 README.md 是否需要更新**：
-- 新增文件 → 在 README.md 中添加该文件说明
-- 删除文件 → 从 README.md 中移除该文件说明
-- 改动代码结构 → 更新 README.md 中的相关描述
-- 创建新的重要子目录 → 在 README.md 中添加子目录说明，或为子目录创建自己的 README.md
-
-**检查清单：**
-- [ ] 修改/新增/删除了文件或文件夹？
-- [ ] 该文件夹的 README.md 是否需要更新？
-- [ ] README.md 长度是否超过 2K tokens？（超过则需要考虑拆分）、是否超过10K tokens？（超过则必须拆分）
-- [ ] 所有链接是否仍然有效？
-- [ ] 新增的文件是否在 README.md 中有清晰说明？
-- [ ] 删除的文件/文件夹是否在 README.md 中被移除？
-
-### 当需要创建或者修改 React 有关代码时：请查阅 `.agents/skills/vercel-react-best-practices/AGENTS.md` 和 `.agents/skills/vercel-composition-patterns/AGENTS.md`
+当需要创建或修改 React 相关代码时，请查阅：
+- [`.agents/skills/vercel-react-best-practices/AGENTS.md`](.agents/skills/vercel-react-best-practices/AGENTS.md)
+- [`.agents/skills/vercel-composition-patterns/AGENTS.md`](.agents/skills/vercel-composition-patterns/AGENTS.md)
 
 ## 参考
 
