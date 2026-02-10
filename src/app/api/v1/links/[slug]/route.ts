@@ -6,17 +6,63 @@ import { getCurrentUser } from '@/lib/auth/server';
 import { AuditService } from '@/lib/services/audit.service';
 
 const auditService = new AuditService();
+/**
+ * GET: Retrieve link details
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Response> {
+  try {
+    const { slug } = await params;
+
+    const link = await linkService.get(slug);
+    if (!link) {
+      return NextResponse.json(
+        errorResponse(ErrorCode.LINK_NOT_FOUND, 'Link not found'),
+        { status: 404 }
+      );
+    }
+
+    if (link.deletedAt) {
+      return NextResponse.json(
+        errorResponse(ErrorCode.LINK_DELETED, 'Link has been deleted'),
+        { status: 410 }
+      );
+    }
+
+    return NextResponse.json(
+      successResponse({
+        slug: link.slug,
+        url: link.url,
+        createdAt: link.createdAt.toISOString(),
+        updatedAt: link.updatedAt.toISOString(),
+        visits: link.visits,
+        isPublic: link.isPublic,
+        metadata: link.metadata,
+        urlHistory: link.urlHistory,
+      })
+    );
+  } catch (error: any) {
+    const statusCode = getHttpStatusCode(error.code) || 500;
+    return NextResponse.json(
+      errorResponse(error.code, error.message),
+      { status: statusCode }
+    );
+  }
+}
+
 
 /**
  * PUT: Update link
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Response> {
   try {
     const user = await getCurrentUser();
-    const slug = params.slug;
+    const { slug } = await params;
     const body = await request.json();
 
     // Get the link before updating to capture old data for audit
@@ -66,11 +112,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Response> {
   try {
     const user = await getCurrentUser();
-    const slug = params.slug;
+    const { slug } = await params;
 
     const deleted = await linkService.delete(
       slug,

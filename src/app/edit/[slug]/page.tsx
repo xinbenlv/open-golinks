@@ -1,48 +1,54 @@
-import React from 'react';
-import { Metadata } from 'next';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { LinkCreationForm } from '@/components/organisms/LinkCreationForm';
 import { Card } from '@/components/atoms/Card';
-import { linkService } from '@/lib/services/link.service';
-import { redirect } from 'next/navigation';
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  return {
-    title: `编辑短链接: ${slug} | Open GoLinks`,
-    description: '编辑短链接或使用此 slug 创建新链接',
-  };
-}
+import type { Link } from '@/db/schema';
 
 /**
  * 编辑页面 - 动态路由
  * 显示链接的编辑表单（如果存在）或创建表单（如果不存在）
  */
-export default async function EditPage({
+export default function EditPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
-  let existingLink = null;
+  const [slug, setSlug] = useState<string>('');
+  const [existingLink, setExistingLink] = useState<Link | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  try {
-    // 尝试获取现有链接
-    const link = await linkService.get(slug);
-    if (link && !link.deletedAt) {
-      existingLink = link;
-    }
-  } catch {
-    // 链接不存在，继续显示创建表单
+  useEffect(() => {
+    (async () => {
+      const { slug: slugValue } = await params;
+      setSlug(slugValue);
+
+      try {
+        // 尝试获取现有链接
+        const response = await fetch(`/api/v1/links/${slugValue}`);
+        if (response.ok) {
+          const data = await response.json();
+          setExistingLink(data.data);
+        }
+      } catch {
+        // 链接不存在，继续显示创建表单
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [params]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center">
+            <p className="text-gray-600">加载中...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
-
-  const handleSuccess = (createdSlug: string) => {
-    // 重定向到仪表板或成功页面
-    redirect(`/dashboard`);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
@@ -73,7 +79,6 @@ export default async function EditPage({
         {/* 表单卡片 */}
         <Card className="shadow-lg">
           <LinkCreationForm
-            onSuccess={handleSuccess}
             isAnonymous={true}
             prefilledSlug={slug}
             existingLink={existingLink}

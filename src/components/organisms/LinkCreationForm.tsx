@@ -43,6 +43,7 @@ export function LinkCreationForm({
   const [success, setSuccess] = useState(false);
   const [generatedSlug, setGeneratedSlug] = useState(initialSlug || prefilledSlug);
   const [slugError, setSlugError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // 确定是编辑模式还是创建模式
   const isEditMode = !!existingLink;
@@ -137,15 +138,73 @@ export function LinkCreationForm({
 
   // 成功状态显示
   if (success && generatedSlug) {
+    const shortUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://golinks.app'}/${generatedSlug}`;
+
+    const handleCopy = async () => {
+      try {
+        await navigator.clipboard.writeText(shortUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        // 复制失败，用户可以手动复制
+      }
+    };
+
     return (
-      <Alert variant="success" title={isEditMode ? "链接更新成功！" : "链接创建成功！"}>
-        <p className="mb-2">
-          {isEditMode ? "链接已更新" : "您的新短链接："}
-        </p>
-        <code className="bg-white bg-opacity-50 px-2 py-1 rounded text-sm">
-          {typeof window !== 'undefined' ? window.location.origin : 'https://golinks.app'}/{generatedSlug}
-        </code>
-      </Alert>
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            {isEditMode ? '链接更新成功！' : '恭喜！短链接创建成功'}
+          </h2>
+          <p className="text-lg text-gray-600 mb-6">
+            {isEditMode ? '链接已更新，现在可以分享啦' : '现在可以去分享啦'}
+          </p>
+
+          {/* 短链接显示区域 */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
+            <p className="text-sm text-gray-600 mb-3">您的短链接</p>
+            <div className="flex items-center gap-2 bg-white rounded-lg p-4 border border-gray-200">
+              <code className="flex-1 text-center font-mono text-lg text-gray-900">
+                {shortUrl}
+              </code>
+              <Button
+                type="button"
+                variant={copied ? 'success' : 'primary'}
+                size="sm"
+                onClick={handleCopy}
+              >
+                {copied ? '✓ 已复制' : '复制'}
+              </Button>
+            </div>
+          </div>
+
+          {/* 操作按钮 */}
+          <div className="flex gap-3 justify-center">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                window.open(shortUrl, '_blank');
+              }}
+            >
+              {isEditMode ? '查看链接' : '测试链接'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                methods.reset();
+                setGeneratedSlug(undefined);
+                setSuccess(false);
+                setCopied(false);
+              }}
+            >
+              创建另一个
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 
