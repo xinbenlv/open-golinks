@@ -1,3 +1,7 @@
+---
+description: "Documentation and README maintenance rules - triggered when modifying file content"
+---
+
 # Documentation Rules
 
 **Trigger**: 修改文件内容时（新增、删除、修改、重构代码）

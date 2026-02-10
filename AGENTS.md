@@ -17,7 +17,7 @@
 
 **Trigger**: 修改文件内容时（新增、删除、修改代码结构）
 
-详见 [`.claude/rules/documentation.rules`](./.claude/rules/documentation.rules)
+详见 [`.claude/rules/documentation.md`](./.claude/rules/documentation.md)
 
 ### 概述
 
@@ -40,7 +40,7 @@
 
 **Trigger**: 创建或处理计划时
 
-详见 [`.claude/rules/planning.rules`](./.claude/rules/planning.rules)
+详见 [`.claude/rules/planning.md`](./.claude/rules/planning.md)
 
 ### 概述
 

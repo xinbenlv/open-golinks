@@ -1,3 +1,7 @@
+---
+description: "Planning management rules - triggered when creating or handling plans"
+---
+
 # Planning Rules
 
 **Trigger**: 创建或处理计划时
