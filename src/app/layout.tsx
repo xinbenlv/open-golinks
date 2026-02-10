@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 import { Geist, Inter } from 'next/font/google';
 import '../styles/globals.css';
+import { initializeApp } from '@/lib/config/startup';
 
-const geist = Geist({ variable: '--font-display' });
-const inter = Inter({ variable: '--font-body' });
+// Initialize app on server startup
+void initializeApp();
+
+const geist = Geist({ variable: '--font-display', subsets: ['latin'] });
+const inter = Inter({ variable: '--font-body', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Open GoLinks v2',

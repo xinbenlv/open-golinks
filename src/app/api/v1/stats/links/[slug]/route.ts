@@ -4,10 +4,11 @@ import { successResponse, errorResponse } from '@/lib/api/responses';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Response> {
   try {
-    const analytics = await analyticsService.getLinkAnalytics(params.slug);
+    const { slug } = await params;
+    const analytics = await analyticsService.getLinkAnalytics(slug);
     return NextResponse.json(successResponse(analytics));
   } catch (error: any) {
     if (error.message.includes('Link not found')) {

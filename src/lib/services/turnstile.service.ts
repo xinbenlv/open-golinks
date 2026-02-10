@@ -16,15 +16,19 @@ export interface TurnstileVerifyResponse {
 export class TurnstileService {
   private siteKey: string;
   private secretKey: string;
+  private bypass: boolean;
   private endpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
   private timeout = 10000; // 10 seconds
 
   constructor() {
     this.siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
     this.secretKey = process.env.TURNSTILE_SECRET_KEY || '';
+    this.bypass = process.env.TURNSTILE_BYPASS === '1';
 
-    if (!this.secretKey) {
-      console.warn('TURNSTILE_SECRET_KEY not configured');
+    if (this.bypass) {
+      console.warn('⚠️ TURNSTILE_BYPASS=1: Turnstile verification is disabled (development only)');
+    } else if (!this.secretKey) {
+      console.warn('⚠️ TURNSTILE_SECRET_KEY not configured');
     }
   }
 
@@ -35,6 +39,16 @@ export class TurnstileService {
     token: string,
     remoteIP?: string
   ): Promise<TurnstileVerifyResponse> {
+    // Bypass mode for development
+    if (this.bypass) {
+      console.info('✓ Turnstile bypass: accepting token');
+      return {
+        success: true,
+        challengeTs: new Date().toISOString(),
+        hostname: 'localhost',
+      };
+    }
+
     // Validate token format
     if (!token || typeof token !== 'string' || token.length < 10) {
       throw createError(
@@ -186,10 +200,17 @@ export class TurnstileService {
   }
 
   /**
-   * Check if Turnstile is configured
+   * Check if Turnstile is configured or bypassed
    */
   isConfigured(): boolean {
-    return !!(this.siteKey && this.secretKey);
+    return this.bypass || !!(this.siteKey && this.secretKey);
+  }
+
+  /**
+   * Check if bypass is enabled
+   */
+  isBypassEnabled(): boolean {
+    return this.bypass;
   }
 }
 

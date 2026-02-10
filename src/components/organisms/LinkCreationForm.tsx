@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputField } from '@/components/molecules/InputField';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/atoms/Badge';
 import { CreateLinkSchema, type CreateLinkInput } from '@/lib/validations/schemas';
 import { generateRandomSlug } from '@/lib/utils/slug-gen';
 import type { Link } from '@/db/schema';
+import confetti from 'canvas-confetti';
 
 export interface LinkCreationFormProps {
   onSuccess?: (slug: string) => void;
@@ -19,6 +20,8 @@ export interface LinkCreationFormProps {
   initialUrl?: string;
   prefilledSlug?: string;
   existingLink?: Link | null;
+  showClaimPrompt?: boolean;
+  onClaim?: () => void;
 }
 
 /**
@@ -37,6 +40,8 @@ export function LinkCreationForm({
   initialUrl,
   prefilledSlug,
   existingLink,
+  showClaimPrompt = false,
+  onClaim,
 }: LinkCreationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,10 +49,47 @@ export function LinkCreationForm({
   const [generatedSlug, setGeneratedSlug] = useState(initialSlug || prefilledSlug);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [isClaimed, setIsClaimed] = useState(false);
 
   // 确定是编辑模式还是创建模式
   const isEditMode = !!existingLink;
   const formSlug = initialSlug || prefilledSlug;
+
+  // 成功时触发烟火效果
+  useEffect(() => {
+    if (!success || !generatedSlug) return;
+
+    const duration = 3000; // 3秒
+    const animationEnd = Date.now() + duration;
+
+    const fireConfetti = () => {
+      if (Date.now() > animationEnd) return;
+
+      // 左侧烟火
+      confetti({
+        particleCount: 40,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.5 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'],
+      });
+
+      // 右侧烟火
+      confetti({
+        particleCount: 40,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.5 },
+        colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'],
+      });
+
+      // 继续动画
+      requestAnimationFrame(fireConfetti);
+    };
+
+    fireConfetti();
+  }, [success, generatedSlug]);
 
   const methods = useForm<CreateLinkInput>({
     resolver: zodResolver(CreateLinkSchema),
@@ -124,11 +166,8 @@ export function LinkCreationForm({
 
       const result = await response.json();
       setSuccess(true);
+      setGeneratedSlug(result.data.slug);
       onSuccess?.(result.data.slug);
-
-      // 重置表单
-      methods.reset();
-      setGeneratedSlug(undefined);
     } catch (err) {
       setError('网络错误，请重试');
     } finally {
@@ -139,6 +178,8 @@ export function LinkCreationForm({
   // 成功状态显示
   if (success && generatedSlug) {
     const shortUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://golinks.app'}/${generatedSlug}`;
+    const qrcodeUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://golinks.app'}/api/v1/links/${generatedSlug}/qrcode`;
+    const qrcodeDownloadUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://golinks.app'}/api/v1/links/${generatedSlug}/qrcode?download=true`;
 
     const handleCopy = async () => {
       try {
@@ -147,6 +188,20 @@ export function LinkCreationForm({
         setTimeout(() => setCopied(false), 2000);
       } catch (err) {
         // 复制失败，用户可以手动复制
+      }
+    };
+
+    const handleDownloadQR = async () => {
+      try {
+        // Trigger PNG download
+        const link = document.createElement('a');
+        link.href = qrcodeDownloadUrl;
+        link.download = `qrcode-${generatedSlug}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error('Failed to download QR code:', err);
       }
     };
 
@@ -179,8 +234,28 @@ export function LinkCreationForm({
             </div>
           </div>
 
+          {/* QR 码显示区域 */}
+          <div className="bg-white rounded-lg p-6 mb-6 border border-gray-200">
+            <p className="text-sm text-gray-600 mb-4">二维码</p>
+            <div className="flex flex-col items-center gap-4">
+              <img
+                src={qrcodeUrl}
+                alt="QR code"
+                className="w-40 h-40 border border-gray-200 rounded-lg"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleDownloadQR}
+              >
+                📥 下载二维码 (PNG)
+              </Button>
+            </div>
+          </div>
+
           {/* 操作按钮 */}
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-3 justify-center flex-wrap">
             <Button
               type="button"
               variant="primary"
@@ -214,6 +289,49 @@ export function LinkCreationForm({
         onSubmit={methods.handleSubmit(onSubmit)}
         className="space-y-6 max-w-2xl"
       >
+        {showClaimPrompt && !isClaimed && (
+          <Alert variant="warning" onClose={() => {}} className="mb-4">
+            <div>
+              <p className="font-semibold">⚠️ 这是一个匿名链接</p>
+              <p className="text-sm mt-1">
+                要修改此链接，请先声明所有权。
+              </p>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                className="mt-3"
+                disabled={claimLoading}
+                isLoading={claimLoading}
+                onClick={async () => {
+                  try {
+                    setClaimLoading(true);
+                    const response = await fetch(
+                      `/api/v1/links/${existingLink!.slug}/claim`,
+                      { method: 'POST' }
+                    );
+                    if (response.ok) {
+                      setIsClaimed(true);
+                      onClaim?.();
+                    } else {
+                      const data = await response.json();
+                      setError(
+                        data.error?.message || '声明所有权失败，请重试'
+                      );
+                    }
+                  } catch (err) {
+                    setError('声明所有权失败，请重试');
+                  } finally {
+                    setClaimLoading(false);
+                  }
+                }}
+              >
+                声明所有权
+              </Button>
+            </div>
+          </Alert>
+        )}
+
         {error && (
           <Alert variant="error" onClose={() => setError(null)}>
             {error}

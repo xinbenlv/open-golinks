@@ -145,7 +145,13 @@ export class LinkService {
       throw createError(ErrorCode.LINK_NOT_FOUND);
     }
 
-    // 2. Check ownership
+    // 2. Check ownership (strict - no anonymous modifications)
+    // Anonymous links must be claimed first
+    if (!current.ownerId) {
+      throw createError(ErrorCode.ANONYMOUS_LINK_MODIFICATION_FORBIDDEN);
+    }
+
+    // Only owner or admin can modify
     if (current.ownerId !== userId && !admin) {
       throw createError(ErrorCode.FORBIDDEN);
     }
@@ -191,6 +197,13 @@ export class LinkService {
       throw createError(ErrorCode.LINK_NOT_FOUND);
     }
 
+    // Check ownership (strict - no anonymous deletions)
+    // Anonymous links must be claimed first
+    if (!current.ownerId) {
+      throw createError(ErrorCode.ANONYMOUS_LINK_MODIFICATION_FORBIDDEN);
+    }
+
+    // Only owner or admin can delete
     if (current.ownerId !== userId && !admin) {
       throw createError(ErrorCode.FORBIDDEN);
     }
@@ -230,6 +243,47 @@ export class LinkService {
       }
       throw createError(ErrorCode.LINK_ALREADY_CLAIMED);
     }
+
+    return result[0];
+  }
+
+  /**
+   * REACTIVATE: Reactivate a soft-deleted link
+   */
+  async reactivate(
+    slug: string,
+    newUrl: string,
+    newMetadata?: any
+  ): Promise<Link> {
+    const current = await this.get(slug);
+
+    if (!current) {
+      throw createError(ErrorCode.LINK_NOT_FOUND);
+    }
+
+    if (!current.deletedAt) {
+      throw createError(ErrorCode.INVALID_INPUT, 400, {
+        message: 'Link is not deleted',
+      });
+    }
+
+    // Validate new URL
+    const urlValidation = validateURL(newUrl);
+    if (!urlValidation.valid) {
+      throw createError(urlValidation.error!);
+    }
+
+    // Reactivate and update URL
+    const result = await db
+      .update(linksTable)
+      .set({
+        url: newUrl,
+        metadata: newMetadata,
+        deletedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(linksTable.slug, slug))
+      .returning();
 
     return result[0];
   }

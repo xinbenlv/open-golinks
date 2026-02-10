@@ -8,11 +8,11 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Response> {
   try {
     const user = await getCurrentUser();
-    const slug = params.slug;
+    const { slug } = await params;
 
     // Get link to check ownership and permissions
     const link = await db.query.linksTable.findFirst({

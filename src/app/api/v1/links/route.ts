@@ -36,7 +36,11 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Turnstile validation for anonymous users
     let turnstileValid = false;
     if (!userId) {
-      if (!turnstileToken) {
+      // Check if Turnstile is bypassed (development)
+      if (turnstileService.isBypassEnabled()) {
+        console.info('✓ Turnstile bypass: accepting anonymous request without token');
+        turnstileValid = true;
+      } else if (!turnstileToken) {
         return NextResponse.json(
           errorResponse(
             ErrorCode.TURNSTILE_REQUIRED,
@@ -44,28 +48,78 @@ export async function POST(request: NextRequest): Promise<Response> {
           ),
           { status: 403 }
         );
-      }
-
-      try {
-        const verified = await turnstileService.verify(turnstileToken, clientIP);
-        if (!verified.success) {
+      } else {
+        try {
+          const verified = await turnstileService.verify(turnstileToken, clientIP);
+          if (!verified.success) {
+            return NextResponse.json(
+              errorResponse(
+                ErrorCode.TURNSTILE_VERIFICATION_FAILED,
+                'Turnstile verification failed'
+              ),
+              { status: 403 }
+            );
+          }
+          turnstileValid = true;
+        } catch (error: any) {
           return NextResponse.json(
             errorResponse(
               ErrorCode.TURNSTILE_VERIFICATION_FAILED,
-              'Turnstile verification failed'
+              'Turnstile service error'
             ),
-            { status: 403 }
+            { status: error.statusCode || 503 }
           );
         }
-        turnstileValid = true;
-      } catch (error: any) {
-        return NextResponse.json(
-          errorResponse(
-            ErrorCode.TURNSTILE_VERIFICATION_FAILED,
-            'Turnstile service error'
-          ),
-          { status: error.statusCode || 503 }
-        );
+      }
+    }
+
+    // Check if slug already exists (including soft-deleted links)
+    if (slug) {
+      const existingLink = await linkService.get(slug);
+
+      if (existingLink) {
+        // If link is soft-deleted, check if user can reactivate
+        if (existingLink.deletedAt) {
+          // Only original owner can reuse deleted slug
+          if (existingLink.ownerId !== userId) {
+            return NextResponse.json(
+              errorResponse(
+                ErrorCode.DELETED_SLUG_FORBIDDEN,
+                `The slug "${slug}" was previously used and deleted. Only the original owner can reuse it.`
+              ),
+              { status: 403 }
+            );
+          }
+
+          // Reactivate the link
+          const reactivated = await linkService.reactivate(slug, url, metadata);
+
+          // Audit log
+          await auditService.logCreate(
+            reactivated.slug,
+            userId,
+            clientIP
+          );
+
+          return NextResponse.json(
+            successResponse({
+              slug: reactivated.slug,
+              url: reactivated.url,
+              createdAt: reactivated.createdAt.toISOString(),
+              message: 'Link reactivated successfully',
+            }),
+            { status: 200 }
+          );
+        } else {
+          // Slug exists and is not deleted
+          return NextResponse.json(
+            errorResponse(
+              ErrorCode.SLUG_ALREADY_EXISTS,
+              `Slug "${slug}" is already in use`
+            ),
+            { status: 409 }
+          );
+        }
       }
     }
 

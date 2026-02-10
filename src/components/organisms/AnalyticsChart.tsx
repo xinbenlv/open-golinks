@@ -14,7 +14,6 @@ import {
 } from 'recharts';
 import { Card } from '@/components/atoms/Card';
 import { Button } from '@/components/atoms/Button';
-import { Badge } from '@/components/atoms/Badge';
 import { Spinner } from '@/components/atoms/Spinner';
 import {
   formatDateShort,
@@ -79,6 +78,7 @@ function CustomTooltip({
   if (!active || !payload || payload.length === 0) return null;
 
   const data = payload[0];
+  if (!data) return null;
 
   return (
     <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">

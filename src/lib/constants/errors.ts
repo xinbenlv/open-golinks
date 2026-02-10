@@ -25,6 +25,8 @@ export enum ErrorCode {
   // 认证和授权错误
   UNAUTHORIZED = 'UNAUTHORIZED',
   FORBIDDEN = 'FORBIDDEN',
+  ANONYMOUS_LINK_MODIFICATION_FORBIDDEN = 'ANONYMOUS_LINK_MODIFICATION_FORBIDDEN',
+  DELETED_SLUG_FORBIDDEN = 'DELETED_SLUG_FORBIDDEN',
   INVALID_TOKEN = 'INVALID_TOKEN',
   TOKEN_EXPIRED = 'TOKEN_EXPIRED',
 
@@ -68,6 +70,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
 
   [ErrorCode.UNAUTHORIZED]: '未认证。请登录。',
   [ErrorCode.FORBIDDEN]: '无权访问此资源。',
+  [ErrorCode.ANONYMOUS_LINK_MODIFICATION_FORBIDDEN]: '匿名链接需要先声明所有权才能修改。请使用 POST /api/v1/links/{slug}/claim 声明所有权。',
+  [ErrorCode.DELETED_SLUG_FORBIDDEN]: '此 slug 之前被使用并删除。只有原所有者可以重新使用。',
   [ErrorCode.INVALID_TOKEN]: '无效的令牌。',
   [ErrorCode.TOKEN_EXPIRED]: '令牌已过期。',
 
@@ -110,6 +114,8 @@ export const HTTP_STATUS_CODES: Record<ErrorCode, number> = {
 
   [ErrorCode.UNAUTHORIZED]: 401,
   [ErrorCode.FORBIDDEN]: 403,
+  [ErrorCode.ANONYMOUS_LINK_MODIFICATION_FORBIDDEN]: 403,
+  [ErrorCode.DELETED_SLUG_FORBIDDEN]: 403,
   [ErrorCode.INVALID_TOKEN]: 401,
   [ErrorCode.TOKEN_EXPIRED]: 401,
 

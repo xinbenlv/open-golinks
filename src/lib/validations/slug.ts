@@ -66,7 +66,7 @@ export function validateSlug(slug: string): {
   // 验证格式
   const formatCheck = validateSlugFormat(slug);
   if (!formatCheck.valid) {
-    return { valid: false, error: formatCheck.error };
+    return { valid: false, error: formatCheck.error, normalized: undefined };
   }
 
   const normalizedSlug = normalizeSlug(slug);
@@ -74,7 +74,7 @@ export function validateSlug(slug: string): {
   // 检查保留
   const reservedCheck = checkReservedSlug(normalizedSlug);
   if (reservedCheck.reserved) {
-    return { valid: false, error: reservedCheck.error };
+    return { valid: false, error: reservedCheck.error, normalized: undefined };
   }
 
   return { valid: true, normalized: normalizedSlug };

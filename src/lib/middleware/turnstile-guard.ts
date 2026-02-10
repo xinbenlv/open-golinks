@@ -31,6 +31,17 @@ export function withTurnstileGuard(
 
       const token = body.turnstileToken;
 
+      // Check if Turnstile is bypassed (development)
+      if (turnstileService.isBypassEnabled()) {
+        console.info('✓ Turnstile bypass enabled - accepting request without token');
+        // Create new request with cloned body for handler
+        const newRequest = new NextRequest(request, {
+          body: JSON.stringify(body),
+        });
+        // Call handler without requiring token
+        return handler(newRequest, context, true);
+      }
+
       if (!token) {
         return NextResponse.json(
           errorResponse(

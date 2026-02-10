@@ -8,7 +8,7 @@ import { ipMaskingService } from '@/lib/services/ip-masking.service';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Response> {
   try {
     const user = await getCurrentUser();
@@ -19,7 +19,7 @@ export async function POST(
       );
     }
 
-    const slug = params.slug;
+    const { slug } = await params;
     const clientIP = ipMaskingService.extractClientIP(request.headers);
 
     // Claim link (atomic operation)

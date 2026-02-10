@@ -62,7 +62,7 @@ export function validateURL(url: string): {
   // 协议验证
   const protocolCheck = validateProtocol(url);
   if (!protocolCheck.valid) {
-    return { valid: false, error: protocolCheck.error };
+    return { valid: false, error: protocolCheck.error || undefined };
   }
 
   // 尝试解析 URL

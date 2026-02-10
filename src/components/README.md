@@ -220,7 +220,7 @@ variant: 'success' | 'error' | 'warning' | 'info'
 | **InputField** | Label + Input | 表单字段 |
 | **TextAreaField** | Label + TextArea | 多行文本字段 |
 
-### Phase 3 Track C (新增)
+### Phase 3 Track C (已实现)
 
 | 组件 | 描述 | 关键特性 |
 |------|------|--------|
@@ -228,6 +228,12 @@ variant: 'success' | 'error' | 'warning' | 'info'
 | **Pagination** | 分页导航 | 智能页码、省略号、前后页 |
 | **FilterBar** | 综合过滤栏 | 搜索+正则过滤+视图切换 |
 | **CopyButton** | 复制按钮 | 一键复制，自动复位反馈 |
+
+### Phase 3 Track D (新增 - 分析组件)
+
+| 组件 | 描述 | 关键特性 |
+|------|------|--------|
+| **StatCard** | 统计卡片 | 值、趋势指标、图标、变体、加载状态 |
 
 ### SearchInput 示例
 
@@ -282,7 +288,7 @@ import { CopyButton } from '@/components/molecules';
 
 ## Organisms (有机体组件)
 
-### Phase 3 Track C (新增)
+### Phase 3 Track C (已实现)
 
 | 组件 | 描述 | 集成 |
 |------|------|------|
@@ -308,6 +314,41 @@ import { LinksDashboardTable } from '@/components/organisms';
 - ✅ 复制链接到剪贴板
 - ✅ 编辑/删除单个链接
 - ✅ 完全响应式设计
+
+### Phase 3 Track D (新增 - 分析组件)
+
+| 组件 | 描述 | 集成 |
+|------|------|------|
+| **AnalyticsChart** | 访问量时序图 | Recharts、日期范围、CSV导出、参考线 |
+
+### AnalyticsChart 示例
+
+```tsx
+import { AnalyticsChart } from '@/components/organisms';
+
+const data = [
+  { date: '2024-01-01', count: 42 },
+  { date: '2024-01-02', count: 58 },
+];
+
+<AnalyticsChart
+  title="Daily Visits"
+  data={data}
+  exportable
+  height={400}
+/>
+```
+
+**功能：**
+- ✅ 时序图表 (Recharts)
+- ✅ 日期范围选择 (7/30/90 天)
+- ✅ 自动填充缺失日期
+- ✅ 平均值和峰值参考线
+- ✅ 自定义 Tooltip
+- ✅ CSV 数据导出
+- ✅ 响应式设计
+- ✅ 加载状态和错误处理
+- ✅ 完整无障碍支持 (WCAG)
 
 ## Hooks (自定义钩子)
 
@@ -442,10 +483,46 @@ test('表单字段验证', () => {
 - **格式化**: `npm run format` - Prettier 格式
 - **类型检查**: `npm run type-check` - TypeScript 验证
 
+## 工具函数 (Utility Functions)
+
+### Phase 3 Track D (新增 - 分析工具)
+
+`src/lib/utils/analytics.ts` 提供数据格式化和处理函数：
+
+| 函数 | 描述 | 用途 |
+|------|------|------|
+| `formatVisits(count)` | 访问量简化显示 | 1000 → "1K", 1500 → "1.5K" |
+| `calculateTrend(current, previous)` | 计算趋势百分比 | 比较两个时期数据 |
+| `formatDateShort(date)` | 缩短日期格式 | "2024-01-15" → "Jan 15" |
+| `formatDateLong(date)` | 完整日期格式 | "2024-01-15" → "January 15, 2024" |
+| `getDateRange(days)` | 获取日期数组 | 生成指定天数的日期列表 |
+| `fillMissingDates(data, days)` | 填充缺失日期 | 补全稀疏数据，缺失日期为0 |
+| `calculateStats(data)` | 计算统计数据 | 总计、平均、最大、最小值 |
+| `exportToCSV(data, filename)` | 导出 CSV | 下载分析数据为 CSV 文件 |
+| `groupByInterval(data, days)` | 按时间间隔分组 | 周级或月级聚合数据 |
+
+### 使用示例
+
+```typescript
+import { formatVisits, calculateTrend, fillMissingDates } from '@/lib/utils/analytics';
+
+// 访问量格式化
+const formatted = formatVisits(1250); // "1.2K"
+
+// 趋势计算
+const trend = calculateTrend(100, 80); // +25
+
+// 填充缺失日期
+const filled = fillMissingDates(
+  [{ date: '2024-01-01', count: 10 }],
+  7
+); // 7天完整数据，缺失日期为0
+```
+
 ## Phase 3 进度
 
 ### Track A: 表单组件 ✅ 完成
 ### Track B: 高级原子和分子 ✅ 完成
 ### Track C: 仪表板组件 ✅ 完成
-### Track D: 页面集成 ✅ 完成
+### Track D: 分析组件 ✅ 完成 (新增)
 ### Track E: 测试 & Storybook ✅ 完成

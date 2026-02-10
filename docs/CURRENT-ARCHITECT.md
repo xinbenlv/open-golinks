@@ -23,8 +23,14 @@ Frontend (Next.js + React)
 │  │  ├─ Card, Badge, Alert
 │  │  ├─ Icon, Avatar, Spinner
 │  │
-│  ├─ Molecules (Planning)
-│  └─ Organisms (Planning)
+│  ├─ Molecules (Phase 3B/D - Track B/D)
+│  │  ├─ InputField - 表单字段
+│  │  ├─ TextAreaField - 文本区域字段
+│  │  └─ StatCard - 统计卡片 (Phase 3D Track D)
+│  │
+│  └─ Organisms (Phase 3B/D - Track B/D)
+│     ├─ LinkCreationForm - 链接创建表单
+│     └─ AnalyticsChart - 分析图表 (Phase 3D Track D)
 │
 ├─ Design System (src/styles/)
 │  ├─ variables.css - CSS 变量
@@ -71,8 +77,8 @@ graph TB
 
         subgraph "Components"
             Atoms["Atoms<br/>(9 components)<br/>Button, Input, Card..."]
-            Molecules["Molecules<br/>(Planning)<br/>FormField, Modal..."]
-            Organisms["Organisms<br/>(Planning)<br/>LinkForm, Header..."]
+            Molecules["Molecules<br/>(Phase 3B/D)<br/>InputField, TextAreaField<br/>StatCard"]
+            Organisms["Organisms<br/>(Phase 3B/D)<br/>LinkCreationForm<br/>AnalyticsChart"]
             Atoms --> Molecules
             Molecules --> Organisms
         end
@@ -157,8 +163,20 @@ src/
 │   │   ├── Avatar.tsx
 │   │   ├── Spinner.tsx
 │   │   └── index.ts
-│   ├── molecules/         # (Planning for Phase 3B)
-│   ├── organisms/         # (Planning for Phase 3C)
+│   ├── molecules/         # (Phase 3B/D - Track B/D)
+│   │   ├── InputField.tsx
+│   │   ├── TextAreaField.tsx
+│   │   ├── StatCard.tsx (Phase 3D Track D)
+│   │   ├── SearchInput.tsx
+│   │   ├── Pagination.tsx
+│   │   ├── FilterBar.tsx
+│   │   ├── CopyButton.tsx
+│   │   └── index.ts
+│   ├── organisms/         # (Phase 3B/D - Track B/D)
+│   │   ├── LinkCreationForm.tsx
+│   │   ├── LinksDashboardTable.tsx
+│   │   ├── AnalyticsChart.tsx (Phase 3D Track D)
+│   │   └── index.ts
 │   └── index.ts
 │
 ├── styles/                # Design system
@@ -167,7 +185,21 @@ src/
 │   └── README.md
 │
 ├── lib/                   # Utilities
-│   └── cn.ts             # classname merger (clsx wrapper)
+│   ├── cn.ts             # classname merger (clsx wrapper)
+│   ├── utils/
+│   │   ├── analytics.ts  # (Phase 3D Track D) 分析数据格式化工具
+│   │   ├── hash.ts
+│   │   ├── ip-mask.ts
+│   │   └── slug-gen.ts
+│   ├── services/
+│   │   ├── analytics.service.ts
+│   │   ├── link.service.ts
+│   │   ├── audit.service.ts
+│   │   └── turnstile.service.ts
+│   ├── auth/
+│   ├── api/
+│   ├── middleware/
+│   └── hooks/
 │
 ├── db/                    # Database
 │   └── (Drizzle schema)
@@ -227,6 +259,98 @@ src/
 - 完整的 TypeScript 类型
 - 所有组件都标记 'use client' directive
 - 遵循 Web Accessibility (WCAG 2.1) 标准
+
+#### Molecule Components (`src/components/molecules/`) - Phase 3B Track B
+
+2 个表单字段分子组件，集成 react-hook-form：
+
+| 组件 | 文件 | 行数 | 功能 |
+|------|------|------|------|
+| InputField | InputField.tsx | 50 | 表单输入字段 - 集成标签、输入框、错误和辅助文本 |
+| TextAreaField | TextAreaField.tsx | 55 | 文本区域字段 - 集成标签、文本框、错误和辅助文本 |
+
+**特性**：
+- 与 react-hook-form 深度集成
+- 自动表单验证和错误处理
+- 辅助文本和错误消息显示
+- 响应式设计和可访问性
+
+#### Organism Components (`src/components/organisms/`) - Phase 3B Track B
+
+完整的链接创建表单，包含：
+
+| 组件 | 文件 | 行数 | 功能 |
+|------|------|------|------|
+| LinkCreationForm | LinkCreationForm.tsx | 180 | 完整链接创建表单 - Slug 输入、URL、元数据、错误处理 |
+
+**功能**：
+- 自定义 slug 输入与自动生成
+- URL 验证
+- 元数据支持（标题、描述、警告开关）
+- React Hook Form + Zod 验证
+- API 集成和错误处理
+- 成功状态显示
+- Turnstile 机器人验证准备
+
+#### Pages (页面集成)
+
+**公开页面** (`src/app/(public)/`):
+- `create/page.tsx` - 链接创建页面，集成 LinkCreationForm
+
+**受保护页面** (`src/app/(protected)/`):
+- `dashboard/page.tsx` - 用户仪表板，集成 LinksDashboardTable
+- `dashboard/[slug]/analytics/page.tsx` (Phase 3D Track D) - 链接分析详情页
+  - 显示特定链接的分析数据
+  - 集成 AnalyticsChart 组件 (`src/app/(protected)/dashboard/[slug]/analytics/page.tsx:1-250`)
+  - 集成 StatCard 组件用于总体统计
+  - 支持日期范围选择和 CSV 导出
+  - 实时计算趋势数据和统计指标
+  - 仅允许链接所有者访问
+
+- `stats/page.tsx` (Phase 3D Track D) - 用户统计聚合页面
+  - 显示用户所有链接的聚合统计
+  - 支持 RegEx 过滤
+  - 表格/网格视图切换
+  - 顶部链接排行
+  - CSV 导出功能
+  - 分页支持（20 条/页）
+
+#### Molecule Components - Analytics (`src/components/molecules/`) - Phase 3D Track D
+
+分析统计分子组件：
+
+| 组件 | 文件 | 行数 | 功能 |
+|------|------|------|------|
+| StatCard | StatCard.tsx | 120 | 统计卡片 - 值、趋势、图标、变体、加载状态 |
+
+**特性** (`src/components/molecules/StatCard.tsx:1-120`):
+- 值、标签、趋势指标显示
+- 5 种色彩变体 (primary, success, warning, error, default)
+- 可选图标和副文本
+- 加载状态骨架屏
+- 趋势百分比计算和显示
+- 完整 WCAG 无障碍支持 (sr-only 文本)
+- 响应式设计和 hover 动画
+
+#### Organism Components - Analytics (`src/components/organisms/`) - Phase 3D Track D
+
+高级分析生物组件：
+
+| 组件 | 文件 | 行数 | 功能 |
+|------|------|------|------|
+| AnalyticsChart | AnalyticsChart.tsx | 250 | 访问量时序图表 - Recharts、日期范围、CSV 导出 |
+
+**特性** (`src/components/organisms/AnalyticsChart.tsx:1-250`):
+- Recharts LineChart 实现
+- 日期范围选择 (7/30/90 天)
+- 自动填充缺失日期数据
+- 平均值和峰值参考线
+- 自定义 Tooltip 组件
+- CSV 数据导出功能
+- 统计摘要 (平均值、峰值、总计)
+- 响应式容器自适应
+- 完整 WCAG 无障碍支持 (ARIA labels, 数据表格视图)
+- 加载和错误状态处理
 
 ### 2. Styling Configuration
 
@@ -358,6 +482,7 @@ audit {
 - `PUT /api/v1/links/:slug` - 更新链接
 - `DELETE /api/v1/links/:slug` - 删除链接
 - `GET /api/v1/links/:slug/redirect` - 重定向
+- `GET /api/v1/links/:slug/qrcode` - 生成 QR 码（PNG 默认，支持 svg/png/jpg/webp 格式）
 
 #### Audit API
 - `GET /api/v1/audit/:slug` - 获取链接的点击记录
@@ -420,23 +545,42 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 - [x] 9 个原子组件
 - [x] 设计系统文档
 
-### Phase 3 Track B (Planning)
+### Phase 3 Track B (完成)
 分子组件 (Molecules):
-- FormField (Label + Input + Error)
-- FormGroup (多个 FormFields)
-- Modal (模态框)
-- Dropdown (下拉菜单)
-- Tabs (标签页)
-- Toast (通知)
+- [x] InputField (Label + Input + Error)
+- [x] TextAreaField (Label + TextArea)
 
-### Phase 3 Track C (Planning)
 生物组件 (Organisms):
-- LinkForm (创建/编辑链接)
-- LinkCard (链接卡片)
-- LinkTable (链接列表)
-- Header (页面头部)
-- Sidebar (侧边栏)
-- LinkStatistics (链接统计)
+- [x] LinkCreationForm (完整链接创建表单)
+
+### Phase 3 Track C (完成)
+分子和生物组件扩展:
+- [x] SearchInput (防抖搜索)
+- [x] Pagination (分页导航)
+- [x] FilterBar (综合过滤栏)
+- [x] CopyButton (复制按钮)
+- [x] LinksDashboardTable (链接仪表板)
+
+### Phase 3 Track D (完成) - 分析组件
+分析分子组件:
+- [x] StatCard (统计卡片 - 值、趋势、图标、变体)
+
+分析生物组件:
+- [x] AnalyticsChart (访问量时序图 - Recharts、日期范围、CSV导出)
+
+分析页面:
+- [x] `/dashboard/[slug]/analytics` (链接分析页面)
+- [x] `/stats` (用户统计聚合页面)
+
+分析工具函数 (`src/lib/utils/analytics.ts`):
+- [x] formatVisits - 访问量简化显示
+- [x] calculateTrend - 趋势计算
+- [x] formatDateShort/Long - 日期格式化
+- [x] getDateRange - 日期范围生成
+- [x] fillMissingDates - 填充缺失日期
+- [x] calculateStats - 统计数据计算
+- [x] exportToCSV - CSV 导出
+- [x] groupByInterval - 时间间隔分组
 
 ## Performance Considerations
 
