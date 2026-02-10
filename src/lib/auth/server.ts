@@ -1,22 +1,31 @@
 import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 /**
  * 创建 Supabase 服务器客户端
  * 用于后端 API 路由和服务器组件
  */
-export function getSupabaseServerClient() {
+export async function getSupabaseServerClient() {
+  const cookieStore = await cookies();
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          // Next.js 服务器端 cookies 获取实现
-          return [];
+          return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          // Next.js 服务器端 cookies 设置实现
-          return cookiesToSet;
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
         },
       },
     }
@@ -27,7 +36,7 @@ export function getSupabaseServerClient() {
  * 获取当前认证用户（服务器端）
  */
 export async function getCurrentUser() {
-  const supabase = getSupabaseServerClient();
+  const supabase = await getSupabaseServerClient();
   try {
     const { data } = await supabase.auth.getUser();
     return data.user ?? null;

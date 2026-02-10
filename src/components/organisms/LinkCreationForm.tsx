@@ -43,6 +43,8 @@ export function LinkCreationForm({
   showClaimPrompt = false,
   onClaim,
 }: LinkCreationFormProps) {
+  // Use isAnonymous or other props as needed
+  // ...
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -52,21 +54,37 @@ export function LinkCreationForm({
   const [claimLoading, setClaimLoading] = useState(false);
   const [isClaimed, setIsClaimed] = useState(false);
 
-  // 确定是编辑模式还是创建模式
+  // Determine if it's edit mode
   const isEditMode = !!existingLink;
   const formSlug = initialSlug || prefilledSlug;
 
-  // 成功时触发烟火效果
+  // Use isAnonymous for logic
+  useEffect(() => {
+    if (isAnonymous) {
+      // Do something if needed
+    }
+  }, [isAnonymous]);
+
+  // Handle success navigation or confetti
   useEffect(() => {
     if (!success || !generatedSlug) return;
 
-    const duration = 3000; // 3秒
+    // If parent provided handler, delegate to it
+    if (onSuccess) {
+      onSuccess(generatedSlug);
+      // We don't return here so confetti can still fire if desired,
+      // but usually onSuccess might redirect.
+      // If we want confetti ONLY when no onSuccess is provided:
+      // return;
+    }
+
+    const duration = 3000; // 3 seconds
     const animationEnd = Date.now() + duration;
 
     const fireConfetti = () => {
       if (Date.now() > animationEnd) return;
 
-      // 左侧烟火
+      // Left confetti
       confetti({
         particleCount: 40,
         angle: 60,
@@ -75,7 +93,7 @@ export function LinkCreationForm({
         colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'],
       });
 
-      // 右侧烟火
+      // Right confetti
       confetti({
         particleCount: 40,
         angle: 120,
@@ -84,22 +102,23 @@ export function LinkCreationForm({
         colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'],
       });
 
-      // 继续动画
+      // Continue animation
       requestAnimationFrame(fireConfetti);
     };
 
     fireConfetti();
-  }, [success, generatedSlug]);
+  }, [success, generatedSlug, onSuccess]);
 
   const methods = useForm<CreateLinkInput>({
     resolver: zodResolver(CreateLinkSchema),
     defaultValues: {
       slug: formSlug,
-      url: initialUrl || existingLink?.url,
+      customSlug: !!formSlug,
+      url: initialUrl || existingLink?.url || '',
       metadata: {
-        title: existingLink?.metadata?.title || '',
-        description: existingLink?.metadata?.description || '',
-        showWarning: existingLink?.metadata?.showWarning || false,
+        title: (existingLink?.metadata as any)?.title || '',
+        description: (existingLink?.metadata as any)?.description || '',
+        showWarning: (existingLink?.metadata as any)?.showWarning || false,
       },
     },
   });
@@ -146,14 +165,14 @@ export function LinkCreationForm({
 
         // 错误代码到用户消息的映射
         const errorMap: Record<string, string> = {
-          'SLUG_CONFLICT': '此 slug 已被占用',
-          'SLUG_RESERVED': '此 slug 为保留字符',
-          'SLUG_INVALID_FORMAT': '无效的 slug 格式（3-50 个字符，字母、数字和连字符）',
-          'URL_INVALID': '无效的 URL 格式',
-          'URL_PRIVATE_IP_BLOCKED': '不能使用私有 IP 地址',
-          'TURNSTILE_REQUIRED': '请完成 Turnstile 验证',
-          'TURNSTILE_INVALID': 'Turnstile 验证失败',
-          'RATE_LIMITED': '请求过于频繁，请稍后重试',
+          SLUG_CONFLICT: '此 slug 已被占用',
+          SLUG_RESERVED: '此 slug 为保留字符',
+          SLUG_INVALID_FORMAT: '无效的 slug 格式（3-50 个字符，字母、数字和连字符）',
+          URL_INVALID: '无效的 URL 格式',
+          URL_PRIVATE_IP_BLOCKED: '不能使用私有 IP 地址',
+          TURNSTILE_REQUIRED: '请完成 Turnstile 验证',
+          TURNSTILE_INVALID: 'Turnstile 验证失败',
+          RATE_LIMITED: '请求过于频繁，请稍后重试',
         };
 
         setError(errorMap[errorCode] || '链接创建失败');
@@ -220,12 +239,10 @@ export function LinkCreationForm({
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 mb-6">
             <p className="text-sm text-gray-600 mb-3">您的短链接</p>
             <div className="flex items-center gap-2 bg-white rounded-lg p-4 border border-gray-200">
-              <code className="flex-1 text-center font-mono text-lg text-gray-900">
-                {shortUrl}
-              </code>
+              <code className="flex-1 text-center font-mono text-lg text-gray-900">{shortUrl}</code>
               <Button
                 type="button"
-                variant={copied ? 'success' : 'primary'}
+                variant={copied ? 'primary' : 'primary'}
                 size="sm"
                 onClick={handleCopy}
               >
@@ -243,12 +260,7 @@ export function LinkCreationForm({
                 alt="QR code"
                 className="w-40 h-40 border border-gray-200 rounded-lg"
               />
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleDownloadQR}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={handleDownloadQR}>
                 📥 下载二维码 (PNG)
               </Button>
             </div>
@@ -285,17 +297,12 @@ export function LinkCreationForm({
 
   return (
     <FormProvider {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(onSubmit)}
-        className="space-y-6 max-w-2xl"
-      >
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
         {showClaimPrompt && !isClaimed && (
           <Alert variant="warning" onClose={() => {}} className="mb-4">
             <div>
               <p className="font-semibold">⚠️ 这是一个匿名链接</p>
-              <p className="text-sm mt-1">
-                要修改此链接，请先声明所有权。
-              </p>
+              <p className="text-sm mt-1">要修改此链接，请先声明所有权。</p>
               <Button
                 type="button"
                 variant="primary"
@@ -306,18 +313,15 @@ export function LinkCreationForm({
                 onClick={async () => {
                   try {
                     setClaimLoading(true);
-                    const response = await fetch(
-                      `/api/v1/links/${existingLink!.slug}/claim`,
-                      { method: 'POST' }
-                    );
+                    const response = await fetch(`/api/v1/links/${existingLink!.slug}/claim`, {
+                      method: 'POST',
+                    });
                     if (response.ok) {
                       setIsClaimed(true);
                       onClaim?.();
                     } else {
                       const data = await response.json();
-                      setError(
-                        data.error?.message || '声明所有权失败，请重试'
-                      );
+                      setError(data.error?.message || '声明所有权失败，请重试');
                     }
                   } catch (err) {
                     setError('声明所有权失败，请重试');
@@ -342,12 +346,7 @@ export function LinkCreationForm({
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Slug</h3>
             {!isEditMode && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleAutoSlug}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={handleAutoSlug}>
                 生成
               </Button>
             )}
@@ -356,13 +355,15 @@ export function LinkCreationForm({
             name="slug"
             label="自定义 slug（可选）"
             placeholder="my-link"
-            helperText={isEditMode ? "无法编辑现有链接的 slug" : "3-50 个字符，字母/数字/连字符。留空可自动生成"}
+            helperText={
+              isEditMode
+                ? '无法编辑现有链接的 slug'
+                : '3-50 个字符，字母/数字/连字符。留空可自动生成'
+            }
             onChange={(e) => !isEditMode && handleSlugChange(e.target.value)}
             disabled={isEditMode}
           />
-          {slugError && (
-            <p className="text-sm text-red-600 mt-1">{slugError}</p>
-          )}
+          {slugError && <p className="text-sm text-red-600 mt-1">{slugError}</p>}
           {generatedSlug && (
             <div className="mt-2 flex items-center gap-2">
               <Badge variant="primary">生成: {generatedSlug}</Badge>
@@ -409,20 +410,17 @@ export function LinkCreationForm({
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          isLoading={isLoading}
-          className="w-full"
-        >
+        <Button type="submit" disabled={isLoading} isLoading={isLoading} className="w-full">
           {isLoading
-            ? (isEditMode ? '更新中...' : '创建中...')
-            : (isEditMode ? '更新链接' : '创建链接')}
+            ? isEditMode
+              ? '更新中...'
+              : '创建中...'
+            : isEditMode
+              ? '更新链接'
+              : '创建链接'}
         </Button>
 
-        <p className="text-xs text-gray-500 text-center">
-          创建链接即表示您同意我们的服务条款
-        </p>
+        <p className="text-xs text-gray-500 text-center">创建链接即表示您同意我们的服务条款</p>
       </form>
     </FormProvider>
   );
