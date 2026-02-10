@@ -17,7 +17,10 @@
 
 **Trigger**: 修改文件内容时（新增、删除、修改代码结构）
 
-详见 [`.claude/rules/documentation.md`](./.claude/rules/documentation.md)
+详细规则分别维护在两个文件中：
+
+- [`.claude/rules/write-readme.md`](./.claude/rules/write-readme.md) - README.md 维护规范
+- [`.claude/rules/current-architect.md`](./.claude/rules/current-architect.md) - CURRENT-ARCHITECT.md 维护规范
 
 ### 概述
 
