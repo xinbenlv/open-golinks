@@ -76,31 +76,16 @@ export default function LoginPage() {
               },
             }}
             providers={['google']}
+            magicLink={true}
+            showLinks={false}
+            view="magic_link"
             redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`}
           />
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-center text-xs text-gray-600 mb-3">支持的登录方式：</p>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-center">
-                <span className="mr-2">📧</span>
-                <span>Magic Link（发送登录链接到邮箱）</span>
-              </li>
-              <li className="flex items-center">
-                <span className="mr-2">🔑</span>
-                <span>邮箱 + 密码登录</span>
-              </li>
-              <li className="flex items-center">
-                <span className="mr-2">🌐</span>
-                <span>Google 账号一键登录</span>
-              </li>
-            </ul>
+          <div className="mt-6">
+            <p className="text-center text-xs text-gray-500">登录即表示同意我们的服务条款</p>
           </div>
         </div>
-
-        <p className="text-center text-xs text-gray-500 mt-6">
-          登录即表示同意我们的服务条款
-        </p>
       </div>
     </div>
   );
