@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  typescript: {
-    strict: true,
-  },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'localhost:3001'],
@@ -32,14 +29,7 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
-  rewrites: async () => ({
-    beforeFiles: [
-      {
-        source: '/:slug((?!api|admin|dashboard|login|logout|register|profile|settings|edit|warn|history|stats|share|export|import|claim|transfer|delete|health|_next|favicon|robots|sitemap|\\.[^/]+)[a-z0-9][a-z0-9-]*[a-z0-9]|[a-z0-9]{3})',
-        destination: '/api/v1/resolve?slug=:slug',
-      },
-    ],
-  }),
 };
+
 
 export default nextConfig;

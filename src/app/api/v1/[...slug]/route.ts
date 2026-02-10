@@ -9,10 +9,11 @@ import { ErrorCode } from '@/lib/constants/errors';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string[] } }
+  { params }: { params: Promise<{ slug: string[] }> }
 ): Promise<Response> {
   try {
-    const slug = params.slug?.[0];
+    const { slug: slugArray } = await params;
+    const slug = slugArray?.[0];
 
     if (!slug) {
       return NextResponse.redirect(new URL('/', request.url));
@@ -35,6 +36,7 @@ export async function GET(
     );
     return response;
   } catch (error: any) {
+    console.error('[API] Error resolving slug:', error);
     if (error.code === ErrorCode.LINK_NOT_FOUND) {
       return NextResponse.json(
         { error: { code: error.code, message: error.message } },

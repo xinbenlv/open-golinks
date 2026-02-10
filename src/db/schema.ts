@@ -14,6 +14,7 @@ import {
   check,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * USERS TABLE
@@ -71,7 +72,7 @@ export const linksTable = pgTable(
   (table) => [
     check(
       'slug_format',
-      `slug ~ '^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$'`
+      sql`slug ~ '^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$'`
     ),
     foreignKey({
       columns: [table.ownerId],

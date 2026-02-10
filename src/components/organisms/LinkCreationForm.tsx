@@ -10,12 +10,15 @@ import { Alert } from '@/components/atoms/Alert';
 import { Badge } from '@/components/atoms/Badge';
 import { CreateLinkSchema, type CreateLinkInput } from '@/lib/validations/schemas';
 import { generateRandomSlug } from '@/lib/utils/slug-gen';
+import type { Link } from '@/db/schema';
 
 export interface LinkCreationFormProps {
   onSuccess?: (slug: string) => void;
   isAnonymous?: boolean;
   initialSlug?: string;
   initialUrl?: string;
+  prefilledSlug?: string;
+  existingLink?: Link | null;
 }
 
 /**
@@ -32,22 +35,28 @@ export function LinkCreationForm({
   isAnonymous = true,
   initialSlug,
   initialUrl,
+  prefilledSlug,
+  existingLink,
 }: LinkCreationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [generatedSlug, setGeneratedSlug] = useState(initialSlug);
+  const [generatedSlug, setGeneratedSlug] = useState(initialSlug || prefilledSlug);
   const [slugError, setSlugError] = useState<string | null>(null);
+
+  // 确定是编辑模式还是创建模式
+  const isEditMode = !!existingLink;
+  const formSlug = initialSlug || prefilledSlug;
 
   const methods = useForm<CreateLinkInput>({
     resolver: zodResolver(CreateLinkSchema),
     defaultValues: {
-      slug: initialSlug,
-      url: initialUrl,
+      slug: formSlug,
+      url: initialUrl || existingLink?.url,
       metadata: {
-        title: '',
-        description: '',
-        showWarning: false,
+        title: existingLink?.metadata?.title || '',
+        description: existingLink?.metadata?.description || '',
+        showWarning: existingLink?.metadata?.showWarning || false,
       },
     },
   });
@@ -78,8 +87,12 @@ export function LinkCreationForm({
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/v1/links', {
-        method: 'POST',
+      // 编辑模式下使用 PUT，创建模式下使用 POST
+      const method = isEditMode ? 'PUT' : 'POST';
+      const url = isEditMode ? `/api/v1/links/${existingLink!.slug}` : '/api/v1/links';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -125,8 +138,10 @@ export function LinkCreationForm({
   // 成功状态显示
   if (success && generatedSlug) {
     return (
-      <Alert variant="success" title="链接创建成功！">
-        <p className="mb-2">您的新短链接：</p>
+      <Alert variant="success" title={isEditMode ? "链接更新成功！" : "链接创建成功！"}>
+        <p className="mb-2">
+          {isEditMode ? "链接已更新" : "您的新短链接："}
+        </p>
         <code className="bg-white bg-opacity-50 px-2 py-1 rounded text-sm">
           {typeof window !== 'undefined' ? window.location.origin : 'https://golinks.app'}/{generatedSlug}
         </code>
@@ -149,21 +164,24 @@ export function LinkCreationForm({
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Slug</h3>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleAutoSlug}
-            >
-              生成
-            </Button>
+            {!isEditMode && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleAutoSlug}
+              >
+                生成
+              </Button>
+            )}
           </div>
           <InputField
             name="slug"
             label="自定义 slug（可选）"
             placeholder="my-link"
-            helperText="3-50 个字符，字母/数字/连字符。留空可自动生成"
-            onChange={(e) => handleSlugChange(e.target.value)}
+            helperText={isEditMode ? "无法编辑现有链接的 slug" : "3-50 个字符，字母/数字/连字符。留空可自动生成"}
+            onChange={(e) => !isEditMode && handleSlugChange(e.target.value)}
+            disabled={isEditMode}
           />
           {slugError && (
             <p className="text-sm text-red-600 mt-1">{slugError}</p>
@@ -220,7 +238,9 @@ export function LinkCreationForm({
           isLoading={isLoading}
           className="w-full"
         >
-          {isLoading ? '创建中...' : '创建链接'}
+          {isLoading
+            ? (isEditMode ? '更新中...' : '创建中...')
+            : (isEditMode ? '更新链接' : '创建链接')}
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
