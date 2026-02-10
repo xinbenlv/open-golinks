@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button 组件 > 快照测试 > primary 按钮快照 1`] = `
+<button
+  class="inline-flex items-center justify-center font-medium rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark active:bg-primary-dark px-4 py-2 text-base"
+>
+  主按钮
+</button>
+`;
+
+exports[`Button 组件 > 快照测试 > 加载状态按钮快照 1`] = `
+<button
+  class="inline-flex items-center justify-center font-medium rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark active:bg-primary-dark px-4 py-2 text-base"
+  disabled=""
+>
+  <span
+    class="mr-2 inline-block animate-spin"
+  >
+    ⟳
+  </span>
+  加载中
+</button>
+`;
+
+exports[`Button 组件 > 快照测试 > 带图标按钮快照 1`] = `
+<button
+  class="inline-flex items-center justify-center font-medium rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark active:bg-primary-dark px-4 py-2 text-base"
+>
+  <span
+    class="mr-2"
+  >
+    ✓
+  </span>
+  确认
+</button>
+`;
+
+exports[`Button 组件 > 快照测试 > 禁用状态按钮快照 1`] = `
+<button
+  class="inline-flex items-center justify-center font-medium rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark active:bg-primary-dark px-4 py-2 text-base"
+  disabled=""
+>
+  禁用
+</button>
+`;

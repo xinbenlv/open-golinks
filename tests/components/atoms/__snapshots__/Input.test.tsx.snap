@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Input 组件 > 快照测试 > email 类型输入框快照 1`] = `
+<input
+  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+  data-testid="input"
+  type="email"
+/>
+`;
+
+exports[`Input 组件 > 快照测试 > 带错误的输入框快照 1`] = `
+<input
+  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed border-error focus:ring-error"
+  data-testid="input"
+/>
+`;
+
+exports[`Input 组件 > 快照测试 > 禁用状态输入框快照 1`] = `
+<input
+  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+  data-testid="input"
+  disabled=""
+/>
+`;
+
+exports[`Input 组件 > 快照测试 > 默认输入框快照 1`] = `
+<input
+  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+  data-testid="input"
+/>
+`;
