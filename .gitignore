@@ -1,13 +1,40 @@
-node_modules
-src/**/*.js
+# 环境变量
 .env
-.env.*
-oauth2.key.json
-.nuxt
-.cache
-.fonts
+.env.local
+.env.*.local
 
-.cred
-logs
+# 依赖
+node_modules/
 
-dist
+# 构建产物
+dist/
+build/
+
+# 测试
+coverage/
+.vitest/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+
+# Bun
+bun.lockb
+
+# Drizzle (临时输出, 不是 migrations)
+drizzle/
+
+# Claude Code 本地配置备份
+.claude/settings.local.json.backup-*
+.claude/settings.local.json

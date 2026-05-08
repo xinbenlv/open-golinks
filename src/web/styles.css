@@ -1,0 +1,25 @@
+:root {
+  font-family:
+    system-ui,
+    -apple-system,
+    "Helvetica Neue",
+    sans-serif;
+  line-height: 1.5;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 60ch;
+  padding: 2rem;
+}
+
+h1 {
+  margin-top: 0;
+}
