@@ -18,7 +18,10 @@
     "storybook:build": "storybook build",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "migrate:legacy": "tsx scripts/migrate-from-legacy.ts",
+    "migrate:legacy:dry": "tsx scripts/migrate-from-legacy.ts --dry-run",
+    "migrate:legacy:verbose": "tsx scripts/migrate-from-legacy.ts --verbose"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -32,6 +35,7 @@
     "clsx": "^2.0.0",
     "crypto-js": "^4.2.0",
     "drizzle-orm": "^0.45.1",
+    "mongodb": "^6.10.0",
     "nanoid": "^5.0.0",
     "next": "^15.1.0",
     "postgres": "^3.4.0",
@@ -40,6 +44,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.51.3",
     "recharts": "^3.7.0",
+    "uuid": "^9.0.1",
     "zod": "^3.22.0"
   },
   "devDependencies": {
@@ -47,16 +52,17 @@
     "@storybook/addon-docs": "^8.0.0",
     "@storybook/addon-essentials": "^8.0.0",
     "@storybook/react": "^8.0.0",
-    "@testing-library/jest-dom": "^6.1.5",
-    "@testing-library/react": "^14.1.0",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/crypto-js": "^4.2.1",
     "@types/node": "^20.10.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.2.0",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "^1.6.0",
     "@vitest/ui": "^1.6.0",
     "autoprefixer": "^10.4.0",
     "drizzle-kit": "^0.28.0",
@@ -67,6 +73,7 @@
     "prettier": "^3.1.0",
     "storybook": "^8.0.0",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.6.0",
     "vite": "^7.3.1",
     "vitest": "^1.6.0"
