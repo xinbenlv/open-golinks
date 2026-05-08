@@ -40,7 +40,9 @@ redirectRoute.get("/:slug", async (c) => {
     .limit(1);
 
   if (!link) {
-    return c.notFound();
+    // slug 格式合法但还没被创建: 把用户送到 /edit/<slug> 让他直接创建,
+    // 而不是 404. 跟 go/links 的 "没找到就创建" 体验一致.
+    return c.redirect(`/edit/${slug}`, 302);
   }
 
   // 异步累加访问数 + daily_visits UPSERT, 不阻塞 redirect

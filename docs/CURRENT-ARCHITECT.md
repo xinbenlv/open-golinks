@@ -68,9 +68,10 @@ flowchart TB
 
 ### 路由
 - **`src/routes/redirect.ts`** (`GET /:slug`)
-  - 校验 slug 格式 + 保留路径
+  - 校验 slug 格式 + 保留路径; RESERVED 或不合法格式 → 404
   - 查询 `links` 表 (排除软删除)
-  - 302 立即返回, 用 `queueMicrotask` 异步累加 visits + UPSERT daily_visits
+  - 命中 → 302 立即返回, 用 `queueMicrotask` 异步累加 visits + UPSERT daily_visits
+  - 未命中 (合法但未创建) → 302 到 `/edit/<slug>`, 让用户走 Landing 同款表单创建
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - 列出最近 50 条公开链接 (stub, 待加分页 + 鉴权)
@@ -88,7 +89,8 @@ flowchart TB
 ### 前端 (SPA)
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
-  - 其他路由 `/dashboard` / `/create` / `/edit/:slug` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
+  - `/edit/:slug` 复用 Landing 整页 (`pages/Edit.tsx` 渲染 `<Landing initialSlug={slug} />`), CreateForm 自动把光标放到 URL 字段.
+  - `/dashboard` / `/create` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
   - 客户端 `src/web/main.tsx:14-32` 智能切换 `hydrateRoot` (Landing 命中预渲染) / `createRoot` (其他路径).
 - 构建输出 `dist/web/`, 由 Hono `serveStatic` 在生产托管.
 
@@ -113,10 +115,11 @@ flowchart TB
 6. 异步: 事务内累加 `links.visits` + UPSERT `daily_visits`
 
 ### 创建短链
-1. SPA POST `/api/v1/links` JSON `{slug, url}`
+1. 用户在 Landing (或 `/edit/<slug>`, slug 自动预填) 填表, SPA POST `/api/v1/links` JSON `{slug, url}`
 2. Hono `links.ts` zod 校验
-3. INSERT, 唯一约束失败返回 `SLUG_TAKEN` 409
-4. 待补: 写 `audit_logs` CREATE 记录
+3. INSERT, 唯一约束失败 (Drizzle 把 PG 的 23505 包成 `DrizzleQueryError`, 从 `err.cause.code` 解出) 返回 `SLUG_TAKEN` 409
+4. 客户端拿到 409 后, 自动生成的 slug 重试一次; 用户自定义的 slug 则在表单内提示
+5. 待补: 写 `audit_logs` CREATE 记录
 
 ## 环境变量
 
@@ -144,7 +147,6 @@ flowchart TB
 - 指纹 (`createdByFingerprint`) 计算
 - `audit_logs` 写入
 - `/warn/:slug` 警告页
-- SPA 各页面具体实现 (Create / Dashboard / Edit / Analytics; 当前仅 Landing 实装, 其余 stub)
-- 把 Landing 创建表单从 mock 切到真实 `POST /api/v1/links`
+- SPA 各页面具体实现 (Create / Dashboard / Analytics; 当前 Landing + Edit 实装, 其余 stub)
 - 单元测试 + e2e 测试
 - CI/CD (GitHub Actions → Railway)

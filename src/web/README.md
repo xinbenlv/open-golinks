@@ -22,7 +22,7 @@ src/web/
     │   ├── index.tsx        # 组合 Header / Hero / Features / HowItWorks / ForTeams / Footer
     │   ├── Header.tsx
     │   ├── Hero.tsx
-    │   ├── CreateForm.tsx   # 内嵌创建表单 (mock submit, 后端就绪后接 POST /api/v1/links)
+    │   ├── CreateForm.tsx   # 内嵌创建表单, 真实 POST /api/v1/links, 支持 initialSlug 预填
     │   ├── Features.tsx
     │   ├── HowItWorks.tsx
     │   ├── ForTeams.tsx
@@ -32,7 +32,7 @@ src/web/
     ├── ComingSoon.tsx       # Dashboard / Create / Edit / Warn / NotFound 通用占位
     ├── Dashboard.tsx        # /dashboard (lazy stub)
     ├── Create.tsx           # /create (lazy stub)
-    ├── Edit.tsx             # /edit/:slug (lazy stub)
+    ├── Edit.tsx             # /edit/:slug 复用 Landing, slug 预填, 光标自动放 URL 输入框
     ├── Warn.tsx             # /warn/:slug (lazy stub)
     └── NotFound.tsx         # * (lazy stub)
 ```
@@ -81,12 +81,19 @@ bun run build:web
 
 ## 创建表单 (CreateForm)
 
-当前 `Hero` 内嵌的创建表单 **走 mock**: 客户端校验 → setTimeout 模拟延迟 → 显示假短链 + copy. 等后端 `POST /api/v1/links` 就绪后, 在 `CreateForm.tsx` 替换 `onSubmit` 内的逻辑.
+`Hero` 内嵌的创建表单直连 `POST /api/v1/links`:
+- 客户端先做 URL/slug 格式校验 (与后端 schema 对齐, 失败原地报错不发请求)
+- 提交成功 (201) → 显示真实短链 (`window.location.host` 拼出) + 复制按钮 + "打开"按钮 (打到 `/<slug>` 走 redirect)
+- slug 留空时, 客户端用 `genSlug()` 生成; 撞库 (409) 时自动重试一次
+- 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
+- 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
 
-校验规则与后端 schema 对齐:
+`/edit/<slug>` 复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
+
+校验规则:
 - `url`: 必填, http/https URL
 - `slug`: 可选, 正则 `^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$`, 不能是保留路径
-- `is_public`: 默认 true
+- `is_public`: UI 上有勾选, 但当前后端 POST 未读这个字段 (DB 默认 true), 待后端补
 
 ## 开发
 
@@ -100,7 +107,7 @@ bun run start                  # NODE_ENV=production, Hono 托管 dist/web
 ## 已知限制
 
 - `/favicon.ico` / `/favicon.svg` / `/robots.txt` 等带 `.` 的根路径在生产被 redirect handler 当成无效 slug 拦截 → 404. 因此 favicon 用 inline data URL 处理. 后端逻辑由 `src/routes/redirect.ts` 决定, 本目录不修改.
-- 直接访问 `/dashboard` / `/edit/:slug` 等 SPA 路径在生产会被 redirect handler 返回 404 (RESERVED 路径). 需要 server 改造以支持 SPA fallback.
+- 直接访问 `/dashboard` 等单段 RESERVED 路径在生产会被 redirect handler 返回 404. 需要 server 改造以支持 SPA fallback (见 `docs/troubleshooting/spa-reserved-paths.md`). `/edit/:slug` 是双段, 走 SPA fallback 没问题.
 
 ## 相关
 

@@ -52,7 +52,9 @@ linksRoute.post("/", async (c) => {
       .returning();
     return c.json({ link: row }, 201);
   } catch (err: unknown) {
-    const code = (err as { code?: string }).code;
+    // Drizzle 把底层 postgres 错误包成 DrizzleQueryError, 真正的 code 在 .cause 上.
+    const e = err as { code?: string; cause?: { code?: string } };
+    const code = e.code ?? e.cause?.code;
     if (code === "23505") {
       return c.json({ error: "SLUG_TAKEN" }, 409);
     }
