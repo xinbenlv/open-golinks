@@ -2,6 +2,21 @@
 
 此目录包含数据迁移和维护脚本。
 
+## run-migrations.ts
+
+应用 `src/db/migrations/` 下 drizzle-kit 生成的 SQL 迁移到 `DATABASE_URL` 指向的库。
+
+由 `bun run db:migrate` 调用。使用 drizzle-orm 内置 migrator，自动维护 `__drizzle_migrations` 表，幂等可重复执行。
+
+## seed-test.ts
+
+本地开发用：插入（或 upsert）一条 `slug=test` → `https://example.com` 的链接，用于手动验证 `/:slug` redirect 与 visits/daily_visits 累加。
+
+```bash
+bun scripts/seed-test.ts
+curl -I http://localhost:3000/test   # 应返回 302 + Location
+```
+
 ## migrate-from-legacy.ts
 
 从 Heroku MongoDB 迁移数据到 PostgreSQL 的脚本。

@@ -5,6 +5,7 @@ import { serveStatic } from "hono/bun";
 import { redirectRoute } from "./routes/redirect.ts";
 import { healthRoute } from "./routes/api/health.ts";
 import { linksRoute } from "./routes/api/links.ts";
+import { meRoute } from "./routes/api/me.ts";
 
 const app = new Hono();
 
@@ -14,6 +15,7 @@ app.use("/api/*", cors());
 // API 路由 (兼容 v2-next /api/v1/* 命名空间, 但具体 schema 可能演进)
 app.route("/api/v1/health", healthRoute);
 app.route("/api/v1/links", linksRoute);
+app.route("/api/v1/me", meRoute);
 
 // 短链重定向: GET /:slug -> 302 to target_url
 // 必须在静态资源之前注册, 否则会被 SPA fallback 吞掉
