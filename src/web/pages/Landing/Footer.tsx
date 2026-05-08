@@ -1,10 +1,25 @@
+import { getVersion } from "../../version";
+
 export function Footer() {
   const year = new Date().getFullYear();
+  const v = getVersion();
+  const versionLabel = v.buildTime ? `${v.sha} · ${v.buildTime}` : v.sha;
+  const repoCommit =
+    v.sha === "dev"
+      ? "https://github.com/xinbenlv/open-golinks"
+      : `https://github.com/xinbenlv/open-golinks/commit/${v.sha}`;
+
   return (
     <footer className="landing-footer">
       <div className="container landing-footer__inner">
         <div className="landing-footer__copy">
           © {year} Open GoLinks · 开源 MIT 协议
+          <span className="landing-footer__version">
+            <span aria-hidden="true"> · </span>
+            <a href={repoCommit} target="_blank" rel="noreferrer" title="查看构建对应的 commit">
+              {versionLabel}
+            </a>
+          </span>
         </div>
         <nav className="landing-footer__links" aria-label="页脚导航">
           <a
