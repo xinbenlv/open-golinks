@@ -1,0 +1,15 @@
+# Nixpacks 显式指定只用 Bun, 避免 Nixpacks 自动检测 Node + 锁到 EOL Node18 的 nixpkgs.
+# 历史: 2026-05-07 部署失败, 错误为 "Node.js 18.x has reached End-Of-Life and has been removed".
+# 见 docs/troubleshooting/railway-nixpacks-node18.md.
+
+[phases.setup]
+nixPkgs = ["bun"]
+
+[phases.install]
+cmds = ["bun install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["bun run build:web"]
+
+[start]
+cmd = "bun src/server.ts"
