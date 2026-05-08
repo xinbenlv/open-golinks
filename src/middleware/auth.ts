@@ -14,6 +14,7 @@
  */
 import type { Context, MiddlewareHandler } from "hono";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
+import { db, schema } from "../db/db.ts";
 
 const JWKS_URL = process.env.SUPABASE_JWKS_URL;
 const ISSUER = process.env.SUPABASE_JWT_ISSUER;
@@ -58,11 +59,35 @@ async function verify(token: string): Promise<AuthUser> {
   };
 }
 
+// 进程内缓存，避免每次请求都打 db。重启后 Set 清空，最多每个 sub 多 1 次 upsert。
+const seenUserIds = new Set<string>();
+
+/**
+ * 首次见到 JWT.sub 时，往 public.users upsert 一行。
+ * Supabase Auth 的 auth.users 和我们的 public.users 是两张表，
+ * 后者被 links.owner_id / audit_logs.actor_id 等外键引用，必须先存在。
+ */
+async function ensureUserRow(user: AuthUser): Promise<void> {
+  if (seenUserIds.has(user.id)) return;
+  if (!user.email) {
+    // 没有 email 的 JWT 不写入 (users.email 是 NOT NULL UNIQUE)
+    seenUserIds.add(user.id);
+    return;
+  }
+  await db
+    .insert(schema.usersTable)
+    .values({ id: user.id, email: user.email })
+    .onConflictDoNothing({ target: schema.usersTable.id });
+  seenUserIds.add(user.id);
+}
+
 export const requireAuth: MiddlewareHandler<AuthEnv> = async (c, next) => {
   const token = readBearer(c);
   if (!token) return c.json({ error: "UNAUTHORIZED" }, 401);
   try {
-    c.set("user", await verify(token));
+    const user = await verify(token);
+    await ensureUserRow(user);
+    c.set("user", user);
   } catch {
     return c.json({ error: "INVALID_TOKEN" }, 401);
   }
@@ -73,7 +98,9 @@ export const optionalAuth: MiddlewareHandler<AuthEnv> = async (c, next) => {
   const token = readBearer(c);
   if (token) {
     try {
-      c.set("user", await verify(token));
+      const user = await verify(token);
+      await ensureUserRow(user);
+      c.set("user", user);
     } catch {
       // 无效 token 在 optional 路径上视为未登录，不报错
     }
