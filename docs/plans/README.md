@@ -8,4 +8,4 @@
 
 ## 已归档
 
-(暂无, 完成后移到 `archived/` 并加 `-phase-N` 后缀)
+- ✅ [`archived/2026-05-08-landing-page-phase-1.md`](./archived/2026-05-08-landing-page-phase-1.md) - Landing 页 SSG 实装 (phase 1)

@@ -3,7 +3,15 @@
 **Date**: 2026-05-08
 **Duration**: 4-6 小时
 **Priority**: P1
-**Status**: 📋 Planning
+**Status**: ✅ Complete (phase 1, 2026-05-07 实装)
+
+## 实装备注 (2026-05-07)
+
+- 路由不只 `/`: 同时 stub 了 `/dashboard` `/create` `/edit/:slug` `/warn/:slug` `*`
+- SEO: 改成 **构建期 SSG 预渲染**, 不是纯 SPA. 见 `scripts/prerender.ts` + `src/web/entry-ssr.tsx`
+- 首屏 JS 实测 ~80KB gzip (高于 50KB 目标), 但 LCP 与首屏内容已不依赖 JS — HTML+CSS 即完整呈现
+- 创建表单走 mock, `POST /api/v1/links` 上线后改 `CreateForm.tsx#onSubmit`
+- 已知遗留: 直接访问 `/dashboard` 等 SPA 路径在生产被 redirect handler 拦截 404, 见 [`docs/troubleshooting/spa-reserved-paths.md`](../../troubleshooting/spa-reserved-paths.md)
 
 ## Overview
 

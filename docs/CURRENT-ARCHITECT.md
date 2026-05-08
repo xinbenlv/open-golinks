@@ -86,8 +86,17 @@ flowchart TB
   - `daily_visits` (UNIQUE(slug, date), 用于 analytics)
 
 ### 前端 (SPA)
-- **`src/web/`** - Vite + React 19. 当前是骨架占位, 后续接路由库实现各页面.
+- **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
+  - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
+  - 其他路由 `/dashboard` / `/create` / `/edit/:slug` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
+  - 客户端 `src/web/main.tsx:14-32` 智能切换 `hydrateRoot` (Landing 命中预渲染) / `createRoot` (其他路径).
 - 构建输出 `dist/web/`, 由 Hono `serveStatic` 在生产托管.
+
+### 脚本 (前端构建)
+- **`scripts/prerender.ts`** - SSG 入口, 由 `bun run build:web` 在 `vite build` 之后执行.
+  - import `src/web/entry-ssr.tsx#renderApp("/")` 拿到 Landing HTML 字符串
+  - 注入 `<title>` / `<meta>` (description / og:* / twitter:* / theme-color) + 防闪烁主题脚本
+  - 写回 `dist/web/index.html`
 
 ### 脚本
 - **`scripts/migrate-from-legacy.ts`** - MongoDB → Postgres 一次性迁移 (复用 v2-next)
@@ -135,6 +144,7 @@ flowchart TB
 - 指纹 (`createdByFingerprint`) 计算
 - `audit_logs` 写入
 - `/warn/:slug` 警告页
-- SPA 路由与各页面 (Create / Dashboard / Edit / Analytics)
+- SPA 各页面具体实现 (Create / Dashboard / Edit / Analytics; 当前仅 Landing 实装, 其余 stub)
+- 把 Landing 创建表单从 mock 切到真实 `POST /api/v1/links`
 - 单元测试 + e2e 测试
 - CI/CD (GitHub Actions → Railway)

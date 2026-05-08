@@ -1,0 +1,147 @@
+/* 全局基础样式: 重置 + body + 排版基础.
+ * 设计 token 在 ./tokens.css.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  font-feature-settings: "ss01", "cv01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* —— 排版工具类 —— */
+
+.h-display {
+  font-size: var(--text-display);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.025em;
+  font-weight: 600;
+  margin: 0;
+}
+
+.h-section {
+  font-size: var(--text-3xl);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  margin: 0;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-faint {
+  color: var(--text-faint);
+}
+
+.serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* —— 容器 —— */
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}
+
+/* —— 滚动 reveal —— */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* —— 焦点环 —— */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* —— Selection —— */
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}

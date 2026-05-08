@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "dev:web": "vite",
-    "build:web": "vite build",
+    "build:web": "vite build && bun scripts/prerender.ts",
     "build": "bun run build:web",
     "start": "NODE_ENV=production bun src/server.ts",
     "type-check": "tsc --noEmit",
@@ -25,6 +25,7 @@
     "postgres": "^3.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router-dom": "^7",
     "zod": "^3.22.0"
   },
   "devDependencies": {
