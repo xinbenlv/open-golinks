@@ -10,7 +10,7 @@ description: "README maintenance rules - triggered when modifying folder content
 
 **每次修改文件夹内容后，必须同步更新该文件夹的 README.md**（如果存在）。维护规则：
 
-- 每次修改文件夹的内容（新增/删除/重命名文件，改动模块结构）后，**必须检查并更新该文件夹的 README.md**
+- 每次修改文件夹的内容（新增/删除/重命名文件，改动模块结构）后，**必须检查并更新该文件夹的 README.md** 以及它 所有上层文件夹 的 README.md的内容。
 - 如果文件夹包含 **5+ 个文件**，即便没有 README.md 也**必须创建** README.md，说明各文件的用途和使用方法
 - README.md 应列出当前文件夹的核心内容，避免重复 CURRENT-ARCHITECT.md 中已有的信息
 

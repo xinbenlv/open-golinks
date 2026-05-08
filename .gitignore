@@ -39,3 +39,6 @@ drizzle/
 # Editor
 .env.*.local
 *.sublime-project
+
+# Claude Code 本地配置备份
+.claude/settings.local.json.backup-*
