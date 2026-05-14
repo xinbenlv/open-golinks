@@ -11,6 +11,7 @@ type LinkRecord = {
   slug: string;
   url: string;
   ownerId: string | null;
+  isPublic: boolean;
   deletedAt: string | null;
   urlHistory: unknown[];
   updatedAt: string;
@@ -110,27 +111,14 @@ export default function Edit() {
     );
   }
 
-  if (!user) {
-    return (
-      <EditNotice
-        title="登录后编辑"
-        message={`/${slug} 已存在。登录 owner 账号后可以修改或删除这个短链。`}
-        action={<Link to="/login" className="btn btn--primary">登录</Link>}
-      />
-    );
-  }
-
-  if (state.link.ownerId !== user.id) {
-    return (
-      <EditNotice
-        title="没有编辑权限"
-        message={`/${slug} 不属于当前登录账号。`}
-      />
-    );
-  }
+  const canEdit = Boolean(user && state.link.ownerId === user.id);
+  const readOnlyReason = !user
+    ? "这个短链已存在。登录 owner 账号后可以修改或删除。"
+    : "这个短链不属于当前登录账号，所以这里仅显示只读信息。";
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!canEdit) return;
     setSubmitting(true);
     setMessage(null);
     setError(null);
@@ -164,6 +152,7 @@ export default function Edit() {
   }
 
   async function onDelete() {
+    if (!canEdit) return;
     if (!window.confirm(`删除 /${slug}? 删除后访问该短链会返回 404。`)) return;
     setSubmitting(true);
     setMessage(null);
@@ -184,6 +173,7 @@ export default function Edit() {
 
   async function onTransfer(e: FormEvent) {
     e.preventDefault();
+    if (!canEdit) return;
     const toEmail = transferEmail.trim();
     if (!toEmail) return;
     if (
@@ -214,11 +204,26 @@ export default function Edit() {
 
   return (
     <main className="auth-page">
-      <section className="auth-panel">
+      <section className="auth-panel edit-panel">
         <div className="auth-copy">
           <h1>编辑 /{slug}</h1>
-          <p>更新目标链接会保留旧 URL 历史。删除后该 slug 访问返回 404。</p>
+          <p>
+            {canEdit
+              ? "更新目标链接会保留旧 URL 历史。删除后该 slug 访问返回 404。"
+              : readOnlyReason}
+          </p>
         </div>
+        {!canEdit ? (
+          <div className="edit-readonly-banner" role="status">
+            <strong>只读模式</strong>
+            <span>可以查看 slug、目标链接和推荐状态，但不能保存更改。</span>
+            {!user ? (
+              <Link to="/login" className="btn btn--ghost btn--sm">
+                登录
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
         <form className="auth-form" onSubmit={onSubmit}>
           <label className="auth-label" htmlFor={urlId}>目标链接</label>
           <input
@@ -227,8 +232,30 @@ export default function Edit() {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
+            disabled={submitting || !canEdit}
             required
           />
+          <dl className="edit-facts" aria-label="Link details">
+            <div>
+              <dt>Slug</dt>
+              <dd>/{state.link.slug}</dd>
+            </div>
+            <div>
+              <dt>URL</dt>
+              <dd>
+                <a href={state.link.url} target="_blank" rel="noreferrer">
+                  {state.link.url}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt>is_public</dt>
+              <dd>{state.link.isPublic ? "true" : "false"}</dd>
+            </div>
+          </dl>
+          <p className="auth-message">
+            is_public 只决定这个短链是否参与推荐、趋势榜等公开发现入口；不影响通过 slug 查看或跳转。
+          </p>
           <label className="auth-label" htmlFor={descriptionId}>Description</label>
           <textarea
             id={descriptionId}
@@ -238,17 +265,18 @@ export default function Edit() {
             maxLength={280}
             placeholder="Short note for this link"
             rows={3}
+            disabled={submitting || !canEdit}
           />
           <TagInput
             id={tagsId}
             value={tags}
             onChange={setTags}
-            disabled={submitting}
+            disabled={submitting || !canEdit}
           />
           <WarnToggle
             id={warnId}
             checked={showWarning}
-            disabled={submitting}
+            disabled={submitting || !canEdit}
             onChange={setShowWarning}
           />
           {message ? <p className="auth-message">{message}</p> : null}
@@ -258,59 +286,67 @@ export default function Edit() {
             </p>
           ) : null}
           <div className="create-success__row">
-            <button className="btn btn--primary" type="submit" disabled={submitting}>
+            <button
+              className="btn btn--primary"
+              type="submit"
+              disabled={submitting || !canEdit}
+            >
               {submitting ? "保存中..." : "保存"}
             </button>
             <button
               className="btn btn--ghost"
               type="button"
               onClick={onDelete}
-              disabled={submitting}
+              disabled={submitting || !canEdit}
             >
               删除
             </button>
           </div>
         </form>
-        <UrlHistory
-          currentUrl={state.link.url}
-          updatedAt={state.link.updatedAt}
-          history={state.link.urlHistory}
-        />
-        <form className="transfer-panel" onSubmit={onTransfer}>
-          <div className="auth-copy">
-            <p className="dashboard-kicker">Danger zone</p>
-            <h2>Transfer ownership</h2>
-            <p>Move this link to another registered user by email.</p>
-          </div>
-          <label className="auth-label" htmlFor={transferId}>
-            Recipient email
-          </label>
-          <div className="transfer-panel__row">
-            <input
-              id={transferId}
-              className="auth-input"
-              type="email"
-              value={transferEmail}
-              onChange={(event) => setTransferEmail(event.target.value)}
-              placeholder="teammate@example.com"
-              disabled={transferring}
-              required
+        {canEdit ? (
+          <>
+            <UrlHistory
+              currentUrl={state.link.url}
+              updatedAt={state.link.updatedAt}
+              history={state.link.urlHistory}
             />
-            <button
-              className="btn btn--ghost"
-              type="submit"
-              disabled={transferring || !transferEmail.trim()}
-            >
-              {transferring ? "Transferring..." : "Transfer"}
-            </button>
-          </div>
-          {transferError ? (
-            <p className="auth-message auth-message--error" role="alert">
-              {transferError}
-            </p>
-          ) : null}
-        </form>
-        <AuditTimeline slug={slug} />
+            <form className="transfer-panel" onSubmit={onTransfer}>
+              <div className="auth-copy">
+                <p className="dashboard-kicker">Danger zone</p>
+                <h2>Transfer ownership</h2>
+                <p>Move this link to another registered user by email.</p>
+              </div>
+              <label className="auth-label" htmlFor={transferId}>
+                Recipient email
+              </label>
+              <div className="transfer-panel__row">
+                <input
+                  id={transferId}
+                  className="auth-input"
+                  type="email"
+                  value={transferEmail}
+                  onChange={(event) => setTransferEmail(event.target.value)}
+                  placeholder="teammate@example.com"
+                  disabled={transferring}
+                  required
+                />
+                <button
+                  className="btn btn--ghost"
+                  type="submit"
+                  disabled={transferring || !transferEmail.trim()}
+                >
+                  {transferring ? "Transferring..." : "Transfer"}
+                </button>
+              </div>
+              {transferError ? (
+                <p className="auth-message auth-message--error" role="alert">
+                  {transferError}
+                </p>
+              ) : null}
+            </form>
+            <AuditTimeline slug={slug} />
+          </>
+        ) : null}
       </section>
     </main>
   );

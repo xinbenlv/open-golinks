@@ -276,6 +276,67 @@ svg {
   color: var(--danger);
 }
 
+.edit-panel {
+  width: min(100%, 780px);
+}
+
+.edit-readonly-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+}
+
+.edit-readonly-banner strong {
+  flex: 0 0 auto;
+}
+
+.edit-readonly-banner span {
+  min-width: 0;
+  flex: 1;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+}
+
+.edit-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.edit-facts div {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+}
+
+.edit-facts dt {
+  margin-bottom: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+.edit-facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.edit-facts a {
+  color: inherit;
+}
+
 .warn-toggle {
   display: flex;
   flex-direction: column;
@@ -849,6 +910,15 @@ svg {
   }
 
   .transfer-panel__row {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-readonly-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .edit-facts {
     grid-template-columns: 1fr;
   }
 
