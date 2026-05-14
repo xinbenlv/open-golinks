@@ -17,12 +17,14 @@ src/web/
 ├── hooks/
 │   ├── useReveal.ts         # IntersectionObserver 滚动 reveal
 │   ├── useTheme.ts          # light / dark / system 三态主题
-│   └── useAuth.ts           # Supabase session store + authFetch
+│   ├── useAuth.ts           # Supabase session store + authFetch
+│   └── useApi.ts            # JSON API wrapper, 自动带 Authorization
 ├── lib/
 │   └── supabase.ts          # supabase-js PKCE client singleton
 ├── components/
 │   ├── AuthGuard.tsx        # owner-only route guard
-│   └── BuildStamp.tsx       # 全局构建版本水印
+│   ├── BuildStamp.tsx       # 全局构建版本水印
+│   └── LinkRow.tsx          # Dashboard 链接行
 └── pages/
     ├── Landing/             # Landing 页 (`/`), 构建期被 SSG 预渲染
     │   ├── index.tsx        # 组合 Header / Hero / Features / HowItWorks / ForTeams / Footer
@@ -35,11 +37,11 @@ src/web/
     │   ├── Footer.tsx
     │   ├── icons.tsx        # 内联 SVG icons, 不引图标库
     │   └── landing.css      # Landing 专属样式
-    ├── ComingSoon.tsx       # Dashboard / Create / Edit / Warn / NotFound 通用占位
-    ├── Dashboard.tsx        # /dashboard (lazy stub)
+    ├── ComingSoon.tsx       # Warn / NotFound 通用占位
+    ├── Dashboard.tsx        # /dashboard owner 链接列表 + 搜索 + 分页
     ├── Login.tsx            # /login, magic link form
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
-    ├── Create.tsx           # /create (lazy stub)
+    ├── Create.tsx           # /create 复用 Landing 创建体验
     ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接
     ├── Warn.tsx             # /warn/:slug (lazy stub)
     └── NotFound.tsx         # * (lazy stub)
@@ -52,8 +54,8 @@ src/web/
 | `/` | `pages/Landing` | 构建期 **SSG 预渲染** + 客户端 hydrate |
 | `/login` | `pages/Login` | 客户端 lazy chunk, Supabase magic link |
 | `/auth/callback` | `pages/AuthCallback` | 客户端 lazy chunk, PKCE code exchange |
-| `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录 |
-| `/create` | `pages/Create` | 客户端 lazy chunk |
+| `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录; owner 链接列表 |
+| `/create` | `pages/Create` | 客户端 lazy chunk; Landing 创建体验 |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
 | `/warn/:slug` | `pages/Warn` | 客户端 lazy chunk |
 | `*` | `pages/NotFound` | 客户端 lazy chunk |

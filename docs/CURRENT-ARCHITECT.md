@@ -75,7 +75,7 @@ flowchart TB
   - 未命中 (合法但未创建) → 302 到 `/edit/<slug>`, 让用户走 Landing 同款表单创建
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
-  - `GET /` - 列出最近 50 条公开链接 (stub, 待加分页 + 鉴权)
+  - `GET /` - `owner=me` 时列出当前用户链接 (require JWT, cursor/q/limit); 默认 `owner=public` 保持公开列表
   - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流; 写 CREATE audit
   - `GET /:slug` - 获取单链接
   - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`, 写 UPDATE audit
@@ -103,9 +103,9 @@ flowchart TB
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
   - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删.
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
-  - `/dashboard` 当前由 `AuthGuard` 保护, 仍是 stub (`pages/ComingSoon.tsx`).
-  - `/create` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
-  - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`.
+  - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions.
+  - `/create` 复用 Landing 创建体验; `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
+  - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`; `src/web/hooks/useApi.ts` 封装 JSON API 请求.
   - 客户端 `src/web/main.tsx:14-32` 智能切换 `hydrateRoot` (Landing 命中预渲染) / `createRoot` (其他路径).
 - 构建输出 `dist/web/`, 由 Hono `serveStatic` 在生产托管.
 
@@ -166,6 +166,6 @@ flowchart TB
 - 指纹 (`createdByFingerprint`) 计算
 - audit log UI; VISIT 明确不写 `audit_logs`
 - `/warn/:slug` 警告页
-- SPA 各页面具体实现 (Create / Dashboard / Analytics; 当前 Landing + Edit + Login 实装, Dashboard/Create/Warn 仍 stub)
+- Analytics 页面; 当前 Landing/Create/Edit/Login/Dashboard 实装, Warn 仍 stub
 - 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)

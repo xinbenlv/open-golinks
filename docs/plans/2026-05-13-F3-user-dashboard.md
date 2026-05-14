@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 3 天
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -82,13 +82,13 @@ test('未登录访问 /dashboard → 跳 /login', ...); // 复用 F1 AuthGuard
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F3-dashboard.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F3]`
-- [ ] 4. Railway env: 无新增
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证: 登录 → /dashboard 看到自己链接列表 → 搜索过滤工作 → 点行进 /edit/:slug; console / network 干净; build SHA 匹配
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 1. type-check + build + 本地 production server healthcheck
+- [x] 2. `bun test tests/e2e/F3-dashboard.test.ts` 绿
+- [x] 3. commit + push, 前缀 `[F3]`
+- [x] 4. Railway env: 无新增
+- [x] 5. deploy SUCCESS
+- [x] 6. 浏览器验证: 登录 → /dashboard 看到自己链接列表 → 搜索过滤工作 → 点行进 /edit/:slug; console / network 干净; build SHA 匹配
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 

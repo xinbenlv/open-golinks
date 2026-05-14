@@ -10,6 +10,7 @@ bun test:e2e          # 只跑 e2e
 bun test tests/e2e/reserved-slug-fallthrough.test.ts   # 跑单个文件
 bun test tests/e2e/F1-auth.test.ts                     # F1 auth/API routing smoke
 bun test tests/e2e/F2-link-crud.test.ts                # F2 real DB CRUD/audit/rate-limit smoke
+bun test tests/e2e/F3-dashboard.test.ts                # F3 owner dashboard API pagination/search
 ```
 
 ## 目录
@@ -18,6 +19,7 @@ bun test tests/e2e/F2-link-crud.test.ts                # F2 real DB CRUD/audit/r
   - `reserved-slug-fallthrough.test.ts` — `GET /dashboard` 等保留路径必须穿透到 SPA fallback, 不能被 `redirectRoute` 短路成 404 (commit `d0e310b` 之前的 bug).
   - `F1-auth.test.ts` — `GET /api/v1/me` 的 401 行为 + `/login` / `/auth/callback` SPA fallback.
   - `F2-link-crud.test.ts` — 真实 Supabase token + Postgres 集成测试: owner CRUD、audit、url_history、软删重建、匿名限流.
+  - `F3-dashboard.test.ts` — `GET /api/v1/links?owner=me` 鉴权、cursor 分页、slug/url 搜索.
 - `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖. F1 的完整 magic-link callback smoke 还需要 `SUPABASE_URL` + `SUPABASE_SECRET_KEY`; 缺少时只跑公开页面 smoke.
 
 ## 约定

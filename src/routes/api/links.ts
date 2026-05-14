@@ -1,6 +1,15 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  ilike,
+  isNull,
+  lt,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import { db, schema } from "../../db/db.ts";
 import {
   optionalAuth,
@@ -26,6 +35,13 @@ const updateLinkSchema = z.object({
   url: z.string().url(),
 });
 
+const listQuerySchema = z.object({
+  owner: z.enum(["me", "public"]).default("public"),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  cursor: z.string().optional(),
+  q: z.string().trim().max(120).optional(),
+});
+
 type UrlHistoryEntry = {
   url: string;
   changedAt: string;
@@ -46,6 +62,27 @@ function expectReturned<T>(row: T | undefined): T {
   return row;
 }
 
+function encodeCursor(row: { createdAt: Date; slug: string }) {
+  return Buffer.from(
+    JSON.stringify({ createdAt: row.createdAt.toISOString(), slug: row.slug }),
+    "utf8",
+  ).toString("base64url");
+}
+
+function decodeCursor(cursor: string) {
+  try {
+    const parsed = JSON.parse(
+      Buffer.from(cursor, "base64url").toString("utf8"),
+    ) as { createdAt?: string; slug?: string };
+    if (!parsed.createdAt || !parsed.slug) return null;
+    const createdAt = new Date(parsed.createdAt);
+    if (Number.isNaN(createdAt.getTime())) return null;
+    return { createdAt, slug: parsed.slug };
+  } catch {
+    return null;
+  }
+}
+
 async function findLink(slug: string) {
   const [row] = await db
     .select()
@@ -64,25 +101,71 @@ function ensureOwner(
   return null;
 }
 
-// GET /api/v1/links - 列出最近的公开链接 (stub, 实际应分页 + 鉴权)
-linksRoute.get("/", async (c) => {
+// GET /api/v1/links - public list or authenticated owner dashboard list.
+linksRoute.get("/", optionalAuth, async (c) => {
+  const parsed = listQuerySchema.safeParse({
+    owner: c.req.query("owner") ?? undefined,
+    limit: c.req.query("limit") ?? undefined,
+    cursor: c.req.query("cursor") ?? undefined,
+    q: c.req.query("q") ?? undefined,
+  });
+  if (!parsed.success) {
+    return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
+  }
+  const { owner, limit, q } = parsed.data;
+  const user = c.get("user");
+  if (owner === "me" && !user) {
+    return c.json({ error: "UNAUTHORIZED" }, 401);
+  }
+
+  const conditions: SQL[] = [isNull(schema.linksTable.deletedAt)];
+  if (owner === "me" && user) {
+    conditions.push(eq(schema.linksTable.ownerId, user.id));
+  } else {
+    conditions.push(eq(schema.linksTable.isPublic, true));
+  }
+
+  if (q) {
+    const pattern = `%${q}%`;
+    conditions.push(
+      or(
+        ilike(schema.linksTable.slug, pattern),
+        ilike(schema.linksTable.url, pattern),
+      )!,
+    );
+  }
+
+  if (parsed.data.cursor) {
+    const cursor = decodeCursor(parsed.data.cursor);
+    if (!cursor) return c.json({ error: "INVALID_CURSOR" }, 400);
+    conditions.push(
+      or(
+        lt(schema.linksTable.createdAt, cursor.createdAt),
+        and(
+          eq(schema.linksTable.createdAt, cursor.createdAt),
+          lt(schema.linksTable.slug, cursor.slug),
+        ),
+      )!,
+    );
+  }
+
   const rows = await db
     .select({
       slug: schema.linksTable.slug,
       url: schema.linksTable.url,
       visits: schema.linksTable.visits,
       createdAt: schema.linksTable.createdAt,
+      updatedAt: schema.linksTable.updatedAt,
+      isPublic: schema.linksTable.isPublic,
     })
     .from(schema.linksTable)
-    .where(
-      and(
-        eq(schema.linksTable.isPublic, true),
-        isNull(schema.linksTable.deletedAt),
-      ),
-    )
-    .orderBy(desc(schema.linksTable.createdAt))
-    .limit(50);
-  return c.json({ links: rows });
+    .where(and(...conditions))
+    .orderBy(desc(schema.linksTable.createdAt), desc(schema.linksTable.slug))
+    .limit(limit + 1);
+
+  const page = rows.slice(0, limit);
+  const nextCursor = rows.length > limit ? encodeCursor(page[page.length - 1]!) : null;
+  return c.json({ links: page, nextCursor });
 });
 
 // POST /api/v1/links - 创建短链. 登录用户写 owner_id; 匿名用户走 IP+UA 限流.
