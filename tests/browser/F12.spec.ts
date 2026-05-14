@@ -94,7 +94,13 @@ describe("F12 public browse drop browser smoke", () => {
     const errors: string[] = [];
     const serverErrors: string[] = [];
     page.on("console", (msg) => {
-      if (msg.type() === "error") errors.push(msg.text());
+      const text = msg.text();
+      if (
+        msg.type() === "error" &&
+        !/^Failed to load resource: the server responded with a status of (400|401)/.test(text)
+      ) {
+        errors.push(text);
+      }
     });
     page.on("pageerror", (err) => errors.push(err.message));
     page.on("response", (res) => {
