@@ -2,7 +2,7 @@
 
 短链与 Analytics 服务. **Bun + Hono + Drizzle + Vite/React** 实现, 部署在 **Railway**.
 
-> 当前分支为 `v2-hono`, 是 v2 的第二次 attempt. 第一次 attempt (`v2-next`, Next.js + Vercel) 因为流量与场景不匹配被放弃, 但其 Drizzle schema 和 MongoDB 迁移脚本被复用. 详见 [`docs/plans/2026-05-07-v2-hono-rewrite.md`](./docs/plans/2026-05-07-v2-hono-rewrite.md).
+> 当前分支为 `v2-hono`, 是 v2 的第二次 attempt. 第一次 attempt (`v2-next`, Next.js + Vercel) 因为流量与场景不匹配被放弃, 但其 Drizzle schema 和 MongoDB 迁移脚本被复用. 历史决策见已归档 [`docs/plans/archived/2026-05-07-v2-hono-rewrite-phase-1.md`](./docs/plans/archived/2026-05-07-v2-hono-rewrite-phase-1.md); 当前活跃工作计划见 [`docs/plans/2026-05-13-feature-parity-master-plan.md`](./docs/plans/2026-05-13-feature-parity-master-plan.md).
 
 ## 架构速览
 

@@ -1,9 +1,11 @@
-# v2-hono 重写计划
+# v2-hono 重写计划 (Phase 1 已归档)
 
 **Date**: 2026-05-07
 **Duration**: 预估 3-4 周
 **Priority**: P0
-**Status**: 🚀 In Progress
+**Status**: ✅ Phase 1 (骨架) 完成 — Phase 2/3/4 内容已被 [`../2026-05-13-feature-parity-master-plan.md`](../2026-05-13-feature-parity-master-plan.md) 取代
+
+> **归档说明 (2026-05-13)**: 阶段 1 骨架已完成; 阶段 2/3/4 的待办内容已迁移到 feature parity 总计划 (F1-F14), 不要再按本文档干活. 架构图见 `docs/CURRENT-ARCHITECT.md`. 本文保留仅作历史决策记录.
 
 ## Overview
 
