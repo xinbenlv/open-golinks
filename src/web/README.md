@@ -65,8 +65,8 @@ src/web/
 | `/auth/callback` | `pages/AuthCallback` | 客户端 lazy chunk, PKCE code exchange |
 | `/claim/:slug` | `pages/Claim` | 客户端 lazy chunk, 登录后认领匿名/legacy 链接 |
 | `/qr/:slug` | `pages/QrEditor` | 客户端 lazy chunk, QR 预览与 PNG 下载 |
-| `/stats` | `AuthGuard(pages/Stats)` | 客户端 lazy chunk, 需登录; 当前用户全部链接详细 analytics |
-| `/stats/:slug` | `AuthGuard(pages/Stats/SlugStats)` | 客户端 lazy chunk, 需登录; 单 slug analytics |
+| `/stats` | `pages/Stats` | 客户端 lazy chunk, 公开只读; 全部未删除链接 GA4 analytics |
+| `/stats/:slug` | `pages/Stats/SlugStats` | 客户端 lazy chunk, 公开只读; 单 slug GA4 analytics |
 | `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录; owner 链接列表 |
 | `/create` | `pages/Create` | 客户端 lazy chunk; Landing 创建体验 |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
@@ -109,8 +109,8 @@ bun run build:web
 `useAuth()` 通过 `@supabase/supabase-js` 维护浏览器 session:
 - `Login.tsx` 调 `signInWithMagicLink(email)`, redirect 到 `/auth/callback`
 - `AuthCallback.tsx` 优先读取 `?code=` 并调用 `exchangeCodeForSession`; Admin generated-link / legacy hash token 回跳则调用 `setSession`
-- `AuthGuard` 保护 `/dashboard`、`/stats`、`/stats/:slug`, 但 `/edit/:slug` 保持公开以保留 "未找到 → 创建" 流程
-- `/stats/:slug` 的 owner 权限由后端 `/api/v1/stats/query` 二次校验
+- `AuthGuard` 保护 `/dashboard`; `/stats`、`/stats/:slug` 与 `/edit/:slug` 保持公开只读/创建入口
+- `/api/v1/stats/summary` 仍 requireAuth 并只给 `/dashboard` 的 owner summary 使用
 - Header 根据 session 显示登录/登出状态
 - `/claim/:slug` 允许未登录用户先查看认领入口; 登录后用浏览器 fingerprint 或 legacy author email 调 `POST /api/v1/links/:slug/claim`
 
@@ -144,10 +144,11 @@ Vite client env:
 
 ## Stats
 
-`/stats` 与 `/stats/<slug>` 调 `/api/v1/stats/query` 获取 scoped GA4 数据:
+`/stats` 与 `/stats/<slug>` 调公开只读的 `/api/v1/stats/query` 获取 GA4 数据:
 - path query: `groupBy: "path"`, `limit` 为 Top 10/20/50, 可切 `pagePathPlusQueryString`
 - date query: `groupBy: "date"`, `limit` 跟随 7/30/90/180 天范围
-- `pathRegex` 是额外过滤条件; 后端仍强制 current user's owned slug scope
+- `/stats` 查询所有未删除 links 并在 GA4 层强制 `pagePath` 为 slug 格式, 同时排除 reserved/system path; `/stats/<slug>` 先确认该 slug 未删除
+- `pathRegex` 是额外过滤条件; 后端仍不暴露任意 GA4 passthrough
 - 组件位于 `components/stats/`: `DateRangePicker`, `PathRegexInput`, `StatsPieChart`, `StatsLineChart`
 
 校验规则:

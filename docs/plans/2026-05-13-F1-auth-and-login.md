@@ -22,7 +22,7 @@
 - `tests/browser/F1.spec.ts` (按 SOP 步骤 6)
 
 修改:
-- `src/web/App.tsx` 或 router 配置: 加 `/login` / `/auth/callback` 路由 + 包 `AuthGuard` 到 `/dashboard` 以及后续 `/stats/*` 等 owner-only 页面; **不要包 `/edit/*`**, 否则会破坏 "未创建 slug → /edit/:slug 创建" 流程
+- `src/web/App.tsx` 或 router 配置: 加 `/login` / `/auth/callback` 路由 + 包 `AuthGuard` 到 `/dashboard` 等 owner-only 页面; **不要包 `/edit/*`**, 否则会破坏 "未创建 slug → /edit/:slug 创建" 流程. 2026-05-14 起 `/stats/*` 改为公开只读 GA4 视图, 不再由 `AuthGuard` 保护.
 - Header: 区分登录/未登录态 (显示邮箱 + 登出按钮)
 - `src/routes/redirect.ts` + `tests/e2e/reserved-slug-fallthrough.test.ts`: 把 `login` 加入 RESERVED, 防止 `/login` 被当成 slug
 

@@ -67,7 +67,7 @@ Dashboard 顶部显示"近 30 天总点击 + 日访问折线". **数据源 = GA4
 GA4 filter notes:
 - 基础版可用 `pagePath` 的 `PARTIAL_REGEXP` 拼出 `^/(foo|bar|baz)$`
 - slug 很多导致 regex 过长时分批查询再合并; 当前规模可先不优化
-- F8 可在此基础上扩展 controlled query, 仍必须注入 owner scope
+- F8 可在此基础上扩展 controlled query; `/dashboard` summary 仍注入 owner scope, 公开 `/stats` query 注入 all-links 或单 slug scope
 
 ### Measurement Protocol 上报 (redirect.ts 内部, 无 endpoint)
 

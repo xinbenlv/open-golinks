@@ -24,8 +24,8 @@
 
 后端:
 - 扩展 [F4](./2026-05-13-F4-basic-stats-ga4.md) 的 `src/routes/api/stats.ts`, 新增 controlled query endpoint, 例如 `POST /api/v1/stats/query`
-- `POST /api/v1/stats/query` 只接受 allowlisted 参数 (`range`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`), 后端自动注入 current user's owned slug scope
-- `/stats/:slug` 必须校验该 slug owner 为 current user; 非 owner 403/404
+- `POST /api/v1/stats/query` 只接受 allowlisted 参数 (`range`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`); 2026-05-14 起为公开只读查询, 无 `slug` 时统计所有未删除 links, 有 `slug` 时校验该 slug 存在且未删除
+- `/stats/:slug` 是公开单 slug GA4 视图; 不存在或已删除返回 404
 - 更新 `src/routes/redirect.ts` RESERVED + `reserved-slug-fallthrough.test.ts`, 把 `stats` 加进去
 
 ## 依赖与现状
@@ -35,9 +35,9 @@
 
 ## Implementation Notes (2026-05-14)
 
-- 已实现 `POST /api/v1/stats/query`, 参数 allowlist 为 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 后端强制 current user owned slug scope.
+- 已实现 `POST /api/v1/stats/query`, 参数 allowlist 为 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 公开只读, 后端强制 all-links 或单 slug scope, 不暴露 GA4 passthrough.
 - `groupBy` 在 v2 API 中固定为 `"path" | "date"`; `pagePathPlusQueryString` 通过 `usePathPlusQueryString` 控制, 避免暴露任意 GA4 dimension passthrough.
-- `/stats` 与 `/stats/:slug` 已接入 React Router + `AuthGuard`, UI 包含 7/30/90/180 天范围、Top 10/20/50 path 表、path share 饼图、day 折线、path regex 和 query string toggle.
+- `/stats` 与 `/stats/:slug` 已接入 React Router 公开路由, UI 包含 7/30/90/180 天范围、Top 10/20/50 path 表、path share 饼图、day 折线、path regex 和 query string toggle.
 - `/stats` 已加入 redirect RESERVED 与 reserved-slug regression.
 
 ## 实施要点 (移植自 master)
@@ -62,7 +62,7 @@ const timeSeries = await postStatsQuery({
 });
 ```
 
-默认 `pathDoesNotMatchRegex` (排除 system path) 直接抄 master `pages/dashboard.vue:99`.
+默认全站查询不再传任意 GA4 passthrough; 后端用 slug 格式 `pagePath` 正则约束到短链路径, 并排除 `/healthz`、`/dashboard`、`/stats` 等 reserved/system path. 用户 `pathRegex` 只作为额外过滤条件.
 
 ## UI 草图
 
@@ -93,7 +93,7 @@ test('切 pagePathPlusQueryString → 不同 query string 分开显示', ...);
 test('点单 path 链接跳到 /stats/<slug>', ...);
 test('空数据状态显示 "No data yet"', ...);
 test('stats endpoint 500 → 显示降级错误而非崩溃', ...);
-test('用户 A 访问用户 B 的 /stats/<slug> → 403/404', ...);
+test('访问不存在或已删除的 /stats/<slug> → 404', ...);
 test('直接访问 /stats 不会被 redirectRoute 当成 slug', ...);
 ```
 

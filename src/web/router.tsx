@@ -26,22 +26,8 @@ export function AppRoutes() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/claim/:slug" element={<Claim />} />
         <Route path="/qr/:slug" element={<QrEditor />} />
-        <Route
-          path="/stats"
-          element={
-            <AuthGuard>
-              <Stats />
-            </AuthGuard>
-          }
-        />
-        <Route
-          path="/stats/:slug"
-          element={
-            <AuthGuard>
-              <SlugStats />
-            </AuthGuard>
-          }
-        />
+        <Route path="/stats" element={<Stats />} />
+        <Route path="/stats/:slug" element={<SlugStats />} />
         <Route
           path="/dashboard"
           element={

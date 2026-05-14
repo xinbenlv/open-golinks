@@ -7,7 +7,7 @@ import {
 import { StatsLineChart } from "../../components/stats/LineChart";
 import { PathRegexInput } from "../../components/stats/PathRegexInput";
 import { StatsPieChart } from "../../components/stats/PieChart";
-import { useApi } from "../../hooks/useApi";
+import { ApiError, useApi } from "../../hooks/useApi";
 
 type StatsRow = {
   dimension: string;
@@ -78,7 +78,11 @@ export function StatsView({ slug }: { slug?: string }) {
     void load()
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Stats unavailable");
+          setError(
+            err instanceof ApiError && err.status === 404
+              ? "Link not found"
+              : "Stats unavailable",
+          );
           setPathResult(null);
           setDateResult(null);
         }
@@ -93,7 +97,7 @@ export function StatsView({ slug }: { slug?: string }) {
   }, [api, limit, pathRegex, range, slug, usePathPlusQueryString]);
 
   const totals = useMemo(() => {
-    const rows = pathResult?.rows ?? [];
+    const rows = dateResult?.rows ?? pathResult?.rows ?? [];
     return rows.reduce(
       (acc, row) => ({
         events: acc.events + row.eventCount,
@@ -101,19 +105,19 @@ export function StatsView({ slug }: { slug?: string }) {
       }),
       { events: 0, users: 0 },
     );
-  }, [pathResult]);
+  }, [dateResult, pathResult]);
 
-  const title = slug ? `Stats for /${slug}` : "Analytics";
+  const title = slug ? `Stats for /${slug}` : "Public stats";
   const scopeLabel = slug
-    ? "Single link"
-    : `${pathResult?.scope.slugCount ?? 0} owned links`;
+    ? "Single public link"
+    : `${pathResult?.scope.slugCount ?? 0} links`;
 
   return (
     <main className="stats-page">
       <section className="stats-shell">
         <header className="dashboard-header stats-header">
           <div>
-            <p className="dashboard-kicker">GA4 analytics</p>
+            <p className="dashboard-kicker">Public GA4 analytics</p>
             <h1>{title}</h1>
             <p>{scopeLabel}</p>
           </div>
@@ -165,7 +169,7 @@ export function StatsView({ slug }: { slug?: string }) {
 
         {error ? (
           <div className="dashboard-alert" role="alert">
-            Stats unavailable
+            {error}
           </div>
         ) : null}
 

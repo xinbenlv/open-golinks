@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { BetaAnalyticsDataClient, type protos } from "@google-analytics/data";
 
 export type StatsDay = {
   date: string;
@@ -24,6 +24,7 @@ export type StatsQueryRow = {
 
 export type StatsQueryInput = {
   slugs: string[];
+  allLinks?: boolean;
   range: 7 | 30 | 90 | 180;
   groupBy: StatsQueryGroupBy;
   limit: number;
@@ -48,6 +49,7 @@ type ReportRedirectInput = {
 
 type StatsProvider = (slugs: string[], days: number) => Promise<StatsSummary>;
 type StatsQueryProvider = (input: StatsQueryInput) => Promise<StatsQueryResult>;
+type FilterExpression = protos.google.analytics.data.v1beta.IFilterExpression;
 
 let client: BetaAnalyticsDataClient | null = null;
 let statsProviderForTests: StatsProvider | null = null;
@@ -105,6 +107,10 @@ function gaDateToIso(value: string) {
 function slugScopeRegex(slugs: string[]) {
   return `^/(${slugs.map(escapeRegex).join("|")})$`;
 }
+
+const PUBLIC_LINK_PATH_REGEX = "^/[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$";
+const PUBLIC_EXCLUDED_PATH_REGEX =
+  "^/(api|auth|claim|create|dashboard|edit|login|logout|qr|stats|warn|assets|static|healthz|test-uptimerobot|robots\\.txt|favicon\\.ico|ical|images|wordpress|wp|callback)$";
 
 export async function reportRedirectToGA4(input: ReportRedirectInput) {
   const measurementId = process.env.GA4_MEASUREMENT_ID;
@@ -234,7 +240,10 @@ export async function queryStatsForSlugs(
       : input.usePathPlusQueryString
         ? "pagePathPlusQueryString"
         : "pagePath";
-  const expressions = [
+  const scopePathRegex = input.allLinks
+    ? PUBLIC_LINK_PATH_REGEX
+    : slugScopeRegex(input.slugs);
+  const expressions: FilterExpression[] = [
     {
       filter: {
         fieldName: "eventName",
@@ -246,11 +255,24 @@ export async function queryStatsForSlugs(
         fieldName: "pagePath",
         stringFilter: {
           matchType: "PARTIAL_REGEXP" as const,
-          value: slugScopeRegex(input.slugs),
+          value: scopePathRegex,
         },
       },
     },
   ];
+  if (input.allLinks) {
+    expressions.push({
+      notExpression: {
+        filter: {
+          fieldName: "pagePath",
+          stringFilter: {
+            matchType: "PARTIAL_REGEXP",
+            value: PUBLIC_EXCLUDED_PATH_REGEX,
+          },
+        },
+      },
+    });
+  }
   if (input.pathRegex?.trim()) {
     expressions.push({
       filter: {

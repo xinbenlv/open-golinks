@@ -32,7 +32,7 @@ bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer 
   - `F5-claim.test.ts` — 匿名 fingerprint claim、legacy author email claim、403/409/400 边界.
   - `F6-warn.test.ts` — `metadata.show_warning` 类型校验、`/:slug` warning 拦截、自包含 `/warn/:slug` SSR、confirm 绕过.
   - `F7-qr.test.ts` — QR API PNG、master-compatible `/qr/*.png`、download header、caption/format/404 校验、`/qr/:slug` SPA fallback.
-  - `F8-detailed-stats.test.ts` — `/api/v1/stats/query` 鉴权、owner scope、单 slug 非 owner 404、allowlist validation、GA4 failure downgrade.
+  - `F8-detailed-stats.test.ts` — `/api/v1/stats/query` 公开全站/单 slug scope、deleted/missing 404、allowlist validation、GA4 failure downgrade.
   - `F9-audit.test.ts` — `/api/v1/audit/:slug` owner-only、CREATE/CLAIM/UPDATE diff、404/403、cursor pagination.
   - `F10-url-history.test.ts` — PATCH url_history 写入顺序、never-edited 空状态、malformed legacy history normalize.
   - `F11-transfer.test.ts` — owner transfer to registered user、A/B dashboard scope、TRANSFER audit、USER_NOT_FOUND/SELF_TRANSFER/FORBIDDEN.
@@ -43,7 +43,7 @@ bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer 
   - `F5.spec.ts` — 生产 golden path: 匿名创建 → `/claim/:slug` 不被短链路由截获 → magic-link 登录 → Dashboard banner → Claim all → owner 列表出现该 slug.
   - `F6.spec.ts` — 生产 golden path: owner 打开 warning toggle → 访客进入 `/warn/:slug` → Proceed → 关闭 warning 后直接 302.
   - `F7.spec.ts` — 生产 golden path: `/qr/:slug` 预览渲染、中文 caption 更新、下载 PNG header/content-disposition 校验.
-  - `F8.spec.ts` — 生产 golden path: 登录 → 创建链接 → `/stats` 控件交互 → `/stats/:slug` 详情 → stats query 200 + build SHA 校验.
+  - `F8.spec.ts` — 生产 golden path: 准备测试链接 → 公开 `/stats` 控件交互 → `/stats/:slug` 详情 → stats query 200 + build SHA 校验.
   - `F9.spec.ts` — 生产 golden path: 登录 → 创建并更新链接 → `/edit/:slug` History → 展开 UPDATE diff.
   - `F10.spec.ts` — 生产 golden path: 登录 → 创建并更新链接 → `/edit/:slug` URL History 显示 current/previous/original.
   - `F11.spec.ts` — 生产 golden path: A 创建链接 → Edit 页 transfer 给已注册 B → A 列表消失, B 列表出现.

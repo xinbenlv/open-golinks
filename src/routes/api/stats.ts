@@ -55,16 +55,14 @@ statsRoute.get("/summary", requireAuth, async (c) => {
   }
 });
 
-statsRoute.post("/query", requireAuth, async (c) => {
+statsRoute.post("/query", async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const parsed = statsQuerySchema.safeParse(body);
   if (!parsed.success) {
     return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
   }
 
-  const user = c.get("user")!;
   const conditions = [
-    eq(schema.linksTable.ownerId, user.id),
     isNull(schema.linksTable.deletedAt),
   ];
   if (parsed.data.slug) {
@@ -82,6 +80,7 @@ statsRoute.post("/query", requireAuth, async (c) => {
   try {
     const result = await queryStatsForSlugs({
       slugs: rows.map((row) => row.slug),
+      allLinks: !parsed.data.slug,
       range: parsed.data.range,
       groupBy: parsed.data.groupBy,
       limit: parsed.data.limit,
