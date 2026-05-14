@@ -17,13 +17,14 @@
 - `src/web/hooks/useAuth.ts` — `{ user, signInWithMagicLink, signOut, loading }`
 - `src/web/components/AuthGuard.tsx` — 受保护路由包装, 未登录跳 `/login`
 - `src/web/pages/Login.tsx` — 邮箱输入 + 魔法链接发送
-- `src/web/pages/AuthCallback.tsx` — 处理 supabase magic link 回跳的 `#access_token=...`
+- `src/web/pages/AuthCallback.tsx` — 处理 Supabase PKCE magic link 回跳的 `?code=...`
 - `tests/e2e/F1-auth.test.ts`
 - `tests/browser/F1.spec.ts` (按 SOP 步骤 6)
 
 修改:
-- `src/web/App.tsx` 或 router 配置: 加 `/login` / `/auth/callback` 路由 + 包 `AuthGuard` 到 `/dashboard`, `/edit/*` 等受保护路径
+- `src/web/App.tsx` 或 router 配置: 加 `/login` / `/auth/callback` 路由 + 包 `AuthGuard` 到 `/dashboard` 以及后续 `/stats/*` 等 owner-only 页面; **不要包 `/edit/*`**, 否则会破坏 "未创建 slug → /edit/:slug 创建" 流程
 - Header: 区分登录/未登录态 (显示邮箱 + 登出按钮)
+- `src/routes/redirect.ts` + `tests/e2e/reserved-slug-fallthrough.test.ts`: 把 `login` 加入 RESERVED, 防止 `/login` 被当成 slug
 
 ## 依赖与现状
 
@@ -35,13 +36,14 @@
 ## 实施步骤
 
 1. `bun add @supabase/supabase-js`
-2. 写 `src/web/lib/supabase.ts`: `createClient(VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce', autoRefreshToken: true } })`
+2. 写 `src/web/lib/supabase.ts`: `createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce', autoRefreshToken: true } })`
 3. 写 `useAuth` hook: 监听 `supabase.auth.onAuthStateChange`, 把 session.access_token 注入 `fetch` 的 `Authorization: Bearer` (用 wrapper or interceptor)
 4. 写 `Login.tsx`: 输入邮箱 → `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: VITE_BASE_URL + '/auth/callback' } })`
-5. 写 `AuthCallback.tsx`: `supabase.auth.exchangeCodeForSession()` 后 navigate 到 `/dashboard`
-6. 写 `AuthGuard`: `useAuth().user ? children : <Navigate to="/login" />`
+5. 写 `AuthCallback.tsx`: 读取 `location.search` 的 `code`, `supabase.auth.exchangeCodeForSession(code)` 后 navigate 到 `/dashboard`; 若缺 `code` 或 exchange 失败, 显示错误并回 `/login`
+6. 写 `AuthGuard`: loading 时显示空/骨架, `user ? children : <Navigate to="/login" replace />`
 7. 改 Header 显示登录态
-8. 写 e2e + browser tests
+8. 更新 `redirect.ts` RESERVED + reserved route regression test
+9. 写 e2e + browser tests
 
 ## API 设计
 
@@ -69,8 +71,8 @@
 ```ts
 // tests/e2e/F1-auth.test.ts
 test('magic link login → session 持久 → 登出', async () => {
-  // 1. 用 admin client 给测试邮箱发 magic link, 拿到 token
-  // 2. 访问 /auth/callback#access_token=...
+  // 1. 用 Supabase Admin API generateLink 或测试邮箱拿到 action_link
+  // 2. 访问 action_link, 最终回跳 /auth/callback?code=...
   // 3. 期望: redirect /dashboard, header 显示 email
   // 4. 调 /api/v1/me 返回 { id, email }
   // 5. 点登出, session 清空
@@ -78,6 +80,7 @@ test('magic link login → session 持久 → 登出', async () => {
 });
 
 test('未登录访问受保护路由 → 跳 /login', ...);
+test('直接访问 /login 不会被 redirectRoute 当成 slug', ...);
 test('JWT 过期 → useAuth 自动 refresh 或跳 /login', ...);
 ```
 
@@ -85,6 +88,7 @@ test('JWT 过期 → useAuth 自动 refresh 或跳 /login', ...);
 
 - [ ] 1. 本地 `bun run type-check` 绿 + `bun --hot src/server.ts` + `vite dev` 起得来
 - [ ] 2. 本地 `bun test tests/e2e/F1-auth.test.ts` 绿
+- [ ] 2b. `bun test tests/e2e/reserved-slug-fallthrough.test.ts` 绿, 且包含 `login`
 - [ ] 3. commit + push, message 前缀 `[F1]`
 - [ ] 4. 同步 Railway env (`railway variables --set` 单条单条推):
   - `VITE_SUPABASE_URL` (= 服务端 `SUPABASE_URL` 同值)

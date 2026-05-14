@@ -25,12 +25,13 @@
 ## 依赖与现状
 
 - F1 (auth) 完成
+- F2 (POST 写 `owner_id` + PATCH/DELETE) 完成; 否则登录用户新建链接不会出现在 `owner=me`
 - DB: 索引 `idx_links_owner_id` 已存在 (`src/db/schema.ts:82`)
 - env: 无新增
 
 ## API 设计
 
-`GET /api/v1/links?owner=me&limit=20&cursor=<base64-encoded-created_at>&q=foo` (requireAuth when owner=me)
+`GET /api/v1/links?owner=me&limit=20&cursor=<base64-encoded-created_at>&q=foo` (requireAuth when owner=me; 永远过滤 `deleted_at IS NULL`)
 
 ```jsonc
 // 200
@@ -42,7 +43,7 @@
 }
 ```
 
-Cursor 用 `(createdAt, slug)` 复合编码; 当 q 存在时, 同时匹配 slug 和 url (PG `ILIKE`, `q` 自动加 `%...%`).
+Cursor 用 `(createdAt, slug)` 复合编码; 当 q 存在时, 同时匹配 slug 和 url (PG `ILIKE`, `q` 自动加 `%...%`). `owner=public` 行为留给 F12 决策, F3 不扩大公开列表能力.
 
 ## UI 草图
 

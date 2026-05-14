@@ -8,13 +8,13 @@
 
 ## Overview
 
-完整移植 master `pages/dashboard.vue` 到 React: 时间范围预设 (7/30/90/180 天), pagePath 正则过滤, 三图表 (Group by Path 表 / Pie / Line by date), pagePath vs pagePathPlusQueryString 切换. **数据源 = GA4 Data API** (复用 [F4](./2026-05-13-F4-basic-stats-ga4.md) 的 `/api/v1/ga4/reports` 端点).
+完整移植 master `pages/dashboard.vue` 到 React: 时间范围预设 (7/30/90/180 天), pagePath 正则过滤, 三图表 (Group by Path 表 / Pie / Line by date), pagePath vs pagePathPlusQueryString 切换. **数据源 = GA4 Data API**, 但必须复用/扩展 [F4](./2026-05-13-F4-basic-stats-ga4.md) 的 scoped stats API, 不暴露任意 GA4 passthrough.
 
 ## Deliverables
 
 新文件:
 - `src/web/pages/Stats/index.tsx` — 用户级 stats (覆盖该用户全部 slug)
-- `src/web/pages/Stats/[slug].tsx` — 单 slug stats 详情
+- `src/web/pages/Stats/SlugStats.tsx` — 单 slug stats 详情 (React Router path `/stats/:slug`, 不使用 Next 风格 `[slug].tsx`)
 - `src/web/components/stats/LineChart.tsx` — recharts 折线
 - `src/web/components/stats/PieChart.tsx` — recharts 饼图
 - `src/web/components/stats/DateRangePicker.tsx`
@@ -22,7 +22,11 @@
 - `tests/e2e/F8-detailed-stats.test.ts`
 - `tests/browser/F8.spec.ts`
 
-无后端新增 — 全部复用 [F4](./2026-05-13-F4-basic-stats-ga4.md) 的 `POST /api/v1/ga4/reports`.
+后端:
+- 扩展 [F4](./2026-05-13-F4-basic-stats-ga4.md) 的 `src/routes/api/stats.ts`, 新增 controlled query endpoint, 例如 `POST /api/v1/stats/query`
+- `POST /api/v1/stats/query` 只接受 allowlisted 参数 (`range`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`), 后端自动注入 current user's owned slug scope
+- `/stats/:slug` 必须校验该 slug owner 为 current user; 非 owner 403/404
+- 更新 `src/routes/redirect.ts` RESERVED + `reserved-slug-fallthrough.test.ts`, 把 `stats` 加进去
 
 ## 依赖与现状
 
@@ -34,22 +38,19 @@
 `master/pages/dashboard.vue:120-200` 的 fetchData 逻辑直接搬:
 
 ```ts
-// 两次 GA4 query
+// 两次 controlled stats query (后端内部转 GA4)
 // 1. Group by path (pagePath 或 pagePathPlusQueryString)
-const groupByPath = await postGA4({
-  dateRanges: [{ startDate, endDate }],
-  dimensions: [{ name: usePathPlusQueryString ? 'pagePathPlusQueryString' : 'pagePath' }],
-  metrics: [{ name: 'eventCount' }, { name: 'activeUsers' }],
-  dimensionFilter,
+const groupByPath = await postStatsQuery({
+  range: selectedRange,
+  groupBy: usePathPlusQueryString ? 'pagePathPlusQueryString' : 'pagePath',
+  pathRegex,
   limit: resultLimit,
 });
 
-// 2. Time series by date
-const timeSeries = await postGA4({
-  dateRanges: [{ startDate, endDate }],
-  dimensions: [{ name: 'date' }],
-  metrics: [{ name: 'eventCount' }, { name: 'activeUsers' }],
-  dimensionFilter,
+const timeSeries = await postStatsQuery({
+  range: selectedRange,
+  groupBy: 'date',
+  pathRegex,
   limit: resultLimit,
 });
 ```
@@ -79,12 +80,14 @@ const timeSeries = await postGA4({
 
 ```ts
 test('打开 /stats 默认显示 7 天 group by path 表 + 折线图', ...);
-test('改时间范围为 30 天 → 重新拉数据 (mock /ga4/reports)', ...);
+test('改时间范围为 30 天 → 重新拉数据 (mock /api/v1/stats/query)', ...);
 test('输入正则 ^/foo- 只剩匹配 path', ...);
 test('切 pagePathPlusQueryString → 不同 query string 分开显示', ...);
 test('点单 path 链接跳到 /stats/<slug>', ...);
 test('空数据状态显示 "No data yet"', ...);
-test('GA4 端点 500 → 显示降级错误而非崩溃', ...);
+test('stats endpoint 500 → 显示降级错误而非崩溃', ...);
+test('用户 A 访问用户 B 的 /stats/<slug> → 403/404', ...);
+test('直接访问 /stats 不会被 redirectRoute 当成 slug', ...);
 ```
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))

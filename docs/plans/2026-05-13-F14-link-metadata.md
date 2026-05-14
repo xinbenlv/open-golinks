@@ -47,7 +47,7 @@
 }
 ```
 
-`metadata` 是 partial — 不传的 key 保持原值. zod schema:
+`metadata` 是 partial — 不传的 key 保持原值. zod schema 必须 strict whitelist, 未列出的 key 拒绝:
 
 ```ts
 z.object({
@@ -57,9 +57,19 @@ z.object({
 }).partial()
 ```
 
+如果 F6 已先实现 `show_warning`, F14 要复用同一 metadata merge helper, 不得覆盖或丢弃已有 `show_warning`.
+
 ### `GET /api/v1/links?owner=me&tag=work` (F3 扩展)
 
-只返回 `metadata.tags @> ARRAY['work']` 的行 (PG JSONB containment).
+只返回带对应 tag 的行. PG JSONB containment 写法应为:
+
+```sql
+metadata @> '{"tags":["work"]}'::jsonb
+-- 或
+(metadata->'tags') @> '["work"]'::jsonb
+```
+
+不要写 `metadata.tags @> ARRAY['work']`; 那是数组语法, 不适用于当前 JSONB 字段.
 
 ## UI 草图
 

@@ -8,7 +8,7 @@
 
 ## Overview
 
-已登录 owner 能改 URL / 软删自己的链接, 旧 URL 进 `url_history`; CREATE / UPDATE / DELETE / CLAIM / TRANSFER 统一写 `audit_logs` (VISIT 走 GA4 不进 audit); 匿名/低频写操作过 IP+UA 内存令牌桶限流 (替代原计划的 Turnstile).
+已登录 owner 能改 URL / 软删自己的链接, 旧 URL 进 `url_history`; 登录用户创建链接时写 `owner_id`; CREATE / UPDATE / DELETE / CLAIM / TRANSFER 统一写 `audit_logs` (VISIT 走 GA4 不进 audit); 匿名/低频写操作过 IP+UA 内存令牌桶限流 (替代原计划的 Turnstile).
 
 ## Deliverables
 
@@ -20,7 +20,7 @@
 
 修改:
 - `src/routes/api/links.ts`:
-  - `POST` 接 audit (CREATE) + ratelimit (匿名) + 软删后重建 UPSERT 逻辑
+  - `POST` 接 `optionalAuth` + audit (CREATE) + ratelimit (匿名) + 软删后重建 UPSERT 逻辑; 若有 JWT, `owner_id = current user`
   - 新增 `PATCH /:slug` (owner-only, 旧 url 入 `url_history`, audit UPDATE)
   - 新增 `DELETE /:slug` (软删 `deleted_at=now()`, audit DELETE)
 - `src/routes/redirect.ts`: 增加 "存在但 `deleted_at IS NOT NULL` → 404" 分支
@@ -33,6 +33,19 @@
 - env: ✅ `IP_HASH_SALT` 本地已生成; Railway 同步时**新生成另一个** salt (不复用)
 
 ## API 设计
+
+### POST `/api/v1/links` 扩展 (optionalAuth)
+
+```jsonc
+// req body 仍保持 F0 shape; F5/F14 会再扩展 fingerprint / metadata
+{ "slug": "foo", "url": "https://example.com" }
+
+// 行为:
+// - 有有效 Bearer JWT: owner_id = current user id
+// - 无 JWT: owner_id = null, 走匿名 rate limit
+// - audit CREATE: actor_id 为 current user 或 null; actor_fingerprint 后续由 F5 补
+// - VISIT 不写 audit
+```
 
 ### PATCH `/api/v1/links/:slug` (requireAuth)
 
@@ -75,6 +88,7 @@
 ```ts
 test('owner 完整 CRUD 流程 + audit + url_history', async () => {
   // login → POST /links {slug:'foo', url:'A'} → audit 含 CREATE
+  // DB links.owner_id === current user; F3 owner=me 能查到
   // PATCH /links/foo {url:'B'} → 200, url_history 含 {url:'A'}
   // GET /:foo → 302 B
   // DELETE /links/foo → 204
@@ -87,6 +101,7 @@ test('软删 slug 重建 (同 owner): 清 deleted_at 后可访问', ...);
 test('软删 slug 重建 (不同 owner) → 409 SLUG_TAKEN', ...);
 test('匿名 6 次 POST 在 1 分钟内 → 第 6 个 429', ...);
 test('已登录用户 POST 不被限流', ...);
+test('已登录 POST 写 owner_id, 匿名 POST owner_id 为 null', ...);
 ```
 
 ## DoD checklist (遵循 [Per-Feature SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))

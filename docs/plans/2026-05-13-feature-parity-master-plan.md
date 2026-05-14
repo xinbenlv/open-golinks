@@ -23,20 +23,19 @@
    `docs/plans/<YYYY-MM-DD>-<F-id>-<short-name>.md`, 内含 endpoint shape /
    DB 改动 / UI 草图 / 测试用例
 2. **可上线的 v2-hono 服务**, 全部 P0 (F1–F5) 功能可用并经 e2e 覆盖
-3. **数据迁移脚本** (`scripts/migrate-from-legacy.ts` 已存在, 需补完)
-   —— 把 master 的 MongoDB 历史链接搬到 Supabase Postgres
+3. **Legacy ownership reconciliation** — 数据已 dump 到 Supabase Postgres, 后续不再跑全量迁移; 需要补 owner/email 映射校验与 legacy claim/backfill runbook
 4. **生产切流 runbook** (`docs/runbooks/v2-cutover.md`) —
    DNS / 双跑 / 回滚步骤
 5. **架构文档更新** (`docs/CURRENT-ARCHITECT.md`) — 完工后同步
 
 ## Implementation Steps
 
-1. **W0 (本周)**: 评审本主计划; ✅ GA4/GCP 4 个凭据已在本地 `.env`; ✅ 3 个 `VITE_*` 已补; ✅ 浏览器验证工具已定 (Puppeteer + 系统 Chrome, headless, 见 SOP 步骤 6); 跑老链接 owner_id 占比确认 SQL; F7 Bun + `@napi-rs/canvas` spike; F13 Chrome ext spike
+1. **W0 (本周)**: 评审本主计划; ✅ GA4/GCP 4 个凭据已在本地 `.env`; ✅ 本地 3 个 `VITE_*` 已补, Railway 待 F1 推; ✅ 浏览器验证工具已定 (Puppeteer + 系统 Chrome, headless, 见 SOP 步骤 6); 跑老链接 owner_id / legacy author email 覆盖率 SQL; F7 Bun + `@napi-rs/canvas` spike; F13 Chrome ext spike
 
 > 之后的 W1-W6 每一项都要遵循"Per-Feature 推进 SOP" — 不是"本周做完 F1+F2", 而是"F1 走完 7 步再开始 F2".
 2. **W1**: 实施 F1 (auth UI) + F2 (CRUD + audit + ratelimit), 合并 + e2e 绿
 3. **W2**: 实施 F3 (dashboard) + F4 (基础 stats + GA4 双向接入); 评估 F6 /warn 是否升回 P0; 验证 GA4 测试 property 工作正常
-4. **W3**: 实施 F5 (claim) + F7 (QR)
+4. **W3**: 实施 F5 (claim + legacy ownership reconciliation) + F7 (QR)
 5. **W4**: 实施 F8 (详细 stats 移植 master) + F9 + F10; 演练切流; **决策 F12 do/drop**; **切换生产 DNS**
 6. **W5–W6**: P1 收尾 (F6, F11, F14) + 用户反馈; 评估 cookie banner / GDPR; 决定 F12 是否做
 
@@ -102,6 +101,16 @@ expect(v.commit).toBe(process.env.GITHUB_SHA || lastLocalCommit);
 - 步骤 6 (浏览器验证) 红 → **不要 patch 上去就跑** — 写一个新的 e2e/browser 测试覆盖这个 case (符合 `feedback_bug_to_e2e`), 然后修
 - 任何一步遇到生产事故 → 走 Risks 表的回滚方案
 
+### 新增顶层路由的保留路径规则
+
+`redirect.ts` 会把 `GET /:slug` 当短链处理; 任何新增 SPA 顶层路径或 SSR 顶层路径都必须同时完成:
+
+1. 把路径第一段加入 `src/routes/redirect.ts` 的 `RESERVED` set
+2. 更新 `tests/e2e/reserved-slug-fallthrough.test.ts` 的 `EXPECTED_RESERVED`
+3. 在对应 feature 的 browser test 中直接访问该路径, 确认不会被当成 slug 跳 `/edit/<slug>`
+
+当前已知后续会新增的顶层路径: `/login`, `/claim`, `/qr`, `/stats`, `/browse` (若 F12 = Do). `/auth` 已在 RESERVED 内, 覆盖 `/auth/callback`.
+
 ### 与 master 双跑期 (W4 切流前)
 
 - W3-W4 期间, master 在原生产域名跑, v2-hono 在 `*.up.railway.app` 跑
@@ -125,7 +134,7 @@ expect(v.commit).toBe(process.env.GITHUB_SHA || lastLocalCommit);
 | 图表库 | recharts (待引入) | master 用 ECharts (`vue-echarts`), 切到 React 生态 |
 | QR 生成 | `qrcode` (npm) | 服务端 PNG + 客户端 canvas |
 | 反滥用 | ~~Cloudflare Turnstile~~ → **暂缓 (P2 评估)**; 用 IP+UA token bucket 兜底 | 不引入外部依赖, 单容器内存计数即可 |
-| **Analytics 数据源** | **GA4 Data API (读) + Measurement Protocol (写)**, 沿用 master | 保留几年的历史数据连续性, 切流无缝; daily_visits 仍写但作为冷备 |
+| **Analytics 数据源** | **GA4 Data API (读) + Measurement Protocol (写)**, 沿用 master | 保留几年历史数据连续性; event_name 默认继续用 master 的 `page_view`, 通过 params 标记 v2-hono; daily_visits 仍写但作为冷备 |
 | **GA4 SDK (后端)** | `@google-analytics/data` | 移植自 master |
 | e2e (API 级) | `bun test tests/e2e/` | Bun 内置, 跟现有 `tests/e2e/` 一致 |
 | 浏览器验证 (E2E) | **Puppeteer (puppeteer-core) + 系统 Chrome + headless**, `bun test tests/browser/` | 轻量 (~10MB), CDP-based, F1 落地前装 |
@@ -169,13 +178,14 @@ src/
 ├── routes/
 │   ├── redirect.ts            # /:slug 主重定向
 │   ├── warn.ts                # ← 新增: /warn/:slug SSR 警告页
+│   ├── qr.ts                  # ← 新增: /qr/:slug.png master 兼容 QR 路由
 │   └── api/
 │       ├── health.ts
 │       ├── version.ts
 │       ├── me.ts              # 当前用户 (已有)
 │       ├── links.ts           # CRUD (扩展 PATCH/DELETE/claim/transfer)
 │       ├── audit.ts           # ← 新增: GET /api/v1/audit/:slug
-│       ├── stats.ts           # ← 新增: GET /api/v1/stats/*
+│       ├── stats.ts           # ← 新增: scoped stats endpoints (内部调用 GA4 Data API)
 │       └── qr.ts              # ← 新增: GET /api/v1/qr/:slug
 ├── lib/
 │   ├── slug.ts                # slug 校验/生成
@@ -223,7 +233,7 @@ tests/e2e/
 ### 🔴 P0 - 切流前必须有
 
 - [ ] **F1. 用户认证 + 登录 UI** — Supabase Auth 替代 Auth0
-- [ ] **F2. 链接编辑 (PATCH) + 删除 (软删) + 统一 audit** — master 有, v2-hono 仅有 POST; 顺便补齐 CREATE/VISIT 的 audit 写入
+- [ ] **F2. 链接编辑 (PATCH) + 删除 (软删) + 统一 audit** — master 有, v2-hono 仅有 POST; 顺便补齐 CREATE audit 写入; VISIT 明确不进 audit
 - [ ] **F3. 个人链接列表 (User Dashboard)** — 对应 master `user-links.vue`
 - [ ] **F4. 基础 stats dashboard** — 日访问折线 + 总点击
 - [ ] **F5. 匿名链接认领 (Claim)** — master 关键差异化功能
@@ -256,8 +266,8 @@ tests/e2e/
 - **[F1. 用户认证 + 登录 UI](./2026-05-13-F1-auth-and-login.md)** (3 天) — Supabase magic link + JWT session 感知; 不新增后端 API, 主要是前端 + AuthGuard 路由保护
 - **[F2. 链接 CRUD + audit + ratelimit](./2026-05-13-F2-link-crud-audit-ratelimit.md)** (3 天) — PATCH / DELETE + 软删 + 统一 audit middleware + IP+UA 内存 token bucket 限流 (替代 Turnstile)
 - **[F3. 个人链接列表 Dashboard](./2026-05-13-F3-user-dashboard.md)** (3 天) — `?owner=me` 分页 + 搜索 + LinkRow + 空状态 CTA
-- **[F4. 基础 Stats + GA4 上报](./2026-05-13-F4-basic-stats-ga4.md)** (2.5 天) — 移植 master GA4, redirect fire-and-forget Measurement Protocol 上报, recharts 折线
-- **[F5. 匿名链接认领 (Claim)](./2026-05-13-F5-anonymous-claim.md)** (3 天) — fingerprint (canvas + UA, fallback 无 canvas) + Dashboard banner + 单链接认领页
+- **[F4. 基础 Stats + GA4 上报](./2026-05-13-F4-basic-stats-ga4.md)** (2.5 天) — 移植 master GA4, scoped stats endpoint, redirect fire-and-forget `page_view` 上报, recharts 折线
+- **[F5. 匿名链接认领 (Claim)](./2026-05-13-F5-anonymous-claim.md)** (3 天) — fingerprint claim + legacy email ownership reconciliation + Dashboard banner + 单链接认领页
 
 ### 🟡 P1 (切流后 1 月内)
 
@@ -282,8 +292,8 @@ tests/e2e/
 |---|---|
 | W0 | 创建各 sub-plan 文件; F13 Chrome Ext spike (1 天); F7 Bun + `@napi-rs/canvas` spike (0.5 天) |
 | W1 | F1 (auth) + F2 (CRUD + audit 统一收口) |
-| W2 | F3 (dashboard) + F4 (基础 stats); 跑 master → Supabase 数据迁移 dry-run |
-| W3 | F5 (claim) + F7 (QR) |
+| W2 | F3 (dashboard) + F4 (基础 stats); 跑 legacy owner/email 映射 dry-run |
+| W3 | F5 (claim + legacy ownership reconciliation) + F7 (QR) |
 | W4 | F8 (详细 stats) + F9 + F10; 演练切流; **决策 F12 do/drop**; **切换生产 DNS** |
 | W5–W6 | F6 (/warn) + F11 + F14, 视反馈引入 F12 / 优化 |
 
@@ -292,17 +302,19 @@ tests/e2e/
 ### 数据迁移
 - **现状**: 已完成一次性 dump (MongoDB → Supabase Postgres), 后续以 Postgres 为准, **不再跑迁移脚本**
 - **`scripts/migrate-from-legacy.ts`**: 暂留, 但不再列为依赖项; 必要时手动校对一次性记录
-- **老链接 owner_id 处理**: 假定 dump 后 owner_id 多数为 null (Auth0 邮箱 → Supabase UUID 难映射), 走 **F5 claim 流程**让用户认领
+- **老链接 owner_id 处理**: 不能只靠 fingerprint claim. W0/W2 必须先按 legacy author email → Supabase `public.users.email` 做可映射率统计与 backfill; fingerprint claim 只覆盖 v2-hono 新匿名创建的链接. 对 `owner_id IS NULL AND created_by_fingerprint IS NULL` 的 legacy 链接, F5 必须提供 email match claim 或人工校验 runbook 后才能切流
 - **建议跑一次确认 SQL** (W0 内):
   ```sql
   SELECT
     COUNT(*) FILTER (WHERE owner_id IS NULL) AS unowned,
     COUNT(*) FILTER (WHERE owner_id IS NOT NULL) AS owned,
+    COUNT(*) FILTER (WHERE owner_id IS NULL AND metadata->>'legacy_author_email' IS NOT NULL) AS unowned_with_legacy_email,
+    COUNT(*) FILTER (WHERE owner_id IS NULL AND created_by_fingerprint IS NOT NULL) AS unowned_with_fingerprint,
     COUNT(*) AS total
   FROM links;
   ```
-  如果 unowned 占比 > 50%, F5 claim 升级为 P0 阻塞 (用户登录后必须能认领)
-- **GA4 历史**: 不迁移, 直接复用 master 的 GA4 property (沿用 `GA4_PROPERTY_ID`). 切流后 v2-hono 上报新事件到同一 property, 历史 + 新数据连续
+  如果 unowned 占比 > 0, W2 必须产出映射/认领方案; 如果 `legacy_author_email` 缺失或无法匹配占比 > 5%, F5 legacy claim 升级为切流阻塞
+- **GA4 历史**: 不迁移, 直接复用 master 的 GA4 property (沿用 `GA4_PROPERTY_ID`). v2-hono 默认继续上报 `page_view`, 并增加 `slug` / `source=v2-hono` / `is_redirect=true` params, 这样历史 + 新数据能在同一 event_name 下连续查询
 
 ### 切流策略
 - **W3 末**: 在 Railway 起 v2-hono 生产实例, 走临时域名 (e.g. `v2.golinks.example`)
@@ -339,7 +351,7 @@ tests/e2e/
 | Chrome Extension 老用户不更新 | API shim 永久保留 v2 兼容路径 (F13) |
 | ~~MongoDB → Postgres 迁移数据丢失~~ | ~~dry-run~~ — 已 dump 一次, 风险消除 |
 | Supabase free tier 限额 (50k MAU / 500 MB DB) | 监控用量; 当前规模远低于上限, 触发后升级 Pro ($25/月) |
-| 老链接 owner_id 为 null 占比过高 | W0 内跑确认 SQL; F5 claim 升级为 P0 阻塞确保切流不丢功能 |
+| 老链接 owner_id 为 null 或 legacy author email 缺失 | W0/W2 跑覆盖率 SQL; 先 email backfill, 再 F5 legacy claim/manual review; 未解决前不切 DNS |
 | canvas fingerprint 在隐私模式失败 | F5 内已设计 fallback 算法 |
 | **GA4 服务依赖 (down → dashboard 空白)** | dashboard 显示降级状态; `daily_visits` 表保留写入作冷备, P2 评估脱离 GA4 |
 | **GA4 Measurement Protocol 上报失败 (fire-and-forget)** | Bun fetch 失败不阻塞 redirect; 5xx 计数告警, 高于阈值时调查 |
@@ -377,19 +389,19 @@ tests/e2e/
 | `GA4_PROPERTY_ID` | GA4 Data API 查询 (F4 dashboard 取数) | ✅ `.env` 已配 |
 | `GOOGLE_APPLICATION_CREDENTIALS_JSON` | base64 编码的 GCP service account JSON, 解码到 `/tmp/gcp-key.json` 给 SDK 用 | ✅ `.env` 已配. **注意: 这是高权限凭据, 仅服务端用**; 建议生产 Railway 用独立的 v2-hono service account, 不共用 master 的 |
 
-客户端 (Vite, `VITE_*` 前缀, 0/4 就位):
+客户端 (Vite, `VITE_*` 前缀, 本地 3/3 就位; Railway 待 F1 同步):
 
 | 变量名 | 用途 | 状态 |
 |---|---|---|
-| `VITE_SUPABASE_URL` | supabase-js client (= 服务端 `SUPABASE_URL` 同值) | ❌ F1 前加 |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | publishable JWT (= 服务端 `SUPABASE_PUBLISHABLE_KEY` 同值) | ❌ F1 前加 |
+| `VITE_SUPABASE_URL` | supabase-js client (= 服务端 `SUPABASE_URL` 同值) | ✅ `.env` 已配; F1 前推 Railway |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | publishable JWT (= 服务端 `SUPABASE_PUBLISHABLE_KEY` 同值) | ✅ `.env` 已配; F1 前推 Railway |
 | ~~`VITE_TURNSTILE_SITE_KEY`~~ | ~~Turnstile widget~~ | **暂缓** |
-| `VITE_BASE_URL` | 前端 base URL (= `PUBLIC_BASE_URL` 同值) | ❌ F1 前加; 本地 `http://localhost:3000`, **生产 `https://open-golinks-v2-hono-production.up.railway.app`** |
+| `VITE_BASE_URL` | 前端 base URL (= `PUBLIC_BASE_URL` 同值) | ✅ `.env` 已配本地 `http://localhost:3000`; F1 前推 Railway 为 `https://open-golinks-v2-hono-production.up.railway.app` |
 
 > Vite 安全机制: 没有 `VITE_` 前缀的变量不会进客户端 bundle, 即使值一样也得双写一份. 建议在 `template.env` 用注释指明"同步保持一致".
 
-**P0 阻塞项汇总** (2026-05-13 评估; ✅ 部分已就位, 仅剩前端 env 待补):
-- F1 (auth) 前: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_BASE_URL` (从对应服务端值复制); `PUBLIC_BASE_URL` 本地用 `http://localhost:3000`
+**P0 阻塞项汇总** (2026-05-13 评估; ✅ 本地 env 就位, Railway 待推):
+- F1 (auth) 前: 将 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_BASE_URL`, `PUBLIC_BASE_URL` 推到 Railway; 本地 `PUBLIC_BASE_URL` 用 `http://localhost:3000`
 - F2 (CRUD + audit) 前: ✅ `IP_HASH_SALT` 已就位
 - F4 (stats + GA4 上报) 前: ✅ GA4/GCP 4 个凭据全部已就位
 - W4 生产切流前: Railway 上对应改 `PUBLIC_BASE_URL` + `VITE_BASE_URL` 为生产域名
@@ -405,7 +417,7 @@ tests/e2e/
 - [x] **GA4 凭据已在本地 `.env`** (2026-05-13 确认); Railway 生产 env 仍需配置 (W4 前)
 - [ ] **(P1 建议) 生成独立的 v2-hono GCP service account 给生产用**, 不共用 master 的, 权限收敛到 GA4 Data API 只读
 - [ ] **新建 GA4 测试 property** (e2e 测试用, 避免污染生产数据); 或承认 e2e 跳过 GA4 集成测试
-- [ ] master 仓库中 NotoSansCJK 字体文件路径确认 (F7 复制源)
+- [ ] master 仓库中 NotoSansCJK 字体文件路径确认 (F7 复制源; 当前 master 路径为 `static/fonts/NotoSansCJKsc-Regular.otf`, 需确认文件实际存在)
 - [ ] Chrome Extension 源码 repo URL (F13 spike 需要)
 - [ ] 生产域名 DNS 控制权 (W4 切流)
 - [ ] Better Stack / 告警出口账户 (W4 后接入)
@@ -417,12 +429,12 @@ tests/e2e/
 - [ ] F12 公开链接发现 do/drop (W4 末)
 - [ ] 软删后是否暴露 "回收站"
 - [ ] F11 transfer 是否需要被接收方确认 (当前默认: 不需要, 直接转)
-- [ ] dump 进来的老链接 owner_id 状态: 待查 (建议跑 SQL 确认: `SELECT COUNT(*) FILTER (WHERE owner_id IS NULL) FROM links`). 默认走 F5 claim 流程
+- [ ] dump 进来的老链接 owner_id + legacy author email 覆盖率: 待查. 默认先 email backfill, fingerprint 只处理 v2-hono 新匿名链接; 无 email/fingerprint 的 legacy 链接走 F5 manual review, 未闭环不切流
 - [ ] ~~历史 visits 计数迁移~~ — **不需要**, 历史数据全在 GA4
 - [ ] 是否做 dark mode / i18n / cookie banner (GDPR — **GA4 上报有 IP/UA, 加 cookie banner 是合规需求**, 优先级提到 P1)
 - [ ] Dashboard 默认分页大小 (当前默认 20) / 默认排序 (当前默认 created_at desc)
 - [ ] recharts 主题色与品牌风格 (跟 Landing 一致, 复刻 master ECharts 还是重设计)
-- [ ] GA4 上报的 event_name 命名约定: `link_redirect` (区分 master 的 `page_view`) — agent 默认这么干, 若想跟 master 完全一致改成 `page_view` 需明示
+- [x] GA4 上报 event_name: 默认继续用 master 的 `page_view`, 通过 event params `source=v2-hono`, `slug`, `is_redirect=true` 区分; 若后续需要新 event_name, F4/F8 查询必须同时兼容历史 `page_view`
 
 ### 🟡 测试环境
 
@@ -452,7 +464,7 @@ tests/e2e/
 - 搜索: PG `ILIKE` (规模 < 1M 行够用), 不上 fulltext
 - audit_logs 永久保留 (磁盘成本 < $0.01/GB·月); VISIT 事件**不写** audit, 走 GA4
 - redirect.ts 的 daily_visits / visits 字段保留写入但暂不读 (冷备); F4/F8 数据源全部走 GA4 Data API
-- GA4 上报: queueMicrotask fire-and-forget, **不 await** (跟 master 不一样, 不阻塞 redirect)
+- GA4 上报: redirect response 生成前读/写 `_ga` cookie, 然后 queueMicrotask fire-and-forget Measurement Protocol, **不 await** (跟 master 不一样, 不阻塞 redirect)
 - Turnstile 暂缓; 用内存 IP+UA token bucket 兜底
 
 ---
@@ -469,7 +481,7 @@ tests/e2e/
 | 链接编辑 | `pages/link.vue` + `POST /api/v2/edit` | 仅 `POST /api/v1/links` (create) | F2 |
 | 链接删除 | 有 | 无 | F2 |
 | 匿名认领 | 有 | 无 | F5 |
-| Redirect | 基础 302 | 智能 (不存在 → /edit/:slug) + 异步 visit + daily_visits UPSERT | ✅ v2-hono 更好 (但缺 audit VISIT 写入, F2 补) |
+| Redirect | 基础 302 + GA4 `page_view` | 智能 (不存在 → /edit/:slug) + 异步 visit + daily_visits UPSERT | ✅ v2-hono 更好; F4 补 GA4 `page_view`, VISIT 不写 audit |
 | Landing 页 | 无 | 有 (`Landing/*`, SSR prerender) | ✅ v2-hono 新增 |
 | 警告页 | 未确认 | 无 | F6 (按新增处理) |
 | 审计日志 | 无 | schema 完整, API 无 | F9 |
