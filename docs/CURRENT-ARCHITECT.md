@@ -13,6 +13,7 @@
    Browser ──▶│  Bun + Hono                                  │
    Extension  │   ├─ /:slug          → 302 + 异步 analytics  │
               │   ├─ /warn/:slug     → SSR warning HTML      │
+              │   ├─ /qr/:slug.png    → QR PNG compat         │
               │   ├─ /api/v1/health  → JSON                  │
               │   ├─ /api/v1/links   → CRUD + claim + audit  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
@@ -41,6 +42,7 @@ flowchart TB
     SRV[Bun + Hono server.ts]
     RED[redirect.ts<br/>GET /:slug]
     WARN[warn.ts<br/>GET /warn/:slug]
+    QR[qr.ts<br/>GET /qr/*.png]
     API[routes/api/*.ts]
     SPA[Vite SPA<br/>dist/web/]
   end
@@ -54,6 +56,7 @@ flowchart TB
   EX -->|GET /:slug| SRV
   SRV --> RED
   SRV --> WARN
+  SRV --> QR
   RED -->|SELECT| PG
   RED -->|302| BR
   RED -.->|async UPSERT| PG
@@ -83,6 +86,9 @@ flowchart TB
   - Hono SSR route, 返回自包含 HTML, 不依赖 SPA bundle
   - 查询未删除链接; 不存在/已删除 → 404
   - Proceed 链接指向 `/:slug?confirm=1`, 让 redirect hot path 真正跳转并记录 analytics
+- **`src/routes/qr.ts`** (`GET /qr/:slug.png`, `GET /qr/d/:slug.png`)
+  - master-compatible QR PNG paths; `/d/` 变体加 `Content-Disposition: attachment`
+  - 接受 `caption` 和 `addLogo=true`, 返回 `image/png`
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - `owner=me` 时列出当前用户链接 (require JWT, cursor/q/limit); 默认 `owner=public` 保持公开列表
@@ -93,6 +99,7 @@ flowchart TB
   - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`; F6 允许最小 `metadata.show_warning` boolean patch, 其他 metadata key 等 F14; 写 UPDATE audit
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
+- **`src/routes/api/qr.ts`** (`GET /api/v1/qr/:slug`) - 公开 QR PNG endpoint; `format=png`, `caption<=100`, `logo=true`; 不存在/软删返回 404.
 - **`src/routes/api/stats.ts`** (`GET /api/v1/stats/summary`) - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
 
 ### Middleware
@@ -103,6 +110,7 @@ flowchart TB
 - **`src/middleware/audit.ts`** - `writeAudit(c, action, slug, diff?)`, 对低频 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 写 `audit_logs`; `VISIT` 不写 audit.
 - **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
 - **`src/lib/fingerprint.ts`** - 浏览器端 64-hex fingerprint: canvas + UA + timezone + screen; canvas 不可用时用本地持久 fallback token. 服务端只校验格式和比对已有值.
+- **`src/lib/qr.ts`** - `qrcode` + `@napi-rs/canvas` 服务端 QR PNG 渲染, 支持 CJK caption、内置 logo、1h/1000-entry LRU cache, 字体来自 `src/assets/fonts/NotoSansCJKsc-Regular.otf`.
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
@@ -119,6 +127,7 @@ flowchart TB
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
+  - `/qr/:slug` 是 QR editor; 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
   - `/create` 复用 Landing 创建体验.
   - `/warn/:slug` 不再走 SPA; 由 Hono `src/routes/warn.ts` 直接返回 SSR HTML.
   - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`; `src/web/hooks/useApi.ts` 封装 JSON API 请求.
@@ -162,6 +171,12 @@ flowchart TB
 2. 访客访问 `/:slug`, redirect handler 发现 `metadata.show_warning` 且没有 `?confirm=1`, 返回 302 `/warn/:slug`
 3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets
 4. 用户点 Proceed 访问 `/:slug?confirm=1`, redirect handler 跳过 warning, 返回目标 URL 302 并记录 visits/GA4
+
+### QR code
+1. 用户进入 `/qr/:slug`, SPA 读取 `/api/v1/links/:slug` 获取目标 URL 并用 `QrCanvas` 实时预览短链 QR
+2. 下载按钮指向 `/qr/d/:slug.png?caption=...&addLogo=true`
+3. 兼容旧路径 `/qr/:slug.png` 返回 inline PNG; `/qr/d/:slug.png` 返回 attachment PNG
+4. 服务端 QR PNG 始终编码短链 URL (`PUBLIC_BASE_URL` 或请求 origin + `/:slug`), 不直接编码 destination URL
 
 ### 匿名链接认领
 1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`

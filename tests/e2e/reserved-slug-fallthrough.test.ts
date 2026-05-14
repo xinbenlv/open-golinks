@@ -31,6 +31,7 @@ const EXPECTED_RESERVED = [
   "dashboard",
   "edit",
   "login",
+  "qr",
   "warn",
   "assets",
   "static",

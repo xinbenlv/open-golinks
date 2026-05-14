@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@google-analytics/data": "^6.0.0",
+    "@napi-rs/canvas": "^1.0.0",
     "@supabase/supabase-js": "^2.105.4",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.6.0",
@@ -28,6 +29,7 @@
     "mongodb": "^7.2.0",
     "nanoid": "^5.0.0",
     "postgres": "^3.4.0",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7",
@@ -37,6 +39,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",

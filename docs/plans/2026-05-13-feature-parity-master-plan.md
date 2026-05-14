@@ -242,7 +242,7 @@ tests/e2e/
 ### 🟡 P1 - 切流后 1 个月内补齐
 
 - [x] **F6. /warn/:slug 警告页** — 标记敏感链接的拦截页 (master 是否有未确认, 视为 v2-hono 新增)
-- [ ] **F7. QR 码生成 / 显示 / 下载** — 对应 master `QrCodeEditor.vue`
+- [x] **F7. QR 码生成 / 显示 / 下载** — 对应 master `QrCodeEditor.vue`
 - [ ] **F8. 详细 Analytics 页** — 时间范围, slug 正则过滤, 多图表
 - [ ] **F9. 审计日志查看 (`/api/v1/audit/:slug`)** — schema 已有, API 缺失
 - [ ] **F10. 链接 URL 历史展示** — schema 已有
@@ -418,7 +418,7 @@ tests/e2e/
 - [x] **GA4 凭据已在本地 `.env`** (2026-05-13 确认); Railway 生产 env 仍需配置 (W4 前)
 - [ ] **(P1 建议) 生成独立的 v2-hono GCP service account 给生产用**, 不共用 master 的, 权限收敛到 GA4 Data API 只读
 - [ ] **新建 GA4 测试 property** (e2e 测试用, 避免污染生产数据); 或承认 e2e 跳过 GA4 集成测试
-- [ ] master 仓库中 NotoSansCJK 字体文件路径确认 (F7 复制源; 当前 master 路径为 `static/fonts/NotoSansCJKsc-Regular.otf`, 需确认文件实际存在)
+- [x] master 仓库中 NotoSansCJK 字体文件路径确认并复制到 `src/assets/fonts/NotoSansCJKsc-Regular.otf`
 - [ ] Chrome Extension 源码 repo URL (F13 spike 需要)
 - [ ] 生产域名 DNS 控制权 (W4 切流)
 - [ ] Better Stack / 告警出口账户 (W4 后接入)
@@ -478,7 +478,7 @@ tests/e2e/
 | GA4 上报 | `src/main.ts:180-247` 中间件 (Measurement Protocol, await axios) | 已有 fire-and-forget Measurement Protocol | ✅ F4 |
 | 用户链接列表 | `pages/user-links.vue` | 已有 `/dashboard` owner list/search/pagination | ✅ F3 |
 | 登录 | Auth0 (`src/routes/auth.ts`) | Supabase Auth UI + JWT middleware + `/api/v1/me` | ✅ F1 |
-| QR 码 | `components/QrCodeEditor.vue` + `src/routes/qr.ts` | 无 | F7 |
+| QR 码 | `components/QrCodeEditor.vue` + `src/routes/qr.ts` | 已有 `/qr/:slug` React editor + `/api/v1/qr/:slug` + `/qr/:slug.png` compat | ✅ F7 |
 | 链接编辑 | `pages/link.vue` + `POST /api/v2/edit` | 已有 owner-only PATCH | ✅ F2 |
 | 链接删除 | 有 | 已有 owner-only soft delete | ✅ F2 |
 | 匿名认领 | 有 | 已有 fingerprint + legacy email claim | ✅ F5 |

@@ -50,6 +50,9 @@ export function LinkRow({
         <Link className="btn btn--ghost btn--sm" to={`/edit/${link.slug}`}>
           Edit
         </Link>
+        <Link className="btn btn--ghost btn--sm" to={`/qr/${link.slug}`}>
+          QR
+        </Link>
         <button
           className="btn btn--ghost btn--sm"
           type="button"

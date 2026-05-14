@@ -9,6 +9,7 @@ const Edit = lazy(() => import("./pages/Edit"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Claim = lazy(() => import("./pages/Claim"));
+const QrEditor = lazy(() => import("./pages/QrEditor"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const Fallback = () => null;
@@ -22,6 +23,7 @@ export function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/claim/:slug" element={<Claim />} />
+        <Route path="/qr/:slug" element={<QrEditor />} />
         <Route
           path="/dashboard"
           element={
