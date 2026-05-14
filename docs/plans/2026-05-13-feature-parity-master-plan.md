@@ -249,7 +249,7 @@ tests/e2e/
 
 ### 🟢 P2 - 长尾, 视用户反馈
 
-- [ ] **F11. 链接所有权转移 (Transfer)**
+- [x] **F11. 链接所有权转移 (Transfer)**
 - [ ] **F12. 公开链接发现页 (Browse Public Links)** — master 无, 新功能 (决策 deadline: W4 末)
 - [ ] **F13. Chrome Extension 兼容性验证** (W1 必须先 spike 一次, 决定走 shim 还是发新版)
 - [ ] **F14. 链接 metadata (tags, description)** — schema 已有
@@ -487,5 +487,5 @@ tests/e2e/
 | 警告页 | 未确认 | 已有 `/warn/:slug` SSR + Edit toggle | ✅ F6 (按新增处理) |
 | 审计日志 | 无 | 已有 owner-only `/api/v1/audit/:slug` + Edit 页 timeline | ✅ F9 |
 | URL 历史 | 有 | 已有 `url_history` 写入 + Edit 页 URL History timeline | ✅ F10 |
-| 所有权转移 | 无 | enum 已含 `TRANSFER`, 无 API | F11 (新增) |
+| 所有权转移 | 无 | 已有 owner-only transfer API + Edit 页 Danger zone form | ✅ F11 |
 | Chrome Extension | 待 W0 spike 确认 | 未验证 | F13 |

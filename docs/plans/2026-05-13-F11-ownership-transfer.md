@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 1.5 天
 **Priority**: P2
-**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -95,11 +95,11 @@ test('转给自己 → 400 SELF_TRANSFER', ...);
 
 - [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3111 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
 - [x] 2. `bun test tests/e2e/F11-transfer.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F11]`
-- [ ] 4. Railway env: 无新增
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产: 准备两个测试账号 A/B, A 转一个 slug 给 B, 双方 dashboard 状态正确
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 3. commit + push, 前缀 `[F11]` (`45e57e0`)
+- [x] 4. Railway env: 无新增
+- [x] 5. deploy SUCCESS (`200bab09-982e-4824-89cc-2b5204f2a008`, 2026-05-14)
+- [x] 6. 浏览器验证生产 (`RUN_BROWSER_TESTS=1 EXPECTED_SHA=45e57e bun test tests/browser/F11.spec.ts`): 准备两个测试账号 A/B, A 转一个 slug 给 B, 双方 dashboard 状态正确
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 
