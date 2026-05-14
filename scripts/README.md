@@ -26,41 +26,51 @@ curl -I http://localhost:3000/test   # 应返回 302 + Location
 open-golinks v2 从 MongoDB（Heroku） 迁移到 PostgreSQL（Supabase）。此脚本用于：
 - 读取旧 MongoDB 数据库中的用户和链接
 - 规范化 schema（MongoDB 字段 → PostgreSQL 字段）
-- 将数据插入新的 PostgreSQL 数据库
+- 将数据 upsert 到 PostgreSQL 数据库
 - 支持干运行（dry-run）模式进行测试
+- 默认保留只存在于 PostgreSQL 的链接，不做删除
 
 ### 使用方法
 
 #### 1. **干运行（推荐首先运行）**
 ```bash
-npm run migrate:legacy:dry
+bun run migrate:legacy:dry
 ```
 - 显示将迁移的数据量
 - 显示数据映射规则
 - **不修改任何数据库**
 - 用于验证迁移前的准备
 
-#### 2. **实际迁移**
+#### 2. **非破坏性 upsert（默认实际迁移）**
 ```bash
-npm run migrate:legacy
+bun run migrate:legacy
 ```
-- **会覆盖现有数据库中的链接和用户**
-- 读取 MongoDB 中的用户和链接
-- 映射到 PostgreSQL schema
-- 插入数据
+- 添加 MongoDB 中的新 slug
+- 对 MongoDB 和 PostgreSQL 都存在的 slug 覆盖 URL，并补充 `metadata.legacy_author_email`
+- 保留只存在于 PostgreSQL 的链接
+- 保留既有 visits、url_history、created_by_fingerprint、deleted_at、is_public
+- 仅当 legacy author 能映射到 `public.users.email` 时更新 owner；否则保留现有 owner
 
 #### 3. **详细日志**
 ```bash
-npm run migrate:legacy:verbose
+bun run migrate:legacy -- --verbose
 ```
 - 显示每条被迁移的记录
 - 对调试有帮助
+
+#### 4. **破坏性全量替换（仅恢复/重建时使用）**
+```bash
+bun run migrate:legacy:replace
+```
+- **会清空 `daily_visits`、`audit_logs`、`links` 后重新导入**
+- 不会清空 `users`
+- 日常补 dump 不要使用这个命令
 
 ### 环境变量
 
 脚本需要以下环境变量：
 
-- `LEGACY_MONGO_DB_URL` - Heroku MongoDB 连接字符串
+- `LEGACY_MONGO_DB_READONLY_URL` - Heroku MongoDB 只读连接字符串
   - 格式: `mongodb+srv://user:password@cluster/database`
   - 存储在 `.env` 文件中
 
@@ -71,19 +81,14 @@ npm run migrate:legacy:verbose
 ### 工作流程
 
 1. **连接到 MongoDB**
-   - 使用 `LEGACY_MONGO_DB_URL`
+   - 使用 `LEGACY_MONGO_DB_READONLY_URL`
    - 自动检测用户集合（users, accounts, profiles, user）
    - 自动检测链接集合（links, urls, shortlinks, golinks, link）
 
 2. **迁移用户**
-   - 读取 MongoDB 用户
-   - 规范化字段：
-     - `_id` / `id` → UUID
-     - `email` → email
-     - `role` → role (默认 "user")
-     - `createdAt` / `created_at` → createdAt
-   - 删除现有用户（仅匹配 email）
-   - 插入新用户
+   - 从 MongoDB `shortlinks.author` 提取 email
+   - 复用 `public.users.email` 已存在用户
+   - 不存在时创建 `public.users` 记录
 
 3. **迁移链接**
    - 读取 MongoDB 链接
@@ -160,7 +165,8 @@ metadata         → metadata
 ### 注意事项
 
 ⚠️ **重要**：
-- 实际迁移会**覆盖现有数据**（users/links 表）
+- 默认实际迁移是非破坏性的 upsert；不会删除 PostgreSQL-only 链接
+- 只有 `--replace-all` / `bun run migrate:legacy:replace` 会清空链接相关表
 - 在执行之前始终运行 `--dry-run` 模式进行验证
 - 备份生产数据库（Supabase 提供备份功能）
 - 审计日志（audit_logs 表）**不会被迁移**（需要手动处理）
@@ -169,9 +175,9 @@ metadata         → metadata
 
 #### 连接错误
 ```
-❌ 错误: LEGACY_MONGO_DB_URL 环境变量未设置
+❌ 错误: LEGACY_MONGO_DB_READONLY_URL 环境变量未设置
 ```
-- 确保 `.env` 文件包含 `LEGACY_MONGO_DB_URL`
+- 确保 `.env` 文件包含 `LEGACY_MONGO_DB_READONLY_URL`
 - 检查连接字符串格式
 
 #### 无法找到集合

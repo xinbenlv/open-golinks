@@ -17,7 +17,8 @@
     "db:migrate": "bun scripts/run-migrations.ts",
     "db:studio": "drizzle-kit studio",
     "migrate:legacy": "bun scripts/migrate-from-legacy.ts",
-    "migrate:legacy:dry": "bun scripts/migrate-from-legacy.ts --dry-run"
+    "migrate:legacy:dry": "bun scripts/migrate-from-legacy.ts --dry-run",
+    "migrate:legacy:replace": "bun scripts/migrate-from-legacy.ts --replace-all"
   },
   "dependencies": {
     "@google-analytics/data": "^6.0.0",

@@ -4,11 +4,12 @@
  * 从 Heroku MongoDB 迁移数据到 PostgreSQL
  *
  * 使用方法：
- *   npm run migrate:legacy                # 实际迁移（会覆盖现有数据）
+ *   npm run migrate:legacy                # 非破坏性 upsert（保留 Postgres-only 链接）
  *   npm run migrate:legacy -- --dry-run   # 测试运行（仅显示将迁移的数据，不修改数据库）
+ *   npm run migrate:legacy -- --replace-all # 破坏性全量替换（会清空 links/audit_logs/daily_visits）
  *
  * 环境变量：
- *   LEGACY_MONGO_DB_URL - 旧 MongoDB 连接字符串
+ *   LEGACY_MONGO_DB_READONLY_URL - 旧 MongoDB 只读连接字符串
  *   DATABASE_URL        - 新 PostgreSQL 连接字符串
  */
 
@@ -51,12 +52,15 @@ interface LegacyLink {
 
 // ============ CONFIG ============
 
-const DRY_RUN = process.argv.includes('--dry-run');
-const VERBOSE = process.argv.includes('--verbose');
+const args = new Set(process.argv.slice(2));
+const DRY_RUN = args.has('--dry-run');
+const VERBOSE = args.has('--verbose');
+const REPLACE_ALL = args.has('--replace-all');
+const MODE = REPLACE_ALL ? 'replace-all' : 'upsert-only';
 
-const LEGACY_MONGO_URL = process.env.LEGACY_MONGO_DB_URL;
+const LEGACY_MONGO_URL = process.env.LEGACY_MONGO_DB_READONLY_URL;
 if (!LEGACY_MONGO_URL) {
-  console.error('❌ 错误: LEGACY_MONGO_DB_URL 环境变量未设置');
+  console.error('❌ 错误: LEGACY_MONGO_DB_READONLY_URL 环境变量未设置');
   process.exit(1);
 }
 
@@ -143,8 +147,8 @@ function mapLegacyLink(mongoLink: LegacyLink, emailToUserIdMap: Map<string, stri
     updatedAt: now,
     visits: 0,
     createdByFingerprint: null,
-    isPublic: true,
-    metadata: author ? { legacyAuthor: author } : null,
+    isPublic: false,
+    metadata: author ? { legacy_author_email: author } : null,
   };
 }
 
@@ -159,6 +163,8 @@ async function migrateData() {
     usersMigrated: 0,
     linksRead: 0,
     linksMigrated: 0,
+    linksCreated: 0,
+    linksUpdated: 0,
     errors: 0,
   };
 
@@ -229,11 +235,17 @@ async function migrateData() {
     // ============ STEP 3: 迁移链接 ============
     log('\n🔗 迁移链接...');
 
-    if (!DRY_RUN) {
-      log(`清空现有链接...`);
-      await sql`DELETE FROM daily_visits`;
-      await sql`DELETE FROM audit_logs`;
-      await sql`DELETE FROM links`;
+    if (REPLACE_ALL) {
+      if (!DRY_RUN) {
+        log(`清空现有链接...`, 'warn');
+        await sql`DELETE FROM daily_visits`;
+        await sql`DELETE FROM audit_logs`;
+        await sql`DELETE FROM links`;
+      } else {
+        log(`使用 ${MODE} dry-run 模式: 实际执行时会先清空 links/audit_logs/daily_visits`, 'warn');
+      }
+    } else {
+      log(`使用 ${MODE} 模式: 添加/覆盖 MongoDB 中存在的 slug, 保留 Postgres-only 链接`);
     }
 
     for (const mongoLink of legacyLinks) {
@@ -242,7 +254,7 @@ async function migrateData() {
         if (!link) continue;
 
         if (!DRY_RUN) {
-          await sql`
+          const result = await sql`
             INSERT INTO links (
               slug, url, owner_id, created_at, updated_at,
               visits, created_by_fingerprint, is_public, metadata, url_history
@@ -256,10 +268,20 @@ async function migrateData() {
             )
             ON CONFLICT (slug) DO UPDATE SET
               url = EXCLUDED.url,
-              owner_id = EXCLUDED.owner_id,
+              owner_id = COALESCE(EXCLUDED.owner_id, links.owner_id),
               updated_at = EXCLUDED.updated_at,
-              metadata = EXCLUDED.metadata
+              metadata = CASE
+                WHEN EXCLUDED.metadata IS NULL THEN links.metadata
+                ELSE COALESCE(links.metadata, '{}'::jsonb) || EXCLUDED.metadata
+              END
+            RETURNING (xmax = 0) AS inserted
           `;
+          const inserted = Boolean((result[0] as { inserted?: boolean } | undefined)?.inserted);
+          if (inserted) {
+            stats.linksCreated++;
+          } else {
+            stats.linksUpdated++;
+          }
         }
         stats.linksMigrated++;
         vlog(`  ${DRY_RUN ? '[DRY-RUN]' : '✓'} ${link.slug} -> ${link.url}`);
@@ -277,8 +299,13 @@ async function migrateData() {
       log('📋 DRY-RUN 模式 - 未修改任何数据', 'info');
     }
     log('迁移统计:', 'success');
+    log(`  模式: ${MODE}${DRY_RUN ? ' dry-run' : ''}`);
     log(`  👥 用户:  ${stats.usersMigrated}/${stats.usersRead} 已迁移`);
     log(`  🔗 链接:  ${stats.linksMigrated}/${stats.linksRead} 已迁移`);
+    if (!DRY_RUN) {
+      const deleteSummary = REPLACE_ALL ? '已先清空 links/audit_logs/daily_visits' : '0';
+      log(`     新增: ${stats.linksCreated}, 覆盖: ${stats.linksUpdated}, 删除: ${deleteSummary}`);
+    }
     if (stats.errors > 0) {
       log(`  ⚠️  错误:  ${stats.errors}`, 'warn');
     }
@@ -287,7 +314,7 @@ async function migrateData() {
     if (!DRY_RUN) {
       log('✅ 迁移完成！', 'success');
     } else {
-      log('✅ DRY-RUN 完成！使用 npm run migrate:legacy 执行实际迁移', 'success');
+      log('✅ DRY-RUN 完成！使用 npm run migrate:legacy 执行非破坏性 upsert', 'success');
     }
 
     await sql.end();
@@ -305,6 +332,7 @@ async function migrateData() {
 log(`\n${'='.repeat(50)}`);
 log('MongoDB 到 PostgreSQL 数据迁移');
 log(`${'='.repeat(50)}`);
+log(`模式: ${MODE}`);
 if (DRY_RUN) {
   log('🧪 DRY-RUN 模式: 仅显示将迁移的数据', 'warn');
 }

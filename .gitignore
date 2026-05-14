@@ -29,6 +29,9 @@ logs/
 *.log
 npm-debug.log*
 
+# 本地数据库备份
+tmp/db-backup/
+
 # Bun
 bun.lockb
 

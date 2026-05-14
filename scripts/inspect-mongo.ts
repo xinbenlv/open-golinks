@@ -15,7 +15,12 @@ for (const line of envContent.split('\n')) {
 }
 
 async function main() {
-  const client = new MongoClient(process.env.LEGACY_MONGO_DB_URL!);
+  const mongoUrl = process.env.LEGACY_MONGO_DB_READONLY_URL;
+  if (!mongoUrl) {
+    throw new Error('LEGACY_MONGO_DB_READONLY_URL is required');
+  }
+
+  const client = new MongoClient(mongoUrl);
   await client.connect();
   const db = client.db();
 
