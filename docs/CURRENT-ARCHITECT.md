@@ -140,7 +140,7 @@ flowchart TB
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
   - `/stats` / `/stats/:slug` 是公开只读 GA4 统计视图, 调 `/api/v1/stats/query` 展示全站或单 slug 的 path 表、path share 饼图、date 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换.
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
-  - `/qr/:slug` 是 QR editor; 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
+  - `/edit/:slug` 和创建成功态内嵌 QR editor; `/qr/:slug` 仍是独立 QR editor. 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
   - `/create` 复用 Landing 创建体验.
   - `/warn/:slug` 不再走 SPA; 由 Hono `src/routes/warn.ts` 直接返回 SSR HTML.
   - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`; `src/web/hooks/useApi.ts` 封装 JSON API 请求.
@@ -205,10 +205,11 @@ flowchart TB
 4. 发起方立即失去 owner 权限; 接收方的 `/dashboard` 可看到该链接
 
 ### QR code
-1. 用户进入 `/qr/:slug`, SPA 读取 `/api/v1/links/:slug` 获取目标 URL 并用 `QrCanvas` 实时预览短链 QR
-2. 下载按钮指向 `/qr/d/:slug.png?caption=...&addLogo=true`
-3. 兼容旧路径 `/qr/:slug.png` 返回 inline PNG; `/qr/d/:slug.png` 返回 attachment PNG
-4. 服务端 QR PNG 始终编码短链 URL (`PUBLIC_BASE_URL` 或请求 origin + `/:slug`), 不直接编码 destination URL
+1. 用户在 `/edit/:slug` 或 `/qr/:slug` 中看到 `QrCanvas` 实时预览短链 QR; 创建成功态也显示可下载 QR
+2. `caption` / `addLogo` 作为 link `metadata` 保存; `/qr/*.png` 未传 query 时读取已保存设置
+3. 下载按钮指向 `/qr/d/:slug.png?caption=...&addLogo=true`
+4. 兼容旧路径 `/qr/:slug.png` 返回 inline PNG; `/qr/d/:slug.png` 返回 attachment PNG
+5. 服务端 QR PNG 始终编码短链 URL (`PUBLIC_BASE_URL` 或请求 origin + `/:slug`), 不直接编码 destination URL
 
 ### Detailed analytics
 1. 任何用户访问 `/stats` 或 `/stats/:slug`
