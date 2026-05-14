@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 0.5 天
 **Priority**: P1
-**Status**: 📋 Planning
+**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -26,6 +26,12 @@ Edit 页右侧 / 折叠区显示该链接的 URL 历史 timeline. 纯 UI feature
 - DB: `links.url_history` (jsonb) 已就绪, F2 写入
 - API: 复用 `GET /api/v1/links/:slug` (response 已含 `urlHistory`)
 - env: 无新增
+
+## Implementation Notes (2026-05-14)
+
+- 已实现 `UrlHistory` 组件并嵌入 Edit 页, 展示 current URL、历史 URL newest-first、original 标记和空状态.
+- `normalizeUrlHistoryEntries` 兼容 camelCase/snake_case 历史字段, malformed legacy 值会被忽略并回退为空数组.
+- 后端无新增端点, 仍复用 `GET /api/v1/links/:slug`.
 
 ## UI 草图
 
@@ -52,8 +58,8 @@ test('history JSON 损坏 (旧数据格式) → 显示 fallback 不崩溃', ...)
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F10-url-history.test.ts` 绿
+- [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3110 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
+- [x] 2. `bun test tests/e2e/F10-url-history.test.ts` 绿
 - [ ] 3. commit + push, 前缀 `[F10]`
 - [ ] 4. Railway env: 无新增
 - [ ] 5. deploy SUCCESS

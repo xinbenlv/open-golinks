@@ -15,4 +15,5 @@
 - `stats/PathRegexInput.tsx` — `/stats` path regex 输入 + Apply.
 - `stats/PieChart.tsx` — `/stats` path event share 饼图.
 - `stats/LineChart.tsx` — `/stats` date event/user 折线图.
+- `UrlHistory.tsx` — Edit 页 URL 历史展示, 兼容 malformed legacy `url_history` 并回退到空状态.
 - `WarnToggle.tsx` — Edit 页 warning interstitial 开关, 只写 `metadata.show_warning`.

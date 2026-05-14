@@ -127,7 +127,7 @@ flowchart TB
 ### 前端 (SPA)
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
-  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 `AuditTimeline`.
+  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 `UrlHistory` 与 `AuditTimeline`.
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
   - `/stats` / `/stats/:slug` 由 `AuthGuard` 保护, 调 `/api/v1/stats/query` 展示 GA4 path 表、path share 饼图、date 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换.
@@ -183,6 +183,12 @@ flowchart TB
 3. 后端先校验 `links.owner_id = JWT sub`; 非 owner 403, 不存在/已删除 404
 4. 返回按 `timestamp DESC, id DESC` 排序的审计日志, `UPDATE` 等带 diff 的事件可在 UI 展开查看 JSON
 5. `Load more` 用 base64url cursor 继续取下一页
+
+### URL history
+1. Owner 在 `/edit/:slug` 保存新目标 URL
+2. `PATCH /api/v1/links/:slug` 把旧 URL 追加到 `links.url_history` (`{ url, changedAt, changedBy }`)
+3. Edit 页 `UrlHistory` 直接使用 `GET /api/v1/links/:slug` 返回的 `urlHistory`, newest-first 展示历史目标 URL
+4. 旧数据若不是数组或条目缺少 `url`, 前端 normalize 后忽略, 显示 "No previous URLs" 而不崩溃
 
 ### QR code
 1. 用户进入 `/qr/:slug`, SPA 读取 `/api/v1/links/:slug` 获取目标 URL 并用 `QrCanvas` 实时预览短链 QR

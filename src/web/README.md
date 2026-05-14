@@ -30,6 +30,7 @@ src/web/
 │   ├── QrCanvas.tsx         # QR editor 客户端 canvas 预览
 │   ├── StatsChart.tsx       # Dashboard 30 日 GA4 折线
 │   ├── stats/               # 详细 Analytics 控件与图表
+│   ├── UrlHistory.tsx       # Edit 页 URL 历史展示
 │   └── WarnToggle.tsx       # Edit 页 warning interstitial 开关
 └── pages/
     ├── Landing/             # Landing 页 (`/`), 构建期被 SSG 预渲染
@@ -49,7 +50,7 @@ src/web/
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
     ├── Claim.tsx            # /claim/:slug, 匿名链接登录后认领
     ├── Create.tsx           # /create 复用 Landing 创建体验
-    ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接 + audit timeline
+    ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接 + URL history/audit timeline
     ├── QrEditor.tsx         # /qr/:slug, QR 预览 + PNG 下载
     ├── Stats/               # /stats 和 /stats/:slug 详细 GA4 analytics
     └── NotFound.tsx         # * (lazy stub)
@@ -128,7 +129,7 @@ Vite client env:
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
 
-`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning` 或 DELETE 软删, 底部 `AuditTimeline` 展示 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 历史并支持展开 diff. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
+`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning` 或 DELETE 软删, 底部 `UrlHistory` 展示历史目标 URL, `AuditTimeline` 展示 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 历史并支持展开 diff. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
 
 ## QR Editor
 

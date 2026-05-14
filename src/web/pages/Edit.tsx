@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AuditTimeline } from "../components/AuditTimeline";
+import { UrlHistory } from "../components/UrlHistory";
 import { WarnToggle } from "../components/WarnToggle";
 import { authFetch, useAuth } from "../hooks/useAuth";
 import { Landing } from "./Landing";
@@ -11,6 +12,7 @@ type LinkRecord = {
   ownerId: string | null;
   deletedAt: string | null;
   urlHistory: unknown[];
+  updatedAt: string;
   metadata: { show_warning?: boolean } | null;
 };
 
@@ -186,6 +188,11 @@ export default function Edit() {
             </button>
           </div>
         </form>
+        <UrlHistory
+          currentUrl={state.link.url}
+          updatedAt={state.link.updatedAt}
+          history={state.link.urlHistory}
+        />
         <AuditTimeline slug={slug} />
       </section>
     </main>
