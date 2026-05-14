@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 0.5 天
 **Priority**: P1
-**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -60,14 +60,14 @@ test('history JSON 损坏 (旧数据格式) → 显示 fallback 不崩溃', ...)
 
 - [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3110 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
 - [x] 2. `bun test tests/e2e/F10-url-history.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F10]`
-- [ ] 4. Railway env: 无新增
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产:
+- [x] 3. commit + push, 前缀 `[F10]` (`f869525`)
+- [x] 4. Railway env: 无新增
+- [x] 5. deploy SUCCESS (`4c1fb9ec-f3f1-4507-b398-4123395cdac1`, 2026-05-14)
+- [x] 6. 浏览器验证生产 (`RUN_BROWSER_TESTS=1 EXPECTED_SHA=f86952 bun test tests/browser/F10.spec.ts`):
   - 对测试 slug 改 2-3 次 url
   - /edit/<slug> 看到 URL History timeline
   - build SHA 匹配
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 

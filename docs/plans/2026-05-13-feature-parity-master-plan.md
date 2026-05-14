@@ -245,7 +245,7 @@ tests/e2e/
 - [x] **F7. QR 码生成 / 显示 / 下载** — 对应 master `QrCodeEditor.vue`
 - [x] **F8. 详细 Analytics 页** — 时间范围, slug 正则过滤, 多图表
 - [x] **F9. 审计日志查看 (`/api/v1/audit/:slug`)** — owner-only timeline + diff 展开
-- [ ] **F10. 链接 URL 历史展示** — schema 已有
+- [x] **F10. 链接 URL 历史展示** — Edit 页 URL History timeline
 
 ### 🟢 P2 - 长尾, 视用户反馈
 
@@ -486,6 +486,6 @@ tests/e2e/
 | Landing 页 | 无 | 有 (`Landing/*`, SSR prerender) | ✅ v2-hono 新增 |
 | 警告页 | 未确认 | 已有 `/warn/:slug` SSR + Edit toggle | ✅ F6 (按新增处理) |
 | 审计日志 | 无 | 已有 owner-only `/api/v1/audit/:slug` + Edit 页 timeline | ✅ F9 |
-| URL 历史 | 有 | schema 有 (jsonb 默认 []), API 无 | F10 |
+| URL 历史 | 有 | 已有 `url_history` 写入 + Edit 页 URL History timeline | ✅ F10 |
 | 所有权转移 | 无 | enum 已含 `TRANSFER`, 无 API | F11 (新增) |
 | Chrome Extension | 待 W0 spike 确认 | 未验证 | F13 |
