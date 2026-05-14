@@ -1,10 +1,13 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
+import { AuthGuard } from "./components/AuthGuard";
 import { Landing } from "./pages/Landing";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Create = lazy(() => import("./pages/Create"));
 const Edit = lazy(() => import("./pages/Edit"));
+const Login = lazy(() => import("./pages/Login"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Warn = lazy(() => import("./pages/Warn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -16,7 +19,16 @@ export function AppRoutes() {
     <Suspense fallback={<Fallback />}>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route
+          path="/dashboard"
+          element={
+            <AuthGuard>
+              <Dashboard />
+            </AuthGuard>
+          }
+        />
         <Route path="/create" element={<Create />} />
         <Route path="/edit/:slug" element={<Edit />} />
         <Route path="/warn/:slug" element={<Warn />} />

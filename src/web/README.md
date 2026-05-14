@@ -16,7 +16,13 @@ src/web/
 │   └── global.css           # 全局重置 + 容器 + .reveal 动画基础
 ├── hooks/
 │   ├── useReveal.ts         # IntersectionObserver 滚动 reveal
-│   └── useTheme.ts          # light / dark / system 三态主题
+│   ├── useTheme.ts          # light / dark / system 三态主题
+│   └── useAuth.ts           # Supabase session store + authFetch
+├── lib/
+│   └── supabase.ts          # supabase-js PKCE client singleton
+├── components/
+│   ├── AuthGuard.tsx        # owner-only route guard
+│   └── BuildStamp.tsx       # 全局构建版本水印
 └── pages/
     ├── Landing/             # Landing 页 (`/`), 构建期被 SSG 预渲染
     │   ├── index.tsx        # 组合 Header / Hero / Features / HowItWorks / ForTeams / Footer
@@ -31,6 +37,8 @@ src/web/
     │   └── landing.css      # Landing 专属样式
     ├── ComingSoon.tsx       # Dashboard / Create / Edit / Warn / NotFound 通用占位
     ├── Dashboard.tsx        # /dashboard (lazy stub)
+    ├── Login.tsx            # /login, magic link form
+    ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
     ├── Create.tsx           # /create (lazy stub)
     ├── Edit.tsx             # /edit/:slug 复用 Landing, slug 预填, 光标自动放 URL 输入框
     ├── Warn.tsx             # /warn/:slug (lazy stub)
@@ -42,7 +50,9 @@ src/web/
 | 路径 | 组件 | 渲染策略 |
 |---|---|---|
 | `/` | `pages/Landing` | 构建期 **SSG 预渲染** + 客户端 hydrate |
-| `/dashboard` | `pages/Dashboard` | 客户端 lazy chunk |
+| `/login` | `pages/Login` | 客户端 lazy chunk, Supabase magic link |
+| `/auth/callback` | `pages/AuthCallback` | 客户端 lazy chunk, PKCE code exchange |
+| `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录 |
 | `/create` | `pages/Create` | 客户端 lazy chunk |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk |
 | `/warn/:slug` | `pages/Warn` | 客户端 lazy chunk |
@@ -79,6 +89,19 @@ bun run build:web
 - 颜色 / 间距 / 阴影 / 字号一律用 token (CSS variable), 不写死十六进制.
 - 不引 Tailwind v3 / framer-motion / 大型 UI 库 (体积约束).
 
+## Auth
+
+`useAuth()` 通过 `@supabase/supabase-js` 维护浏览器 session:
+- `Login.tsx` 调 `signInWithMagicLink(email)`, redirect 到 `/auth/callback`
+- `AuthCallback.tsx` 读取 `?code=` 并调用 `exchangeCodeForSession`
+- `AuthGuard` 保护 `/dashboard`, 但 `/edit/:slug` 保持公开以保留 "未找到 → 创建" 流程
+- Header 根据 session 显示登录/登出状态
+
+Vite client env:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_BASE_URL`
+
 ## 创建表单 (CreateForm)
 
 `Hero` 内嵌的创建表单直连 `POST /api/v1/links`:
@@ -107,7 +130,7 @@ bun run start                  # NODE_ENV=production, Hono 托管 dist/web
 ## 已知限制
 
 - `/favicon.ico` / `/favicon.svg` / `/robots.txt` 等带 `.` 的根路径在生产被 redirect handler 当成无效 slug 拦截 → 404. 因此 favicon 用 inline data URL 处理. 后端逻辑由 `src/routes/redirect.ts` 决定, 本目录不修改.
-- 直接访问 `/dashboard` 等单段 RESERVED 路径在生产会被 redirect handler 返回 404. 需要 server 改造以支持 SPA fallback (见 `docs/troubleshooting/spa-reserved-paths.md`). `/edit/:slug` 是双段, 走 SPA fallback 没问题.
+- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login` 等已覆盖.
 
 ## 相关
 

@@ -197,9 +197,10 @@ async function migrateData() {
         try {
           // 查询是否已经存在（Supabase Auth 可能已创建）
           const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
-          if (existing.length > 0) {
-            emailToUserIdMap.set(email, existing[0].id);
-            vlog(`  ✓ 已存在: ${email} (${existing[0].id})`);
+          const existingUser = existing[0] as { id: string } | undefined;
+          if (existingUser) {
+            emailToUserIdMap.set(email, existingUser.id);
+            vlog(`  ✓ 已存在: ${email} (${existingUser.id})`);
           } else {
             const id = uuidv4();
             await sql`

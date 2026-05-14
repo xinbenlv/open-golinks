@@ -11,6 +11,7 @@ const RESERVED = new Set([
   "create",
   "dashboard",
   "edit",
+  "login",
   "warn",
   "assets",
   "static",

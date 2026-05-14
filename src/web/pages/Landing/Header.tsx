@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
+import { useAuth } from "../../hooks/useAuth";
 import { IconGitHub, IconSun, IconMoon, IconMonitor } from "./icons";
 
 const THEME_LABEL: Record<string, string> = {
@@ -10,7 +12,9 @@ const THEME_LABEL: Record<string, string> = {
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
+  const { user, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -77,9 +81,32 @@ export function Header() {
             <IconGitHub />
           </a>
 
-          <a href="/dashboard" className="btn btn--ghost btn--sm">
-            登录
-          </a>
+          {user ? (
+            <div className="nav-account">
+              <Link to="/dashboard" className="nav-account__email">
+                {user.email ?? "Dashboard"}
+              </Link>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                disabled={signingOut}
+                onClick={async () => {
+                  setSigningOut(true);
+                  try {
+                    await signOut();
+                  } finally {
+                    setSigningOut(false);
+                  }
+                }}
+              >
+                {signingOut ? "退出中" : "登出"}
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="btn btn--ghost btn--sm">
+              登录
+            </Link>
+          )}
         </nav>
       </div>
     </header>

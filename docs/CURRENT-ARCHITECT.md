@@ -14,6 +14,7 @@
    Extension  │   ├─ /:slug          → 302 + 异步 analytics  │
               │   ├─ /api/v1/health  → JSON                  │
               │   ├─ /api/v1/links   → CRUD                  │
+              │   ├─ /api/v1/me      → JWT 当前用户          │
               │   └─ /*              → 静态 SPA (dist/web)   │
               └──────────┬───────────────────────────────────┘
                          │ postgres-js + Drizzle
@@ -68,7 +69,7 @@ flowchart TB
 
 ### 路由
 - **`src/routes/redirect.ts`** (`GET /:slug`)
-  - 校验 slug 格式 + 保留路径; RESERVED 或不合法格式 → 404
+  - 校验 slug 格式 + 保留路径; RESERVED 或不合法格式 → `next()`, 交给静态资源 / SPA fallback
   - 查询 `links` 表 (排除软删除)
   - 命中 → 302 立即返回, 用 `queueMicrotask` 异步累加 visits + UPSERT daily_visits
   - 未命中 (合法但未创建) → 302 到 `/edit/<slug>`, 让用户走 Landing 同款表单创建
@@ -77,6 +78,13 @@ flowchart TB
   - `GET /` - 列出最近 50 条公开链接 (stub, 待加分页 + 鉴权)
   - `POST /` - 创建链接 (stub, 待接 Turnstile + 指纹)
   - `GET /:slug` - 获取单链接
+- **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
+
+### Middleware
+- **`src/middleware/auth.ts`** - Supabase Auth JWT 验证 middleware:
+  - `requireAuth`: 缺失或无效 Bearer token → 401
+  - `optionalAuth`: 有 token 就验, 无 token 继续匿名
+  - 首次见到 JWT `sub` 时 lazy upsert `public.users`, 供 `links.owner_id` / `audit_logs.actor_id` 外键使用
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
@@ -90,7 +98,10 @@ flowchart TB
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
   - `/edit/:slug` 复用 Landing 整页 (`pages/Edit.tsx` 渲染 `<Landing initialSlug={slug} />`), CreateForm 自动把光标放到 URL 字段.
-  - `/dashboard` / `/create` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
+  - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk.
+  - `/dashboard` 当前由 `AuthGuard` 保护, 仍是 stub (`pages/ComingSoon.tsx`).
+  - `/create` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
+  - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`.
   - 客户端 `src/web/main.tsx:14-32` 智能切换 `hydrateRoot` (Landing 命中预渲染) / `createRoot` (其他路径).
 - 构建输出 `dist/web/`, 由 Hono `serveStatic` 在生产托管.
 
@@ -129,6 +140,11 @@ flowchart TB
 | `PORT` | - | Railway 自动注入, 本地默认 3000 |
 | `NODE_ENV` | - | `production` 时托管 SPA |
 | `PUBLIC_BASE_URL` | 待用 | 生成完整短链时使用 |
+| `SUPABASE_JWKS_URL` | ✅ | JWT 验证 JWKS URL |
+| `SUPABASE_JWT_ISSUER` | ✅ | JWT issuer 校验 |
+| `VITE_SUPABASE_URL` | ✅ | 前端 Supabase client URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | 前端 Supabase publishable key |
+| `VITE_BASE_URL` | ✅ | magic link redirect base URL |
 | `TURNSTILE_SECRET_KEY` | 待用 | 创建链接的 bot 防护 |
 | `TURNSTILE_SITE_KEY` | 待用 | 前端嵌入 |
 
@@ -142,11 +158,10 @@ flowchart TB
 
 ## 当前未实现 (TODO)
 
-- Auth middleware (Supabase JWT 验证)
 - Turnstile 校验
 - 指纹 (`createdByFingerprint`) 计算
 - `audit_logs` 写入
 - `/warn/:slug` 警告页
-- SPA 各页面具体实现 (Create / Dashboard / Analytics; 当前 Landing + Edit 实装, 其余 stub)
-- 单元测试 + e2e 测试
+- SPA 各页面具体实现 (Create / Dashboard / Analytics; 当前 Landing + Edit + Login 实装, Dashboard/Create/Warn 仍 stub)
+- 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)
