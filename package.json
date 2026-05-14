@@ -1,6 +1,6 @@
 {
   "name": "open-golinks-v2-hono",
-  "version": "2.0.0-hono.0",
+  "version": "2.0.0-hono.1",
   "description": "短链与 analytics 服务 - Bun + Hono + Drizzle + Vite/React 实现",
   "private": true,
   "type": "module",
