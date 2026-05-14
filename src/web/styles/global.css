@@ -145,3 +145,26 @@ svg {
   background: var(--accent-soft);
   color: var(--text);
 }
+
+/* —— Build stamp (全局右下角版本水印) —— */
+
+.build-stamp {
+  position: fixed;
+  bottom: 8px;
+  right: 12px;
+  font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  user-select: text;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.build-stamp a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.build-stamp a:hover {
+  text-decoration: underline;
+}

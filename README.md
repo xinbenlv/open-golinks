@@ -87,6 +87,23 @@ healthcheck: `GET /api/v1/health`
 - [活跃计划 docs/plans/](./docs/plans/)
 - [迁移脚本说明 scripts/README.md](./scripts/README.md)
 
+## 版本展示 (Versioning)
+
+每个构建都会被打上 `version / sha / builtAt / branch` 四元组, 来源:
+
+- **`version`**: `package.json#version` (semver, PR 中显式 bump)
+- **`sha`**: `git rev-parse --short=6 HEAD` 或部署平台注入 (`VERCEL_GIT_COMMIT_SHA` / `RAILWAY_GIT_COMMIT_SHA` / `GITHUB_SHA`)
+- **`builtAt`**: ISO-8601 带本地时区偏移, e.g. `2026-05-13T19:30:42-07:00`
+- **`branch`**: 当前分支 (可选)
+
+实现位于 [`src/build-info.ts`](./src/build-info.ts), 在三处暴露:
+
+1. **Web UI**: 全局右下角水印 (`src/web/components/BuildStamp.tsx`) + Landing footer 版本链接
+2. **API**: `GET /api/v1/version` 返回 JSON; 所有响应携带 `X-Build-Version` / `X-Build-Sha` / `X-Build-Time` header
+3. **Server 启动日志**: `[build] open-golinks-v2-hono v… · … · …`
+
+CI/部署期可用 `OGL_BUILD_VERSION` / `OGL_BUILD_SHA` / `OGL_BUILD_TIME` / `OGL_BUILD_BRANCH` 显式覆盖.
+
 ## 兼容性承诺
 
 只保证 **slug URL 兼容**: 所有现有 `/{slug}` 短链在迁移后必须继续工作. API schema / Dashboard UI / Auth session 不保证向前兼容.

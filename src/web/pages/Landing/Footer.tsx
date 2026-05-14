@@ -1,9 +1,9 @@
-import { getVersion } from "../../version";
+import { formatVersionLine, getVersion } from "../../version";
 
 export function Footer() {
   const year = new Date().getFullYear();
   const v = getVersion();
-  const versionLabel = v.buildTime ? `${v.sha} · ${v.buildTime}` : v.sha;
+  const versionLabel = formatVersionLine(v);
   const repoCommit =
     v.sha === "dev"
       ? "https://github.com/xinbenlv/open-golinks"
