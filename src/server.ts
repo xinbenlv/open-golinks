@@ -11,6 +11,7 @@ import { linksRoute } from "./routes/api/links.ts";
 import { meRoute } from "./routes/api/me.ts";
 import { qrApiRoute } from "./routes/api/qr.ts";
 import { statsRoute } from "./routes/api/stats.ts";
+import { v2CompatRoute } from "./routes/api/v2-compat.ts";
 import { versionRoute } from "./routes/api/version.ts";
 import { BUILD_INFO, formatBuildLine } from "./build-info.ts";
 import { loadGcpCredentials } from "./lib/gcp.ts";
@@ -38,6 +39,7 @@ app.route("/api/v1/me", meRoute);
 app.route("/api/v1/qr", qrApiRoute);
 app.route("/api/v1/stats", statsRoute);
 app.route("/api/v1/version", versionRoute);
+app.route("/api/v2", v2CompatRoute);
 
 // Warning interstitial must be served by Hono SSR, not the SPA fallback.
 app.route("/warn", warnRoute);

@@ -297,6 +297,15 @@ linksRoute.get("/claimable", requireAuth, async (c) => {
   return c.json({ links: rows });
 });
 
+// GET /api/v1/links/:slug/available - public slug availability check.
+linksRoute.get("/:slug/available", async (c) => {
+  const parsed = slugSchema.safeParse(c.req.param("slug"));
+  if (!parsed.success) return c.json({ error: "INVALID_SLUG" }, 400);
+
+  const row = await findLink(parsed.data);
+  return c.json({ available: !row || Boolean(row.deletedAt) });
+});
+
 // GET /api/v1/links/:slug
 linksRoute.get("/:slug", async (c) => {
   const slug = c.req.param("slug");
