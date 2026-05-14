@@ -53,6 +53,7 @@ warnRoute.get("/:slug", async (c) => {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff7a45'/%3E%3Cpath d='M32 12 56 52H8L32 12Z' fill='%23101014'/%3E%3Ccircle cx='32' cy='45' r='3' fill='%23ff7a45'/%3E%3Cpath d='M30 25h4v15h-4z' fill='%23ff7a45'/%3E%3C/svg%3E" />
     <title>Warning: External link</title>
     <style>
       :root { color-scheme: dark light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }

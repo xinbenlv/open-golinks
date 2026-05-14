@@ -170,11 +170,16 @@ describe("F6 warning page browser smoke", () => {
       );
       const warnHtml = await page.content();
       expect(warnHtml).not.toContain("<script");
-      await Promise.all([
-        page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 15_000 }),
-        page.click(".btn-proceed"),
-      ]);
-      expect(page.url()).toContain(targetUrl);
+      const proceedHref = await page.$eval(
+        ".btn-proceed",
+        (element) => (element as HTMLAnchorElement).href,
+      );
+      expect(proceedHref).toBe(`${BASE_URL}/${slug}?confirm=1`);
+      const confirmed = await fetch(`${BASE_URL}/${slug}?confirm=1`, {
+        redirect: "manual",
+      });
+      expect(confirmed.status).toBe(302);
+      expect(confirmed.headers.get("location")).toBe(targetUrl);
 
       await page.goto(`${BASE_URL}/edit/${slug}`, { waitUntil: "networkidle0" });
       await page.waitForSelector('input[type="checkbox"]', { timeout: 15_000 });
