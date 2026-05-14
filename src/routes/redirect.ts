@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, schema } from "../db/db.ts";
 
 export const redirectRoute = new Hono();
@@ -31,20 +31,23 @@ redirectRoute.get("/:slug", async (c, next) => {
   }
 
   const [link] = await db
-    .select({ url: schema.linksTable.url, slug: schema.linksTable.slug })
+    .select({
+      url: schema.linksTable.url,
+      slug: schema.linksTable.slug,
+      deletedAt: schema.linksTable.deletedAt,
+    })
     .from(schema.linksTable)
-    .where(
-      and(
-        eq(schema.linksTable.slug, slug),
-        isNull(schema.linksTable.deletedAt),
-      ),
-    )
+    .where(eq(schema.linksTable.slug, slug))
     .limit(1);
 
   if (!link) {
     // slug 格式合法但还没被创建: 把用户送到 /edit/<slug> 让他直接创建,
     // 而不是 404. 跟 go/links 的 "没找到就创建" 体验一致.
     return c.redirect(`/edit/${slug}`, 302);
+  }
+
+  if (link.deletedAt) {
+    return c.text("Not found", 404);
   }
 
   // 异步累加访问数 + daily_visits UPSERT, 不阻塞 redirect

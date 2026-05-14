@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 3 天
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -106,13 +106,13 @@ test('已登录 POST 写 owner_id, 匿名 POST owner_id 为 null', ...);
 
 ## DoD checklist (遵循 [Per-Feature SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F2-link-crud.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F2]`
-- [ ] 4. Railway env: `IP_HASH_SALT=<另生成一个 32-byte hex, 不复用本地值>`
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产: 登录 → 创建 → 编辑 → 删除 → 访问被删 slug 应 404; console + network 无 5xx; `/api/v1/version` commit SHA 匹配
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 1. type-check + build + 本地 production server healthcheck
+- [x] 2. `bun test tests/e2e/F2-link-crud.test.ts` 绿
+- [x] 3. commit + push, 前缀 `[F2]`
+- [x] 4. Railway env: `IP_HASH_SALT=<另生成一个 32-byte hex, 不复用本地值>`
+- [x] 5. deploy SUCCESS
+- [x] 6. 浏览器验证生产: 登录 → 创建 → 编辑 → 删除 → 访问被删 slug 应 404; console + network 无 5xx; `/api/v1/version` commit SHA 匹配
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 

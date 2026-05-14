@@ -40,7 +40,7 @@ src/web/
     ├── Login.tsx            # /login, magic link form
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
     ├── Create.tsx           # /create (lazy stub)
-    ├── Edit.tsx             # /edit/:slug 复用 Landing, slug 预填, 光标自动放 URL 输入框
+    ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接
     ├── Warn.tsx             # /warn/:slug (lazy stub)
     └── NotFound.tsx         # * (lazy stub)
 ```
@@ -54,7 +54,7 @@ src/web/
 | `/auth/callback` | `pages/AuthCallback` | 客户端 lazy chunk, PKCE code exchange |
 | `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录 |
 | `/create` | `pages/Create` | 客户端 lazy chunk |
-| `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk |
+| `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
 | `/warn/:slug` | `pages/Warn` | 客户端 lazy chunk |
 | `*` | `pages/NotFound` | 客户端 lazy chunk |
 
@@ -111,7 +111,7 @@ Vite client env:
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
 
-`/edit/<slug>` 复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
+`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL 或 DELETE 软删. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
 
 校验规则:
 - `url`: 必填, http/https URL

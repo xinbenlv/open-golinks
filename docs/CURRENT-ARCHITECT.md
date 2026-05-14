@@ -13,7 +13,7 @@
    Browser ──▶│  Bun + Hono                                  │
    Extension  │   ├─ /:slug          → 302 + 异步 analytics  │
               │   ├─ /api/v1/health  → JSON                  │
-              │   ├─ /api/v1/links   → CRUD                  │
+  │   ├─ /api/v1/links   → CRUD + audit          │
               │   ├─ /api/v1/me      → JWT 当前用户          │
               │   └─ /*              → 静态 SPA (dist/web)   │
               └──────────┬───────────────────────────────────┘
@@ -76,8 +76,10 @@ flowchart TB
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - 列出最近 50 条公开链接 (stub, 待加分页 + 鉴权)
-  - `POST /` - 创建链接 (stub, 待接 Turnstile + 指纹)
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流; 写 CREATE audit
   - `GET /:slug` - 获取单链接
+  - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`, 写 UPDATE audit
+  - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 
 ### Middleware
@@ -85,6 +87,8 @@ flowchart TB
   - `requireAuth`: 缺失或无效 Bearer token → 401
   - `optionalAuth`: 有 token 就验, 无 token 继续匿名
   - 首次见到 JWT `sub` 时 lazy upsert `public.users`, 供 `links.owner_id` / `audit_logs.actor_id` 外键使用
+- **`src/middleware/audit.ts`** - `writeAudit(c, action, slug, diff?)`, 对低频 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 写 `audit_logs`; `VISIT` 不写 audit.
+- **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
@@ -97,7 +101,7 @@ flowchart TB
 ### 前端 (SPA)
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
-  - `/edit/:slug` 复用 Landing 整页 (`pages/Edit.tsx` 渲染 `<Landing initialSlug={slug} />`), CreateForm 自动把光标放到 URL 字段.
+  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删.
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 当前由 `AuthGuard` 保护, 仍是 stub (`pages/ComingSoon.tsx`).
   - `/create` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
@@ -130,7 +134,7 @@ flowchart TB
 2. Hono `links.ts` zod 校验
 3. INSERT, 唯一约束失败 (Drizzle 把 PG 的 23505 包成 `DrizzleQueryError`, 从 `err.cause.code` 解出) 返回 `SLUG_TAKEN` 409
 4. 客户端拿到 409 后, 自动生成的 slug 重试一次; 用户自定义的 slug 则在表单内提示
-5. 待补: 写 `audit_logs` CREATE 记录
+5. 已登录请求写 `owner_id`; 匿名请求进入 IP+UA rate limit; CREATE 写 `audit_logs`
 
 ## 环境变量
 
@@ -160,7 +164,7 @@ flowchart TB
 
 - Turnstile 校验
 - 指纹 (`createdByFingerprint`) 计算
-- `audit_logs` 写入
+- audit log UI; VISIT 明确不写 `audit_logs`
 - `/warn/:slug` 警告页
 - SPA 各页面具体实现 (Create / Dashboard / Analytics; 当前 Landing + Edit + Login 实装, Dashboard/Create/Warn 仍 stub)
 - 更完整的浏览器回归测试和 CI

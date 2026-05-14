@@ -5,6 +5,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import { authFetch } from "../../hooks/useAuth";
 import { IconArrowRight, IconCheck, IconCopy } from "./icons";
 
 // 与后端 schema CHECK 约束保持一致
@@ -100,7 +101,7 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
     | { ok: false; kind: "taken" | "invalid" | "network"; message?: string }
   > {
     try {
-      const res = await fetch("/api/v1/links", {
+      const res = await authFetch("/api/v1/links", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ slug: slugFinal, url: urlFinal }),
