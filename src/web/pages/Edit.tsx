@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type FormEvent, type ReactNode } from "reac
 import { Link, useParams } from "react-router-dom";
 import { AuditTimeline } from "../components/AuditTimeline";
 import { QrCanvas } from "../components/QrCanvas";
+import { StatsLineChart } from "../components/stats/LineChart";
 import { TagInput } from "../components/TagInput";
 import { UrlHistory } from "../components/UrlHistory";
 import { authFetch, useAuth } from "../hooks/useAuth";
@@ -29,6 +30,18 @@ type LoadState =
   | { status: "create" }
   | { status: "edit"; link: LinkRecord }
   | { status: "error"; message: string };
+
+type StatsRow = {
+  dimension: string;
+  eventCount: number;
+  activeUsers: number;
+};
+
+type StatsQueryResult = {
+  rows: StatsRow[];
+  totalEvents: number;
+  source: "ga4";
+};
 
 export default function Edit() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -233,208 +246,211 @@ export default function Edit() {
 
   return (
     <main className="auth-page">
-      <section className="auth-panel edit-panel">
-        <form className="auth-form" onSubmit={onSubmit}>
-          <div className="edit-header">
-            <div>
-              <p className="dashboard-kicker">Link</p>
-              <h1>Editing a Link</h1>
-            </div>
-            <div className="edit-header__actions">
-              {!canEdit ? (
-                <span className="edit-status" title="Login as the owner to edit">
-                  Read only
-                </span>
-              ) : null}
-              {!user ? (
-                <Link to="/login" className="btn btn--ghost btn--sm">
-                  Login
-                </Link>
-              ) : null}
-              {canEdit ? (
-                <button
-                  className="btn btn--primary btn--sm"
-                  type="submit"
-                  disabled={submitting}
-                >
-                  {submitting ? "Saving..." : "Update"}
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="edit-layout">
-            <div className="edit-fields">
-              <label className="auth-label" htmlFor={slugId}>Slug</label>
-              <div className="edit-input-row">
-                <input
-                  id={slugId}
-                  className="auth-input"
-                  type="text"
-                  value={state.link.slug}
-                  readOnly
-                />
-                <button className="btn btn--ghost" type="button" onClick={copyShortUrl}>
-                  {copied ? "Copied" : "Copy"}
-                </button>
+      <div className="edit-page-stack">
+        <section className="auth-panel edit-panel">
+          <form className="auth-form" onSubmit={onSubmit}>
+            <div className="edit-header">
+              <div>
+                <p className="dashboard-kicker">Link</p>
+                <h1>Editing a Link</h1>
               </div>
-
-              <label className="auth-label" htmlFor={urlId}>目标链接</label>
-              <input
-                id={urlId}
-                className="auth-input"
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                disabled={submitting || !canEdit}
-                required
-              />
-
-              <div className="edit-meta-row">
-                <span className="edit-owner">Owner: {state.link.ownerId ? "registered" : "anonymous"}</span>
-                <label className="edit-switch" htmlFor={publicId} title={publicTooltip}>
-                  <input
-                    id={publicId}
-                    type="checkbox"
-                    checked={isPublic}
-                    onChange={(event) => setIsPublic(event.target.checked)}
-                    disabled={submitting || !canEdit}
-                  />
-                  <span aria-hidden="true" />
-                  <strong>Public</strong>
-                </label>
-                <label className="edit-switch" htmlFor={warnId} title={warningTooltip}>
-                  <input
-                    id={warnId}
-                    type="checkbox"
-                    checked={showWarning}
-                    onChange={(event) => setShowWarning(event.target.checked)}
-                    disabled={submitting || !canEdit}
-                  />
-                  <span aria-hidden="true" />
-                  <strong>Warning</strong>
-                </label>
+              <div className="edit-header__actions">
+                {!canEdit ? (
+                  <span className="edit-status" title="Login as the owner to edit">
+                    Read only
+                  </span>
+                ) : null}
+                {!user ? (
+                  <Link to="/login" className="btn btn--ghost btn--sm">
+                    Login
+                  </Link>
+                ) : null}
+                {canEdit ? (
+                  <button
+                    className="btn btn--primary btn--sm"
+                    type="submit"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Saving..." : "Update"}
+                  </button>
+                ) : null}
               </div>
-
-              <label className="auth-label" htmlFor={descriptionId}>Description</label>
-              <textarea
-                id={descriptionId}
-                className="auth-input auth-textarea"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={280}
-                placeholder="Short note for this link"
-                rows={3}
-                disabled={submitting || !canEdit}
-              />
-              <TagInput
-                id={tagsId}
-                value={tags}
-                onChange={setTags}
-                disabled={submitting || !canEdit}
-              />
-              {message ? <p className="auth-message">{message}</p> : null}
-              {error ? (
-                <p className="auth-message auth-message--error" role="alert">
-                  {error}
-                </p>
-              ) : null}
-              {canEdit ? (
-                <button
-                  className="btn btn--ghost"
-                  type="button"
-                  onClick={onDelete}
-                  disabled={submitting}
-                >
-                  Delete
-                </button>
-              ) : null}
             </div>
 
-            <aside className="edit-qr-card" aria-labelledby="edit-qr-title">
-              <div className="edit-qr-card__head">
-                <div>
-                  <p className="dashboard-kicker">QRCode</p>
-                  <h2 id="edit-qr-title">QR for /{slug}</h2>
+            <div className="edit-layout">
+              <div className="edit-fields">
+                <label className="auth-label" htmlFor={slugId}>Slug</label>
+                <div className="edit-input-row">
+                  <input
+                    id={slugId}
+                    className="auth-input"
+                    type="text"
+                    value={state.link.slug}
+                    readOnly
+                  />
+                  <button className="btn btn--ghost" type="button" onClick={copyShortUrl}>
+                    {copied ? "Copied" : "Copy"}
+                  </button>
                 </div>
-                <a className="btn btn--ghost btn--sm" href={qrDownloadPath} download>
-                  Download
-                </a>
-              </div>
-              <div className="qr-preview-wrap">
-                <QrCanvas value={shortUrl} caption={qrCaption} addLogo={qrAddLogo} />
-              </div>
-              <label className="auth-label" htmlFor={qrCaptionId}>Caption</label>
-              <textarea
-                id={qrCaptionId}
-                className="auth-input auth-textarea"
-                value={qrCaption}
-                onChange={(event) => setQrCaption(event.target.value)}
-                maxLength={100}
-                placeholder="add a description"
-                rows={3}
-                disabled={submitting || !canEdit}
-              />
-              <label className="checkbox">
+
+                <label className="auth-label" htmlFor={urlId}>目标链接</label>
                 <input
-                  type="checkbox"
-                  checked={qrAddLogo}
-                  onChange={(event) => setQrAddLogo(event.target.checked)}
-                  disabled={submitting || !canEdit}
-                />
-                <span>logo</span>
-              </label>
-              <a className="btn btn--ghost" href={qrPngPath} target="_blank" rel="noreferrer">
-                Open PNG
-              </a>
-            </aside>
-          </div>
-        </form>
-        {canEdit ? (
-          <>
-            <UrlHistory
-              currentUrl={state.link.url}
-              updatedAt={state.link.updatedAt}
-              history={state.link.urlHistory}
-            />
-            <form className="transfer-panel" onSubmit={onTransfer}>
-              <div className="auth-copy">
-                <p className="dashboard-kicker">Danger zone</p>
-                <h2>Transfer ownership</h2>
-                <p>Move this link to another registered user by email.</p>
-              </div>
-              <label className="auth-label" htmlFor={transferId}>
-                Recipient email
-              </label>
-              <div className="transfer-panel__row">
-                <input
-                  id={transferId}
+                  id={urlId}
                   className="auth-input"
-                  type="email"
-                  value={transferEmail}
-                  onChange={(event) => setTransferEmail(event.target.value)}
-                  placeholder="teammate@example.com"
-                  disabled={transferring}
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  disabled={submitting || !canEdit}
                   required
                 />
-                <button
-                  className="btn btn--ghost"
-                  type="submit"
-                  disabled={transferring || !transferEmail.trim()}
-                >
-                  {transferring ? "Transferring..." : "Transfer"}
-                </button>
+
+                <div className="edit-meta-row">
+                  <span className="edit-owner">Owner: {state.link.ownerId ? "registered" : "anonymous"}</span>
+                  <label className="edit-switch" htmlFor={publicId} title={publicTooltip}>
+                    <input
+                      id={publicId}
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(event) => setIsPublic(event.target.checked)}
+                      disabled={submitting || !canEdit}
+                    />
+                    <span aria-hidden="true" />
+                    <strong>Public</strong>
+                  </label>
+                  <label className="edit-switch" htmlFor={warnId} title={warningTooltip}>
+                    <input
+                      id={warnId}
+                      type="checkbox"
+                      checked={showWarning}
+                      onChange={(event) => setShowWarning(event.target.checked)}
+                      disabled={submitting || !canEdit}
+                    />
+                    <span aria-hidden="true" />
+                    <strong>Warning</strong>
+                  </label>
+                </div>
+
+                <label className="auth-label" htmlFor={descriptionId}>Description</label>
+                <textarea
+                  id={descriptionId}
+                  className="auth-input auth-textarea"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  maxLength={280}
+                  placeholder="Short note for this link"
+                  rows={3}
+                  disabled={submitting || !canEdit}
+                />
+                <TagInput
+                  id={tagsId}
+                  value={tags}
+                  onChange={setTags}
+                  disabled={submitting || !canEdit}
+                />
+                {message ? <p className="auth-message">{message}</p> : null}
+                {error ? (
+                  <p className="auth-message auth-message--error" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+                {canEdit ? (
+                  <button
+                    className="btn btn--ghost"
+                    type="button"
+                    onClick={onDelete}
+                    disabled={submitting}
+                  >
+                    Delete
+                  </button>
+                ) : null}
               </div>
-              {transferError ? (
-                <p className="auth-message auth-message--error" role="alert">
-                  {transferError}
-                </p>
-              ) : null}
-            </form>
-            <AuditTimeline slug={slug} />
-          </>
-        ) : null}
-      </section>
+
+              <aside className="edit-qr-card" aria-labelledby="edit-qr-title">
+                <div className="edit-qr-card__head">
+                  <div>
+                    <p className="dashboard-kicker">QRCode</p>
+                    <h2 id="edit-qr-title">QR for /{slug}</h2>
+                  </div>
+                  <a className="btn btn--ghost btn--sm" href={qrDownloadPath} download>
+                    Download
+                  </a>
+                </div>
+                <div className="qr-preview-wrap">
+                  <QrCanvas value={shortUrl} caption={qrCaption} addLogo={qrAddLogo} />
+                </div>
+                <label className="auth-label" htmlFor={qrCaptionId}>Caption</label>
+                <textarea
+                  id={qrCaptionId}
+                  className="auth-input auth-textarea"
+                  value={qrCaption}
+                  onChange={(event) => setQrCaption(event.target.value)}
+                  maxLength={100}
+                  placeholder="add a description"
+                  rows={3}
+                  disabled={submitting || !canEdit}
+                />
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={qrAddLogo}
+                    onChange={(event) => setQrAddLogo(event.target.checked)}
+                    disabled={submitting || !canEdit}
+                  />
+                  <span>logo</span>
+                </label>
+                <a className="btn btn--ghost" href={qrPngPath} target="_blank" rel="noreferrer">
+                  Open PNG
+                </a>
+              </aside>
+            </div>
+          </form>
+          {canEdit ? (
+            <>
+              <UrlHistory
+                currentUrl={state.link.url}
+                updatedAt={state.link.updatedAt}
+                history={state.link.urlHistory}
+              />
+              <form className="transfer-panel" onSubmit={onTransfer}>
+                <div className="auth-copy">
+                  <p className="dashboard-kicker">Danger zone</p>
+                  <h2>Transfer ownership</h2>
+                  <p>Move this link to another registered user by email.</p>
+                </div>
+                <label className="auth-label" htmlFor={transferId}>
+                  Recipient email
+                </label>
+                <div className="transfer-panel__row">
+                  <input
+                    id={transferId}
+                    className="auth-input"
+                    type="email"
+                    value={transferEmail}
+                    onChange={(event) => setTransferEmail(event.target.value)}
+                    placeholder="teammate@example.com"
+                    disabled={transferring}
+                    required
+                  />
+                  <button
+                    className="btn btn--ghost"
+                    type="submit"
+                    disabled={transferring || !transferEmail.trim()}
+                  >
+                    {transferring ? "Transferring..." : "Transfer"}
+                  </button>
+                </div>
+                {transferError ? (
+                  <p className="auth-message auth-message--error" role="alert">
+                    {transferError}
+                  </p>
+                ) : null}
+              </form>
+              <AuditTimeline slug={slug} />
+            </>
+          ) : null}
+        </section>
+        <LinkStatsCard slug={slug} />
+      </div>
     </main>
   );
 }
@@ -460,5 +476,91 @@ function EditNotice({
         )}
       </section>
     </main>
+  );
+}
+
+function LinkStatsCard({ slug }: { slug: string }) {
+  const [result, setResult] = useState<StatsQueryResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    void fetch("/api/v1/stats/query", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        slug,
+        range: 30,
+        groupBy: "date",
+        limit: 30,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return (await res.json()) as StatsQueryResult;
+      })
+      .then((body) => {
+        if (!cancelled) setResult(body);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Stats unavailable");
+          setResult(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  const totals = (result?.rows ?? []).reduce(
+    (acc, row) => ({
+      events: acc.events + row.eventCount,
+      users: acc.users + row.activeUsers,
+    }),
+    { events: 0, users: 0 },
+  );
+
+  return (
+    <section className="edit-stats-card" aria-busy={loading}>
+      <div className="edit-stats-card__header">
+        <div>
+          <p className="dashboard-kicker">Stats</p>
+          <h2>Last 30 days</h2>
+        </div>
+        <Link className="btn btn--ghost btn--sm" to={`/stats/${slug}`}>
+          Full stats
+        </Link>
+      </div>
+      <div className="edit-stats-card__metrics">
+        <div className="stats-metric">
+          <span>Events</span>
+          <strong>{loading ? "--" : totals.events.toLocaleString()}</strong>
+        </div>
+        <div className="stats-metric">
+          <span>Users</span>
+          <strong>{loading ? "--" : totals.users.toLocaleString()}</strong>
+        </div>
+        <div className="stats-metric">
+          <span>Source</span>
+          <strong>{result?.source.toUpperCase() ?? "GA4"}</strong>
+        </div>
+      </div>
+      {error ? (
+        <div className="dashboard-empty">Stats unavailable</div>
+      ) : loading ? (
+        <div className="dashboard-empty">Loading stats...</div>
+      ) : (
+        <StatsLineChart rows={result?.rows ?? []} />
+      )}
+    </section>
   );
 }
