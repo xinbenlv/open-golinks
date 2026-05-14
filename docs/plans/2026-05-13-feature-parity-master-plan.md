@@ -232,7 +232,7 @@ tests/e2e/
 
 ### 🔴 P0 - 切流前必须有
 
-- [ ] **F1. 用户认证 + 登录 UI** — Supabase Auth 替代 Auth0
+- [x] **F1. 用户认证 + 登录 UI** — Supabase Auth 替代 Auth0
 - [ ] **F2. 链接编辑 (PATCH) + 删除 (软删) + 统一 audit** — master 有, v2-hono 仅有 POST; 顺便补齐 CREATE audit 写入; VISIT 明确不进 audit
 - [ ] **F3. 个人链接列表 (User Dashboard)** — 对应 master `user-links.vue`
 - [ ] **F4. 基础 stats dashboard** — 日访问折线 + 总点击

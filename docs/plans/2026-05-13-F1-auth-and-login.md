@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 3 天
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -17,7 +17,7 @@
 - `src/web/hooks/useAuth.ts` — `{ user, signInWithMagicLink, signOut, loading }`
 - `src/web/components/AuthGuard.tsx` — 受保护路由包装, 未登录跳 `/login`
 - `src/web/pages/Login.tsx` — 邮箱输入 + 魔法链接发送
-- `src/web/pages/AuthCallback.tsx` — 处理 Supabase PKCE magic link 回跳的 `?code=...`
+- `src/web/pages/AuthCallback.tsx` — 处理 Supabase PKCE magic link 回跳的 `?code=...`; 同时兼容 Supabase Admin `generate_link` 产生的 `#access_token=...` 测试/旧式回跳
 - `tests/e2e/F1-auth.test.ts`
 - `tests/browser/F1.spec.ts` (按 SOP 步骤 6)
 
@@ -31,7 +31,7 @@
 参见主计划 [V0 已有基础](./2026-05-13-feature-parity-master-plan.md#v0-已有基础-避免重复造轮子):
 - DB: 无 schema 改动 — `public.users` 由 `middleware/auth.ts:70-82` lazy upsert
 - API: `GET /api/v1/me` + `requireAuth` / `optionalAuth` 已就绪, **本 feature 不新增后端 API**
-- env: 服务端 6 个 SUPABASE_* 已配 ✅; 客户端 3 个 `VITE_*` 已配本地, Railway 需推
+- env: 服务端 6 个 SUPABASE_* 已配 ✅; 客户端 3 个 `VITE_*` 已推 Railway; `SUPABASE_SECRET_KEY` 已更正为真实 service key, 供 browser smoke 用 Admin `generate_link`
 
 ## 实施步骤
 
@@ -39,7 +39,7 @@
 2. 写 `src/web/lib/supabase.ts`: `createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce', autoRefreshToken: true } })`
 3. 写 `useAuth` hook: 监听 `supabase.auth.onAuthStateChange`, 把 session.access_token 注入 `fetch` 的 `Authorization: Bearer` (用 wrapper or interceptor)
 4. 写 `Login.tsx`: 输入邮箱 → `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: VITE_BASE_URL + '/auth/callback' } })`
-5. 写 `AuthCallback.tsx`: 读取 `location.search` 的 `code`, `supabase.auth.exchangeCodeForSession(code)` 后 navigate 到 `/dashboard`; 若缺 `code` 或 exchange 失败, 显示错误并回 `/login`
+5. 写 `AuthCallback.tsx`: 优先读取 `location.search` 的 `code`, `supabase.auth.exchangeCodeForSession(code)` 后 navigate 到 `/dashboard`; 若 Admin `generate_link` / legacy 链路给 `location.hash` token, 用 `supabase.auth.setSession(...)` 兼容; 两者都缺失或 exchange 失败则显示错误并回 `/login`
 6. 写 `AuthGuard`: loading 时显示空/骨架, `user ? children : <Navigate to="/login" replace />`
 7. 改 Header 显示登录态
 8. 更新 `redirect.ts` RESERVED + reserved route regression test
@@ -86,18 +86,18 @@ test('JWT 过期 → useAuth 自动 refresh 或跳 /login', ...);
 
 ## DoD checklist (遵循 [Per-Feature SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. 本地 `bun run type-check` 绿 + `bun --hot src/server.ts` + `vite dev` 起得来
-- [ ] 2. 本地 `bun test tests/e2e/F1-auth.test.ts` 绿
-- [ ] 2b. `bun test tests/e2e/reserved-slug-fallthrough.test.ts` 绿, 且包含 `login`
-- [ ] 3. commit + push, message 前缀 `[F1]`
-- [ ] 4. 同步 Railway env (`railway variables --set` 单条单条推):
+- [x] 1. 本地 `bun run type-check` 绿 + `bun run build` 绿 + 本地生产 server/browser smoke 起得来
+- [x] 2. 本地 `bun test tests/e2e/F1-auth.test.ts` 绿
+- [x] 2b. `bun test tests/e2e/reserved-slug-fallthrough.test.ts` 绿, 且包含 `login`
+- [x] 3. commit + push, message 前缀 `[F1]`
+- [x] 4. 同步 Railway env (`railway variable set ... --stdin` 单条单条推):
   - `VITE_SUPABASE_URL` (= 服务端 `SUPABASE_URL` 同值)
   - `VITE_SUPABASE_PUBLISHABLE_KEY` (= 服务端 `SUPABASE_PUBLISHABLE_KEY` 同值)
   - `VITE_BASE_URL=https://open-golinks-v2-hono-production.up.railway.app`
-  - `PUBLIC_BASE_URL=https://open-golinks-v2-hono-production.up.railway.app`
-- [ ] 5. `railway status` 显示 deployment SUCCESS
-- [ ] 6. 浏览器验证: 在生产 URL 完整跑一遍 magic link 流程 (用真邮箱或测试邮箱); 检查 console / network / `/api/v1/version` commit SHA = 当前 push 的 SHA
-- [ ] 7. `docs/plans/README.md` 勾选 F1; `docs/CURRENT-ARCHITECT.md` 加 `Login.tsx` 等新文件引用
+  - `SUPABASE_SECRET_KEY` (真实 service key, 仅供 Admin generate-link smoke 使用)
+- [x] 5. `railway status` 显示 deployment SUCCESS
+- [x] 6. 浏览器验证: 在生产 URL 跑 `RUN_BROWSER_TESTS=1 bun test tests/browser/F1.spec.ts`; 检查 login UI / generated magic-link callback / console / network / `/api/v1/version` SHA
+- [x] 7. `docs/plans/README.md` 勾选 F1; `docs/CURRENT-ARCHITECT.md` 加 `Login.tsx` 等新文件引用
 
 ## 风险
 

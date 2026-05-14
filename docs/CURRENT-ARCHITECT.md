@@ -98,7 +98,7 @@ flowchart TB
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
   - `/edit/:slug` 复用 Landing 整页 (`pages/Edit.tsx` 渲染 `<Landing initialSlug={slug} />`), CreateForm 自动把光标放到 URL 字段.
-  - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk.
+  - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 当前由 `AuthGuard` 保护, 仍是 stub (`pages/ComingSoon.tsx`).
   - `/create` / `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
   - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`.

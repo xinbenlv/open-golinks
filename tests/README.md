@@ -16,7 +16,7 @@ bun test tests/e2e/F1-auth.test.ts                     # F1 auth/API routing smo
 - `e2e/` — 端到端回归测试. 每个文件锁住一个已被用户揪出过的 bug, 防止再犯.
   - `reserved-slug-fallthrough.test.ts` — `GET /dashboard` 等保留路径必须穿透到 SPA fallback, 不能被 `redirectRoute` 短路成 404 (commit `d0e310b` 之前的 bug).
   - `F1-auth.test.ts` — `GET /api/v1/me` 的 401 行为 + `/login` / `/auth/callback` SPA fallback.
-- `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖.
+- `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖. F1 的完整 magic-link callback smoke 还需要 `SUPABASE_URL` + `SUPABASE_SECRET_KEY`; 缺少时只跑公开页面 smoke.
 
 ## 约定
 

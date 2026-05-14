@@ -12,7 +12,7 @@
 
 ### 🔴 P0 (切流前)
 
-- [ ] [F1. 用户认证 + 登录 UI](./2026-05-13-F1-auth-and-login.md) — 3 天
+- [x] [F1. 用户认证 + 登录 UI](./2026-05-13-F1-auth-and-login.md) — 3 天
 - [ ] [F2. 链接 CRUD + audit + ratelimit](./2026-05-13-F2-link-crud-audit-ratelimit.md) — 3 天
 - [ ] [F3. 个人链接列表 Dashboard](./2026-05-13-F3-user-dashboard.md) — 3 天
 - [ ] [F4. 基础 Stats + GA4 上报](./2026-05-13-F4-basic-stats-ga4.md) — 2.5 天

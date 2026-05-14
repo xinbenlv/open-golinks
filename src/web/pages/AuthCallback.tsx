@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
+function readImplicitSessionFromHash() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const accessToken = params.get("access_token");
+  const refreshToken = params.get("refresh_token");
+  if (!accessToken || !refreshToken) return null;
+  return { access_token: accessToken, refresh_token: refreshToken };
+}
+
 export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -16,13 +24,18 @@ export default function AuthCallback() {
       }
 
       const code = new URLSearchParams(window.location.search).get("code");
-      if (!code) {
-        setError("登录回跳缺少 code。请重新发送登录链接。");
+      const implicitSession = readImplicitSessionFromHash();
+      if (!code && !implicitSession) {
+        setError("登录回跳缺少 code 或 session。请重新发送登录链接。");
         return;
       }
 
-      const { error: exchangeError } =
-        await supabase.auth.exchangeCodeForSession(code);
+      const { error: exchangeError } = code
+        ? await supabase.auth.exchangeCodeForSession(code)
+        : await supabase.auth.setSession({
+            access_token: implicitSession!.access_token,
+            refresh_token: implicitSession!.refresh_token,
+          });
       if (cancelled) return;
 
       if (exchangeError) {

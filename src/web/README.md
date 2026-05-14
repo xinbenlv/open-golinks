@@ -93,7 +93,7 @@ bun run build:web
 
 `useAuth()` 通过 `@supabase/supabase-js` 维护浏览器 session:
 - `Login.tsx` 调 `signInWithMagicLink(email)`, redirect 到 `/auth/callback`
-- `AuthCallback.tsx` 读取 `?code=` 并调用 `exchangeCodeForSession`
+- `AuthCallback.tsx` 优先读取 `?code=` 并调用 `exchangeCodeForSession`; Admin generated-link / legacy hash token 回跳则调用 `setSession`
 - `AuthGuard` 保护 `/dashboard`, 但 `/edit/:slug` 保持公开以保留 "未找到 → 创建" 流程
 - Header 根据 session 显示登录/登出状态
 
