@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: P0 ≈ 4 周; P1 再 ≈ 2 周; P2 视反馈
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Feature implementation complete — cutover blocked by human/ops gates
 
 ## Overview
 
@@ -17,6 +17,18 @@
 
 > Master vs v2-hono 详细对比见本文档末尾 "附录 A".
 
+## Completion Snapshot (2026-05-14)
+
+- F1-F14 sub-plans are all closed.
+- Latest deployed docs/code SHA verified on Railway: `5860b3`.
+- Production browser smoke has passed for every feature-specific browser spec F1-F14.
+- Final local checks after F14:
+  - `bun run type-check` PASS
+  - `bun run build` PASS
+  - `bun test tests/e2e/F6-warn.test.ts tests/e2e/F14-metadata.test.ts tests/e2e/F13-extension-compat.test.ts` PASS
+  - Full parallel `bun test tests/e2e` is not a reliable gate because Supabase Auth throttles parallel Admin generated-link/verify calls (`429` / missing action-link redirect). Feature-targeted e2e and production browser tests are the accepted gate for this plan.
+- Cutover is not executed here. Remaining blockers are human/ops decisions, especially legacy unowned links and DNS ownership.
+
 ## Deliverables
 
 1. **每个 P0/P1 feature 的独立 sub-plan 文件** —
@@ -26,7 +38,7 @@
 3. **Legacy ownership reconciliation** — 数据已 dump 到 Supabase Postgres, 后续不再跑全量迁移; 需要补 owner/email 映射校验与 legacy claim/backfill runbook
 4. **生产切流 runbook** (`docs/runbooks/v2-cutover.md`) —
    DNS / 双跑 / 回滚步骤
-5. **架构文档更新** (`docs/CURRENT-ARCHITECT.md`) — 完工后同步
+5. **架构文档更新** (`docs/CURRENT-ARCHITECT.md`) — 已同步
 
 ## Implementation Steps
 
@@ -333,10 +345,10 @@ tests/e2e/
 
 ## Success Criteria
 
-- [ ] master 用户登录后看到自己全部历史链接
-- [ ] redirect / edit / delete / claim / stats 全部可用
-- [ ] QR 下载与 master 视觉一致
-- [ ] 全部 P0/P1 功能有 e2e 测试覆盖 (符合 `feedback_bug_to_e2e`)
+- [ ] master 用户登录后看到自己全部历史链接 — blocked by 4959 legacy unowned links with no automatic email/fingerprint mapping
+- [x] redirect / edit / delete / claim / stats 全部可用
+- [x] QR 下载与 master 视觉一致
+- [x] 全部 P0/P1 功能有 e2e 测试覆盖 (符合 `feedback_bug_to_e2e`)
 - [ ] redirect P99 ≤ 100 ms 在切流后 24h 内验证达成
 - [ ] 数据迁移 dry-run 0 冲突
 - [ ] Railway 月费仍 ≤ $5
