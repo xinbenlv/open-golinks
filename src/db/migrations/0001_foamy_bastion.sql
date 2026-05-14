@@ -1,0 +1,1 @@
+ALTER TABLE "links" ALTER COLUMN "is_public" SET DEFAULT false;

@@ -62,11 +62,9 @@ type CreateFormProps = {
 export function CreateForm({ initialSlug }: CreateFormProps) {
   const urlId = useId();
   const slugId = useId();
-  const pubId = useId();
 
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState(initialSlug ?? "");
-  const [isPublic, setIsPublic] = useState(true);
   const [errors, setErrors] = useState<{ url?: string; slug?: string; form?: string }>({});
   const [result, setResult] = useState<Result | null>(null);
   const [copied, setCopied] = useState(false);
@@ -193,7 +191,6 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
     setResult(null);
     setUrl("");
     setSlug(initialSlug ?? "");
-    setIsPublic(true);
     setErrors({});
     setCopied(false);
   }
@@ -295,15 +292,6 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
       </div>
 
       <div className="create-form__actions">
-        <label className="checkbox" htmlFor={pubId}>
-          <input
-            id={pubId}
-            type="checkbox"
-            checked={isPublic}
-            onChange={(e) => setIsPublic(e.target.checked)}
-          />
-          <span>公开可见</span>
-        </label>
         <button
           type="submit"
           className="btn btn--primary"

@@ -9,8 +9,8 @@ const ITEMS = [
   },
   {
     icon: IconShield,
-    title: "公私可控",
-    desc: "默认公开便于分享; 一键改私有, 仅本人可见.",
+    title: "默认不公开发现",
+    desc: "新链接不会进入公开列表; 登录后仅本人可在 dashboard 管理.",
   },
   {
     icon: IconChart,

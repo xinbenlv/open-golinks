@@ -65,7 +65,7 @@ export const linksTable = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     visits: integer('visits').notNull().default(0),
     createdByFingerprint: varchar('created_by_fingerprint', { length: 64 }),
-    isPublic: boolean('is_public').notNull().default(true),
+    isPublic: boolean('is_public').notNull().default(false),
     urlHistory: jsonb('url_history').notNull().default([]),
     metadata: jsonb('metadata'),
   },

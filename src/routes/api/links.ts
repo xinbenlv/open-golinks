@@ -13,8 +13,8 @@ import {
 } from "drizzle-orm";
 import { db, schema } from "../../db/db.ts";
 import {
-  optionalAuth,
   requireAuth,
+  optionalAuth,
   type AuthEnv,
   type AuthUser,
 } from "../../middleware/auth.ts";
@@ -58,7 +58,7 @@ const transferSchema = z.object({
 });
 
 const listQuerySchema = z.object({
-  owner: z.enum(["me", "public"]).default("public"),
+  owner: z.literal("me").default("me"),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
   q: z.string().trim().max(120).optional(),
@@ -138,8 +138,8 @@ function ensureOwner(
   return null;
 }
 
-// GET /api/v1/links - public list or authenticated owner dashboard list.
-linksRoute.get("/", optionalAuth, async (c) => {
+// GET /api/v1/links - authenticated owner dashboard list only.
+linksRoute.get("/", requireAuth, async (c) => {
   const parsed = listQuerySchema.safeParse({
     owner: c.req.query("owner") ?? undefined,
     limit: c.req.query("limit") ?? undefined,
@@ -149,18 +149,13 @@ linksRoute.get("/", optionalAuth, async (c) => {
   if (!parsed.success) {
     return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
   }
-  const { owner, limit, q } = parsed.data;
-  const user = c.get("user");
-  if (owner === "me" && !user) {
-    return c.json({ error: "UNAUTHORIZED" }, 401);
-  }
+  const { limit, q } = parsed.data;
+  const user = c.get("user")!;
 
-  const conditions: SQL[] = [isNull(schema.linksTable.deletedAt)];
-  if (owner === "me" && user) {
-    conditions.push(eq(schema.linksTable.ownerId, user.id));
-  } else {
-    conditions.push(eq(schema.linksTable.isPublic, true));
-  }
+  const conditions: SQL[] = [
+    isNull(schema.linksTable.deletedAt),
+    eq(schema.linksTable.ownerId, user.id),
+  ];
 
   if (q) {
     const pattern = `%${q}%`;
@@ -225,6 +220,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
         url: parsed.data.url,
         ownerId: user?.id ?? null,
         createdByFingerprint: user ? null : fingerprint ?? null,
+        isPublic: false,
       })
       .returning();
     const row = expectReturned(inserted);
@@ -244,6 +240,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
             deletedAt: null,
             urlHistory: [],
             visits: 0,
+            isPublic: false,
             updatedAt: new Date(),
           })
           .where(eq(schema.linksTable.slug, parsed.data.slug))
