@@ -251,7 +251,7 @@ tests/e2e/
 
 - [x] **F11. 链接所有权转移 (Transfer)**
 - [x] **F12. 公开链接发现页 (Browse Public Links)** — Drop, 关闭公开发现面; `GET /api/v1/links` owner-only, 新建/恢复默认 private
-- [ ] **F13. Chrome Extension 兼容性验证** (W1 必须先 spike 一次, 决定走 shim 还是发新版)
+- [x] **F13. Chrome Extension 兼容性验证** — 独立扩展源码未找到; 已实现 `/api/v2` shim, 旧 Auth0 cookie `my-links` 不兼容但 Bearer 可用
 - [ ] **F14. 链接 metadata (tags, description)** — schema 已有
 
 ---
@@ -282,7 +282,7 @@ tests/e2e/
 
 - **[F11. 所有权转移 (Transfer)](./2026-05-13-F11-ownership-transfer.md)** (1.5 天) — `POST /:slug/transfer { toEmail }`, 接收方必须先注册
 - **[F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md)** (Done) — 2026-05-14 决策 Drop; 关闭公开发现面
-- **[F13. Chrome Extension 兼容性](./2026-05-13-F13-chrome-extension-compat.md)** (2 天 含 W0 spike) — shim / 发新版 / 弃用三选一
+- **[F13. Chrome Extension 兼容性](./2026-05-13-F13-chrome-extension-compat.md)** (Done) — 方案 A `/api/v2` shim
 - **[F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md)** (2 天) — JSONB tags + description + Dashboard tag 过滤
 
 ---
@@ -419,7 +419,7 @@ tests/e2e/
 - [ ] **(P1 建议) 生成独立的 v2-hono GCP service account 给生产用**, 不共用 master 的, 权限收敛到 GA4 Data API 只读
 - [ ] **新建 GA4 测试 property** (e2e 测试用, 避免污染生产数据); 或承认 e2e 跳过 GA4 集成测试
 - [x] master 仓库中 NotoSansCJK 字体文件路径确认并复制到 `src/assets/fonts/NotoSansCJKsc-Regular.otf`
-- [ ] Chrome Extension 源码 repo URL (F13 spike 需要)
+- [x] Chrome Extension 源码 repo URL (F13 spike): 未找到独立源码; 已按 master `/api/v2` 契约落 shim
 - [ ] 生产域名 DNS 控制权 (W4 切流)
 - [ ] Better Stack / 告警出口账户 (W4 后接入)
 
@@ -488,4 +488,4 @@ tests/e2e/
 | 审计日志 | 无 | 已有 owner-only `/api/v1/audit/:slug` + Edit 页 timeline | ✅ F9 |
 | URL 历史 | 有 | 已有 `url_history` 写入 + Edit 页 URL History timeline | ✅ F10 |
 | 所有权转移 | 无 | 已有 owner-only transfer API + Edit 页 Danger zone form | ✅ F11 |
-| Chrome Extension | 待 W0 spike 确认 | 未验证 | F13 |
+| Chrome Extension | master `/api/v2/link`, `/api/v2/edit`, `/api/v2/available`, `/api/v2/my-links` | 已有 `/api/v2` shim; public lookup/edit-create 可用, `my-links` 仅 Supabase Bearer JWT | ✅ F13 |

@@ -96,6 +96,7 @@ flowchart TB
   - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`
   - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 新建/恢复默认 `is_public=false`; 写 CREATE audit
   - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 `metadata.legacy_author_email` 认领的未归属链接
+  - `GET /:slug/available` - public availability check, 返回 `{ available: boolean }`; F13 `/api/v2/available/:slug` shim 复用同一语义
   - `GET /:slug` - 获取单链接
   - `POST /:slug/claim` - requireAuth; fingerprint 或 legacy author email 匹配时写 `owner_id`, 写 CLAIM audit
   - `POST /:slug/transfer` - owner-only; 按 recipient email 转移给已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER`
@@ -106,6 +107,12 @@ flowchart TB
 - **`src/routes/api/stats.ts`** (`/api/v1/stats`)
   - `GET /summary` - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
   - `POST /query` - requireAuth; 受控详细查询, 只接受 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 后端自动注入当前用户 owned slug scope, 单 slug 非 owner 返回 404.
+- **`src/routes/api/v2-compat.ts`** (`/api/v2`)
+  - F13 Chrome extension / master API compatibility shim.
+  - `GET /link/:slug` 返回 master array shape (`goLink`, `goDest`, `destHistory`, `addLogo`, `caption`, `editable`); 非 owner 不暴露 owner email.
+  - `GET /available/:slug` 返回 legacy boolean.
+  - `POST /edit` 接受 `{ golink, dest, addLogo?, caption? }`; 匿名可创建, 更新 require Supabase owner Bearer JWT, 写 audit/url_history/metadata.
+  - `GET /my-links` 仅支持 Supabase Bearer JWT; 旧 Auth0 cookie 不兼容.
 
 ### Middleware
 - **`src/middleware/auth.ts`** - Supabase Auth JWT 验证 middleware:

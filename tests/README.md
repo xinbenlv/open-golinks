@@ -37,6 +37,7 @@ bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer 
   - `F10-url-history.test.ts` — PATCH url_history 写入顺序、never-edited 空状态、malformed legacy history normalize.
   - `F11-transfer.test.ts` — owner transfer to registered user、A/B dashboard scope、TRANSFER audit、USER_NOT_FOUND/SELF_TRANSFER/FORBIDDEN.
   - `F12-browse.test.ts` — F12 Drop 决策回归: links list requireAuth、`owner=public` 拒绝、创建/恢复默认 private、不泄露其他 owner 链接.
+  - `F13-extension-compat.test.ts` — `/api/v2` legacy shim: link lookup、availability、edit create/update、Bearer my-links、owner-only update.
 - `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖. F1-F8 的完整 magic-link/browser smoke 需要 `SUPABASE_URL` + `SUPABASE_SECRET_KEY`; 缺少时只跑公开页面 smoke 或跳过需登录用例.
   - `F5.spec.ts` — 生产 golden path: 匿名创建 → `/claim/:slug` 不被短链路由截获 → magic-link 登录 → Dashboard banner → Claim all → owner 列表出现该 slug.
   - `F6.spec.ts` — 生产 golden path: owner 打开 warning toggle → 访客进入 `/warn/:slug` → Proceed → 关闭 warning 后直接 302.
@@ -46,6 +47,7 @@ bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer 
   - `F10.spec.ts` — 生产 golden path: 登录 → 创建并更新链接 → `/edit/:slug` URL History 显示 current/previous/original.
   - `F11.spec.ts` — 生产 golden path: A 创建链接 → Edit 页 transfer 给已注册 B → A 列表消失, B 列表出现.
   - `F12.spec.ts` — 生产 privacy smoke: 无公开 browse UI、未登录 list 401、`owner=public` 400、新建 private.
+  - `F13.spec.ts` — 生产 compatibility smoke: `/api/v2/available`、`/api/v2/edit`、`/api/v2/link` legacy shape + build SHA.
 
 ## 约定
 
