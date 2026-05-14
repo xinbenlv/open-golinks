@@ -1,0 +1,23 @@
+# tests/
+
+存放自动化测试. 用 Bun 内置 test runner (`bun:test`).
+
+## 运行
+
+```bash
+bun test              # 跑全部
+bun test:e2e          # 只跑 e2e
+bun test tests/e2e/reserved-slug-fallthrough.test.ts   # 跑单个文件
+```
+
+## 目录
+
+- `e2e/` — 端到端回归测试. 每个文件锁住一个已被用户揪出过的 bug, 防止再犯.
+  - `reserved-slug-fallthrough.test.ts` — `GET /dashboard` 等保留路径必须穿透到 SPA fallback, 不能被 `redirectRoute` 短路成 404 (commit `d0e310b` 之前的 bug).
+
+## 约定
+
+- **每个 bug 一个 e2e**. 用户揪出的每个 bug 都应该补一个端到端测试, 文件命名建议 `<symptom>.test.ts`, 顶部用注释写清"起因 / 修复 / 这个测试锁的是什么".
+- **测试 symptom, 不测 implementation**. 例如 dashboard 404 的测试断言的是 HTTP 状态码, 不是 `redirectRoute` 内部的 if 分支. 这样实现改了测试也能继续保护.
+- **不依赖前端构建**. e2e 测试只 import 后端模块, 用 sentinel handler 模拟 SPA fallback, 跑得快、信号聚焦.
+- **DB stub**. 测试运行时设 `DATABASE_URL=postgres://stub:...`. `postgres-js` 在第一次 query 前不连接, 不触发 query 的测试用 stub URL 即可.

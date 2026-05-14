@@ -21,11 +21,12 @@ const RESERVED = new Set([
 // SLUG 格式验证 (与 schema CHECK 约束一致)
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$/;
 
-redirectRoute.get("/:slug", async (c) => {
+redirectRoute.get("/:slug", async (c, next) => {
   const slug = c.req.param("slug");
 
+  // 保留路径或非法 slug 格式: 不处理, 交给后续中间件 (静态资源 / SPA fallback)
   if (RESERVED.has(slug) || !SLUG_RE.test(slug)) {
-    return c.notFound();
+    return next();
   }
 
   const [link] = await db
