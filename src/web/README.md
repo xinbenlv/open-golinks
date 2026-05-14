@@ -26,7 +26,8 @@ src/web/
 │   ├── BuildStamp.tsx       # 全局构建版本水印
 │   ├── ClaimBanner.tsx      # Dashboard 匿名/legacy 可认领链接提示
 │   ├── LinkRow.tsx          # Dashboard 链接行
-│   └── StatsChart.tsx       # Dashboard 30 日 GA4 折线
+│   ├── StatsChart.tsx       # Dashboard 30 日 GA4 折线
+│   └── WarnToggle.tsx       # Edit 页 warning interstitial 开关
 └── pages/
     ├── Landing/             # Landing 页 (`/`), 构建期被 SSG 预渲染
     │   ├── index.tsx        # 组合 Header / Hero / Features / HowItWorks / ForTeams / Footer
@@ -39,14 +40,13 @@ src/web/
     │   ├── Footer.tsx
     │   ├── icons.tsx        # 内联 SVG icons, 不引图标库
     │   └── landing.css      # Landing 专属样式
-    ├── ComingSoon.tsx       # Warn / NotFound 通用占位
+    ├── ComingSoon.tsx       # 未来占位页通用组件
     ├── Dashboard.tsx        # /dashboard owner 链接列表 + 搜索 + 分页 + stats
     ├── Login.tsx            # /login, magic link form
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
     ├── Claim.tsx            # /claim/:slug, 匿名链接登录后认领
     ├── Create.tsx           # /create 复用 Landing 创建体验
     ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接
-    ├── Warn.tsx             # /warn/:slug (lazy stub)
     └── NotFound.tsx         # * (lazy stub)
 ```
 
@@ -61,7 +61,7 @@ src/web/
 | `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录; owner 链接列表 |
 | `/create` | `pages/Create` | 客户端 lazy chunk; Landing 创建体验 |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
-| `/warn/:slug` | `pages/Warn` | 客户端 lazy chunk |
+| `/warn/:slug` | Hono `src/routes/warn.ts` | SSR HTML, 不走 SPA bundle |
 | `*` | `pages/NotFound` | 客户端 lazy chunk |
 
 ## SSG 预渲染流程
@@ -119,7 +119,7 @@ Vite client env:
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
 
-`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL 或 DELETE 软删. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
+`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning` 或 DELETE 软删. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
 
 校验规则:
 - `url`: 必填, http/https URL

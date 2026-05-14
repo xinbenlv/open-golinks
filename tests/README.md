@@ -13,6 +13,7 @@ bun test tests/e2e/F2-link-crud.test.ts                # F2 real DB CRUD/audit/r
 bun test tests/e2e/F3-dashboard.test.ts                # F3 owner dashboard API pagination/search
 bun test tests/e2e/F4-stats.test.ts                    # F4 GA4/reporting scoped stats smoke
 bun test tests/e2e/F5-claim.test.ts                    # F5 anonymous/legacy claim smoke
+bun test tests/e2e/F6-warn.test.ts                     # F6 warning interstitial smoke
 ```
 
 ## 目录
@@ -24,8 +25,10 @@ bun test tests/e2e/F5-claim.test.ts                    # F5 anonymous/legacy cla
   - `F3-dashboard.test.ts` — `GET /api/v1/links?owner=me` 鉴权、cursor 分页、slug/url 搜索.
   - `F4-stats.test.ts` — mock Measurement Protocol, scoped stats endpoint, GA4 failure downgrade.
   - `F5-claim.test.ts` — 匿名 fingerprint claim、legacy author email claim、403/409/400 边界.
+  - `F6-warn.test.ts` — `metadata.show_warning` PATCH 白名单、`/:slug` warning 拦截、自包含 `/warn/:slug` SSR、confirm 绕过.
 - `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖. F1-F5 的完整 magic-link/browser smoke 需要 `SUPABASE_URL` + `SUPABASE_SECRET_KEY`; 缺少时只跑公开页面 smoke 或跳过需登录用例.
   - `F5.spec.ts` — 生产 golden path: 匿名创建 → `/claim/:slug` 不被短链路由截获 → magic-link 登录 → Dashboard banner → Claim all → owner 列表出现该 slug.
+  - `F6.spec.ts` — 生产 golden path: owner 打开 warning toggle → 访客进入 `/warn/:slug` → Proceed → 关闭 warning 后直接 302.
 
 ## 约定
 

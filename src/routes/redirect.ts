@@ -25,6 +25,15 @@ const RESERVED = new Set([
 // SLUG 格式验证 (与 schema CHECK 约束一致)
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$/;
 
+function showWarning(metadata: unknown) {
+  return Boolean(
+    metadata &&
+      typeof metadata === "object" &&
+      !Array.isArray(metadata) &&
+      (metadata as { show_warning?: unknown }).show_warning === true,
+  );
+}
+
 redirectRoute.get("/:slug", async (c, next) => {
   const slug = c.req.param("slug");
 
@@ -38,6 +47,7 @@ redirectRoute.get("/:slug", async (c, next) => {
       url: schema.linksTable.url,
       slug: schema.linksTable.slug,
       deletedAt: schema.linksTable.deletedAt,
+      metadata: schema.linksTable.metadata,
     })
     .from(schema.linksTable)
     .where(eq(schema.linksTable.slug, slug))
@@ -51,6 +61,10 @@ redirectRoute.get("/:slug", async (c, next) => {
 
   if (link.deletedAt) {
     return c.text("Not found", 404);
+  }
+
+  if (showWarning(link.metadata) && c.req.query("confirm") !== "1") {
+    return c.redirect(`/warn/${encodeURIComponent(slug)}`, 302);
   }
 
   const existingClientId = getCookie(c, "_ga");

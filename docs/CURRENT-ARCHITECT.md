@@ -12,6 +12,7 @@
               │                                              │
    Browser ──▶│  Bun + Hono                                  │
    Extension  │   ├─ /:slug          → 302 + 异步 analytics  │
+              │   ├─ /warn/:slug     → SSR warning HTML      │
               │   ├─ /api/v1/health  → JSON                  │
               │   ├─ /api/v1/links   → CRUD + claim + audit  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
@@ -39,6 +40,7 @@ flowchart TB
   subgraph Railway[Railway us-west2 容器]
     SRV[Bun + Hono server.ts]
     RED[redirect.ts<br/>GET /:slug]
+    WARN[warn.ts<br/>GET /warn/:slug]
     API[routes/api/*.ts]
     SPA[Vite SPA<br/>dist/web/]
   end
@@ -51,6 +53,7 @@ flowchart TB
   BR -->|GET /:slug| SRV
   EX -->|GET /:slug| SRV
   SRV --> RED
+  SRV --> WARN
   RED -->|SELECT| PG
   RED -->|302| BR
   RED -.->|async UPSERT| PG
@@ -73,8 +76,13 @@ flowchart TB
 - **`src/routes/redirect.ts`** (`GET /:slug`)
   - 校验 slug 格式 + 保留路径; RESERVED 或不合法格式 → `next()`, 交给静态资源 / SPA fallback
   - 查询 `links` 表 (排除软删除)
+  - 若 `metadata.show_warning === true` 且未带 `?confirm=1`, 302 到 `/warn/:slug`
   - 命中 → 302 立即返回, 用 `queueMicrotask` 异步累加 visits + UPSERT daily_visits
   - 未命中 (合法但未创建) → 302 到 `/edit/<slug>`, 让用户走 Landing 同款表单创建
+- **`src/routes/warn.ts`** (`GET /warn/:slug`)
+  - Hono SSR route, 返回自包含 HTML, 不依赖 SPA bundle
+  - 查询未删除链接; 不存在/已删除 → 404
+  - Proceed 链接指向 `/:slug?confirm=1`, 让 redirect hot path 真正跳转并记录 analytics
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - `owner=me` 时列出当前用户链接 (require JWT, cursor/q/limit); 默认 `owner=public` 保持公开列表
@@ -82,7 +90,7 @@ flowchart TB
   - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 `metadata.legacy_author_email` 认领的未归属链接
   - `GET /:slug` - 获取单链接
   - `POST /:slug/claim` - requireAuth; fingerprint 或 legacy author email 匹配时写 `owner_id`, 写 CLAIM audit
-  - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`, 写 UPDATE audit
+  - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`; F6 允许最小 `metadata.show_warning` boolean patch, 其他 metadata key 等 F14; 写 UPDATE audit
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 - **`src/routes/api/stats.ts`** (`GET /api/v1/stats/summary`) - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
@@ -111,7 +119,8 @@ flowchart TB
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
-  - `/create` 复用 Landing 创建体验; `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
+  - `/create` 复用 Landing 创建体验.
+  - `/warn/:slug` 不再走 SPA; 由 Hono `src/routes/warn.ts` 直接返回 SSR HTML.
   - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`; `src/web/hooks/useApi.ts` 封装 JSON API 请求.
   - 客户端 `src/web/main.tsx:14-32` 智能切换 `hydrateRoot` (Landing 命中预渲染) / `createRoot` (其他路径).
 - 构建输出 `dist/web/`, 由 Hono `serveStatic` 在生产托管.
@@ -147,6 +156,12 @@ flowchart TB
 3. INSERT, 唯一约束失败 (Drizzle 把 PG 的 23505 包成 `DrizzleQueryError`, 从 `err.cause.code` 解出) 返回 `SLUG_TAKEN` 409
 4. 客户端拿到 409 后, 自动生成的 slug 重试一次; 用户自定义的 slug 则在表单内提示
 5. 已登录请求写 `owner_id`; 匿名请求进入 IP+UA rate limit; CREATE 写 `audit_logs`
+
+### Warning interstitial
+1. Owner 在 `/edit/:slug` 勾选 `WarnToggle`, PATCH `/api/v1/links/:slug` body `{ metadata: { show_warning: true } }`
+2. 访客访问 `/:slug`, redirect handler 发现 `metadata.show_warning` 且没有 `?confirm=1`, 返回 302 `/warn/:slug`
+3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets
+4. 用户点 Proceed 访问 `/:slug?confirm=1`, redirect handler 跳过 warning, 返回目标 URL 302 并记录 visits/GA4
 
 ### 匿名链接认领
 1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
@@ -187,7 +202,6 @@ flowchart TB
 
 - Turnstile 校验
 - audit log UI; VISIT 明确不写 `audit_logs`
-- `/warn/:slug` 警告页
-- Analytics 详情页; 当前 Landing/Create/Edit/Login/Dashboard/Claim 实装, Warn 仍 stub
+- Analytics 详情页; 当前 Landing/Create/Edit/Login/Dashboard/Claim 实装, `/warn/:slug` 由 Hono SSR 实装
 - 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)

@@ -9,7 +9,6 @@ const Edit = lazy(() => import("./pages/Edit"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Claim = lazy(() => import("./pages/Claim"));
-const Warn = lazy(() => import("./pages/Warn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const Fallback = () => null;
@@ -33,7 +32,6 @@ export function AppRoutes() {
         />
         <Route path="/create" element={<Create />} />
         <Route path="/edit/:slug" element={<Edit />} />
-        <Route path="/warn/:slug" element={<Warn />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

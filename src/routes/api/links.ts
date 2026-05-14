@@ -33,9 +33,21 @@ const createLinkSchema = z.object({
   url: z.string().url(),
 });
 
-const updateLinkSchema = z.object({
-  url: z.string().url(),
-});
+const metadataPatchSchema = z
+  .object({
+    show_warning: z.boolean(),
+  })
+  .strict();
+
+const updateLinkSchema = z
+  .object({
+    url: z.string().url().optional(),
+    metadata: metadataPatchSchema.optional(),
+  })
+  .strict()
+  .refine((value) => value.url !== undefined || value.metadata !== undefined, {
+    message: "url or metadata is required",
+  });
 
 const claimSchema = z.object({
   fingerprint: z.string().regex(/^[0-9a-f]{64}$/).optional(),
@@ -61,6 +73,15 @@ function pgCode(err: unknown): string | undefined {
 
 function normalizeUrlHistory(value: unknown): UrlHistoryEntry[] {
   return Array.isArray(value) ? (value as UrlHistoryEntry[]) : [];
+}
+
+function normalizeMetadata(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return { ...(value as Record<string, unknown>) };
+}
+
+function showWarning(metadata: unknown) {
+  return normalizeMetadata(metadata).show_warning === true;
 }
 
 function legacyAuthorEmail(metadata: unknown): string | null {
@@ -351,26 +372,48 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   if (ownershipError === "FORBIDDEN") return c.json({ error: "FORBIDDEN" }, 403);
   if (!existing) return c.json({ error: "NOT_FOUND" }, 404);
 
-  const changedAt = new Date().toISOString();
-  const urlHistory = [
-    ...normalizeUrlHistory(existing.urlHistory),
-    { url: existing.url, changedAt, changedBy: user.id },
-  ];
+  const nextUrl = parsed.data.url ?? existing.url;
+  const urlHistory = parsed.data.url
+    ? [
+        ...normalizeUrlHistory(existing.urlHistory),
+        { url: existing.url, changedAt: new Date().toISOString(), changedBy: user.id },
+      ]
+    : normalizeUrlHistory(existing.urlHistory);
+  const metadata = parsed.data.metadata
+    ? {
+        ...normalizeMetadata(existing.metadata),
+        show_warning: parsed.data.metadata.show_warning,
+      }
+    : existing.metadata;
+  const diff: Record<string, unknown> = {};
+  if (parsed.data.url) {
+    diff.before = { ...(diff.before as object | undefined), url: existing.url };
+    diff.after = { ...(diff.after as object | undefined), url: nextUrl };
+  }
+  if (parsed.data.metadata) {
+    diff.before = {
+      ...(diff.before as object | undefined),
+      metadata: { show_warning: showWarning(existing.metadata) },
+    };
+    diff.after = {
+      ...(diff.after as object | undefined),
+      metadata: { show_warning: parsed.data.metadata.show_warning },
+    };
+  }
+
   const [updated] = await db
     .update(schema.linksTable)
     .set({
-      url: parsed.data.url,
+      url: nextUrl,
       urlHistory,
+      metadata,
       updatedAt: new Date(),
     })
     .where(eq(schema.linksTable.slug, slug))
     .returning();
   const row = expectReturned(updated);
 
-  await writeAudit(c, "UPDATE", slug, {
-    before: { url: existing.url },
-    after: { url: row.url },
-  });
+  await writeAudit(c, "UPDATE", slug, diff);
   return c.json({ link: row });
 });
 

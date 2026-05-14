@@ -198,8 +198,8 @@ src/
     │   ├── Dashboard.tsx      # ← 重写 (链接列表 + stats)
     │   ├── Stats/             # ← 新增: 详细 analytics 页
     │   ├── Login.tsx          # ← 新增
-    │   ├── Create.tsx         # 已有 stub, 待完善
-    │   ├── Edit.tsx           # 已有 stub, 待完善
+    │   ├── Create.tsx         # 复用 Landing 创建体验
+    │   ├── Edit.tsx           # owner URL 更新 / 软删 / warning toggle
     │   ├── Claim.tsx          # ← 新增: 匿名链接认领
     │   └── QrEditor.tsx       # ← 新增: QR 编辑+下载
     ├── components/
@@ -241,7 +241,7 @@ tests/e2e/
 
 ### 🟡 P1 - 切流后 1 个月内补齐
 
-- [ ] **F6. /warn/:slug 警告页** — 标记敏感链接的拦截页 (master 是否有未确认, 视为 v2-hono 新增)
+- [x] **F6. /warn/:slug 警告页** — 标记敏感链接的拦截页 (master 是否有未确认, 视为 v2-hono 新增)
 - [ ] **F7. QR 码生成 / 显示 / 下载** — 对应 master `QrCodeEditor.vue`
 - [ ] **F8. 详细 Analytics 页** — 时间范围, slug 正则过滤, 多图表
 - [ ] **F9. 审计日志查看 (`/api/v1/audit/:slug`)** — schema 已有, API 缺失
@@ -474,17 +474,17 @@ tests/e2e/
 
 | 功能 | master | v2-hono 现状 | 缺口 |
 |---|---|---|---|
-| Stats dashboard | `pages/dashboard.vue` (GA4 Data API + ECharts; 后端透传端点 `POST /api/v2/ga4/reports` 在 `src/routes/apiv2.ts:14`) | `Dashboard.tsx` stub | F4 / F8 (沿用 GA4, 移植 vue→react) |
-| GA4 上报 | `src/main.ts:180-247` 中间件 (Measurement Protocol, await axios) | 无 | F4 (改成 fire-and-forget) |
-| 用户链接列表 | `pages/user-links.vue` | 无 | F3 |
-| 登录 | Auth0 (`src/routes/auth.ts`) | JWT middleware + `/api/v1/me` 已有, UI 无 | F1 |
+| Stats dashboard | `pages/dashboard.vue` (GA4 Data API + ECharts; 后端透传端点 `POST /api/v2/ga4/reports` 在 `src/routes/apiv2.ts:14`) | Dashboard 基础 stats 已有, 详情页待 F8 | F8 (详细 analytics) |
+| GA4 上报 | `src/main.ts:180-247` 中间件 (Measurement Protocol, await axios) | 已有 fire-and-forget Measurement Protocol | ✅ F4 |
+| 用户链接列表 | `pages/user-links.vue` | 已有 `/dashboard` owner list/search/pagination | ✅ F3 |
+| 登录 | Auth0 (`src/routes/auth.ts`) | Supabase Auth UI + JWT middleware + `/api/v1/me` | ✅ F1 |
 | QR 码 | `components/QrCodeEditor.vue` + `src/routes/qr.ts` | 无 | F7 |
-| 链接编辑 | `pages/link.vue` + `POST /api/v2/edit` | 仅 `POST /api/v1/links` (create) | F2 |
-| 链接删除 | 有 | 无 | F2 |
-| 匿名认领 | 有 | 无 | F5 |
+| 链接编辑 | `pages/link.vue` + `POST /api/v2/edit` | 已有 owner-only PATCH | ✅ F2 |
+| 链接删除 | 有 | 已有 owner-only soft delete | ✅ F2 |
+| 匿名认领 | 有 | 已有 fingerprint + legacy email claim | ✅ F5 |
 | Redirect | 基础 302 + GA4 `page_view` | 智能 (不存在 → /edit/:slug) + 异步 visit + daily_visits UPSERT | ✅ v2-hono 更好; F4 补 GA4 `page_view`, VISIT 不写 audit |
 | Landing 页 | 无 | 有 (`Landing/*`, SSR prerender) | ✅ v2-hono 新增 |
-| 警告页 | 未确认 | 无 | F6 (按新增处理) |
+| 警告页 | 未确认 | 已有 `/warn/:slug` SSR + Edit toggle | ✅ F6 (按新增处理) |
 | 审计日志 | 无 | schema 完整, API 无 | F9 |
 | URL 历史 | 有 | schema 有 (jsonb 默认 []), API 无 | F10 |
 | 所有权转移 | 无 | enum 已含 `TRANSFER`, 无 API | F11 (新增) |

@@ -3,6 +3,7 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import { redirectRoute } from "./routes/redirect.ts";
+import { warnRoute } from "./routes/warn.ts";
 import { healthRoute } from "./routes/api/health.ts";
 import { linksRoute } from "./routes/api/links.ts";
 import { meRoute } from "./routes/api/me.ts";
@@ -32,6 +33,9 @@ app.route("/api/v1/links", linksRoute);
 app.route("/api/v1/me", meRoute);
 app.route("/api/v1/stats", statsRoute);
 app.route("/api/v1/version", versionRoute);
+
+// Warning interstitial must be served by Hono SSR, not the SPA fallback.
+app.route("/warn", warnRoute);
 
 // 短链重定向: GET /:slug -> 302 to target_url
 // 必须在静态资源之前注册, 否则会被 SPA fallback 吞掉

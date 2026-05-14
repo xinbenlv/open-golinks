@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
+import { WarnToggle } from "../components/WarnToggle";
 import { authFetch, useAuth } from "../hooks/useAuth";
 import { Landing } from "./Landing";
 
@@ -9,6 +10,7 @@ type LinkRecord = {
   ownerId: string | null;
   deletedAt: string | null;
   urlHistory: unknown[];
+  metadata: { show_warning?: boolean } | null;
 };
 
 type LoadState =
@@ -21,8 +23,10 @@ export default function Edit() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { user, loading: authLoading } = useAuth();
   const urlId = useId();
+  const warnId = useId();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [url, setUrl] = useState("");
+  const [showWarning, setShowWarning] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +51,7 @@ export default function Edit() {
       const body = (await res.json()) as { link: LinkRecord };
       setState({ status: "edit", link: body.link });
       setUrl(body.link.url);
+      setShowWarning(body.link.metadata?.show_warning === true);
     }
 
     if (slug) void load();
@@ -102,7 +107,7 @@ export default function Edit() {
       const res = await authFetch(`/api/v1/links/${slug}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, metadata: { show_warning: showWarning } }),
       });
       if (!res.ok) {
         setError(`保存失败: HTTP ${res.status}`);
@@ -111,6 +116,7 @@ export default function Edit() {
       const body = (await res.json()) as { link: LinkRecord };
       setState({ status: "edit", link: body.link });
       setUrl(body.link.url);
+      setShowWarning(body.link.metadata?.show_warning === true);
       setMessage("已保存。");
     } finally {
       setSubmitting(false);
@@ -152,6 +158,12 @@ export default function Edit() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             required
+          />
+          <WarnToggle
+            id={warnId}
+            checked={showWarning}
+            disabled={submitting}
+            onChange={setShowWarning}
           />
           {message ? <p className="auth-message">{message}</p> : null}
           {error ? (
