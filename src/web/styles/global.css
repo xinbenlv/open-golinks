@@ -331,6 +331,33 @@ svg {
   padding: var(--space-3) var(--space-4);
 }
 
+.claim-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border: 1px solid var(--accent-soft);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--accent) 9%, var(--bg-elevated));
+  padding: var(--space-4);
+}
+
+.claim-banner h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.claim-banner p {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+}
+
+.claim-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .stats-panel {
   display: grid;
   grid-template-columns: minmax(220px, 0.7fr) minmax(320px, 1.6fr);
@@ -481,7 +508,8 @@ svg {
 
 @media (max-width: 640px) {
   .dashboard-header,
-  .dashboard-toolbar {
+  .dashboard-toolbar,
+  .claim-banner {
     align-items: stretch;
     flex-direction: column;
   }

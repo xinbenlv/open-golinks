@@ -8,6 +8,7 @@ import {
   isNull,
   lt,
   or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { db, schema } from "../../db/db.ts";
@@ -19,6 +20,7 @@ import {
 } from "../../middleware/auth.ts";
 import { writeAudit } from "../../middleware/audit.ts";
 import { anonymousWriteRateLimit } from "../../middleware/ratelimit.ts";
+import { isFingerprint } from "../../lib/fingerprint.ts";
 
 export const linksRoute = new Hono<AuthEnv>();
 
@@ -33,6 +35,10 @@ const createLinkSchema = z.object({
 
 const updateLinkSchema = z.object({
   url: z.string().url(),
+});
+
+const claimSchema = z.object({
+  fingerprint: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 });
 
 const listQuerySchema = z.object({
@@ -55,6 +61,12 @@ function pgCode(err: unknown): string | undefined {
 
 function normalizeUrlHistory(value: unknown): UrlHistoryEntry[] {
   return Array.isArray(value) ? (value as UrlHistoryEntry[]) : [];
+}
+
+function legacyAuthorEmail(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const value = (metadata as { legacy_author_email?: unknown }).legacy_author_email;
+  return typeof value === "string" ? value : null;
 }
 
 function expectReturned<T>(row: T | undefined): T {
@@ -176,6 +188,10 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
     return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
   }
   const user = c.get("user");
+  const fingerprint = c.req.header("x-fingerprint")?.toLowerCase();
+  if (fingerprint && !isFingerprint(fingerprint)) {
+    return c.json({ error: "INVALID_FINGERPRINT" }, 400);
+  }
   try {
     const [inserted] = await db
       .insert(schema.linksTable)
@@ -183,12 +199,13 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
         slug: parsed.data.slug,
         url: parsed.data.url,
         ownerId: user?.id ?? null,
+        createdByFingerprint: user ? null : fingerprint ?? null,
       })
       .returning();
     const row = expectReturned(inserted);
     await writeAudit(c, "CREATE", row.slug, {
       after: { url: row.url, ownerId: row.ownerId },
-    });
+    }, {}, user ? null : fingerprint);
     return c.json({ link: row }, 201);
   } catch (err: unknown) {
     // Drizzle 把底层 postgres 错误包成 DrizzleQueryError, 真正的 code 在 .cause 上.
@@ -219,6 +236,45 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
   }
 });
 
+// GET /api/v1/links/claimable - links current user can claim by fingerprint or legacy email.
+linksRoute.get("/claimable", requireAuth, async (c) => {
+  const fingerprint = c.req.query("fingerprint")?.toLowerCase();
+  if (fingerprint && !isFingerprint(fingerprint)) {
+    return c.json({ error: "INVALID_FINGERPRINT" }, 400);
+  }
+
+  const user = c.get("user")!;
+  const matchers: SQL[] = [];
+  if (fingerprint) {
+    matchers.push(eq(schema.linksTable.createdByFingerprint, fingerprint));
+  }
+  if (user.email) {
+    matchers.push(
+      sql`lower(${schema.linksTable.metadata}->>'legacy_author_email') = ${user.email.toLowerCase()}`,
+    );
+  }
+  if (!matchers.length) return c.json({ links: [] });
+
+  const rows = await db
+    .select({
+      slug: schema.linksTable.slug,
+      url: schema.linksTable.url,
+      createdAt: schema.linksTable.createdAt,
+    })
+    .from(schema.linksTable)
+    .where(
+      and(
+        isNull(schema.linksTable.ownerId),
+        isNull(schema.linksTable.deletedAt),
+        or(...matchers),
+      ),
+    )
+    .orderBy(desc(schema.linksTable.createdAt))
+    .limit(50);
+
+  return c.json({ links: rows });
+});
+
 // GET /api/v1/links/:slug
 linksRoute.get("/:slug", async (c) => {
   const slug = c.req.param("slug");
@@ -233,6 +289,49 @@ linksRoute.get("/:slug", async (c) => {
     )
     .limit(1);
   if (!row) return c.json({ error: "NOT_FOUND" }, 404);
+  return c.json({ link: row });
+});
+
+// POST /api/v1/links/:slug/claim - claim an anonymous link by fingerprint or legacy email.
+linksRoute.post("/:slug/claim", requireAuth, async (c) => {
+  const slug = c.req.param("slug");
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = claimSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
+  }
+
+  const user = c.get("user")!;
+  const existing = await findLink(slug);
+  if (!existing || existing.deletedAt) return c.json({ error: "NOT_FOUND" }, 404);
+  if (existing.ownerId) return c.json({ error: "ALREADY_OWNED" }, 409);
+
+  const fingerprint = parsed.data.fingerprint?.toLowerCase();
+  const fingerprintMatches =
+    Boolean(fingerprint) && existing.createdByFingerprint === fingerprint;
+  const legacyEmail = legacyAuthorEmail(existing.metadata);
+  const legacyMatches =
+    Boolean(user.email && legacyEmail) &&
+    legacyEmail!.toLowerCase() === user.email!.toLowerCase();
+
+  if (!fingerprintMatches && !legacyMatches) {
+    return c.json({ error: "CLAIM_FORBIDDEN" }, 403);
+  }
+
+  const [updated] = await db
+    .update(schema.linksTable)
+    .set({ ownerId: user.id, updatedAt: new Date() })
+    .where(eq(schema.linksTable.slug, slug))
+    .returning();
+  const row = expectReturned(updated);
+  await writeAudit(
+    c,
+    "CLAIM",
+    slug,
+    { before: { ownerId: null }, after: { ownerId: user.id } },
+    { claim_method: fingerprintMatches ? "fingerprint" : "legacy_email" },
+    fingerprint,
+  );
   return c.json({ link: row });
 });
 

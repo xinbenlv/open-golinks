@@ -6,6 +6,10 @@ import {
   type FormEvent,
 } from "react";
 import { authFetch } from "../../hooks/useAuth";
+import {
+  computeFingerprint,
+  rememberCreatedLink,
+} from "../../../lib/fingerprint";
 import { IconArrowRight, IconCheck, IconCopy } from "./icons";
 
 // 与后端 schema CHECK 约束保持一致
@@ -13,9 +17,11 @@ const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$/;
 const RESERVED = new Set([
   "api",
   "auth",
+  "claim",
   "create",
   "dashboard",
   "edit",
+  "login",
   "warn",
   "assets",
   "static",
@@ -101,12 +107,19 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
     | { ok: false; kind: "taken" | "invalid" | "network"; message?: string }
   > {
     try {
+      const fingerprint = await computeFingerprint();
       const res = await authFetch("/api/v1/links", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "x-fingerprint": fingerprint,
+        },
         body: JSON.stringify({ slug: slugFinal, url: urlFinal }),
       });
-      if (res.status === 201) return { ok: true, slug: slugFinal };
+      if (res.status === 201) {
+        rememberCreatedLink(slugFinal, fingerprint);
+        return { ok: true, slug: slugFinal };
+      }
       if (res.status === 409) return { ok: false, kind: "taken" };
       if (res.status === 400) {
         const body = (await res.json().catch(() => null)) as

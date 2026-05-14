@@ -8,6 +8,7 @@ const Create = lazy(() => import("./pages/Create"));
 const Edit = lazy(() => import("./pages/Edit"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Claim = lazy(() => import("./pages/Claim"));
 const Warn = lazy(() => import("./pages/Warn"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -21,6 +22,7 @@ export function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/claim/:slug" element={<Claim />} />
         <Route
           path="/dashboard"
           element={

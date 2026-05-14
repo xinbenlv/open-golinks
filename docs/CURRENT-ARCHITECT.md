@@ -13,9 +13,9 @@
    Browser ──▶│  Bun + Hono                                  │
    Extension  │   ├─ /:slug          → 302 + 异步 analytics  │
               │   ├─ /api/v1/health  → JSON                  │
-  │   ├─ /api/v1/links   → CRUD + audit          │
-  │   ├─ /api/v1/me      → JWT 当前用户          │
-  │   ├─ /api/v1/stats   → scoped GA4 stats      │
+              │   ├─ /api/v1/links   → CRUD + claim + audit  │
+              │   ├─ /api/v1/me      → JWT 当前用户           │
+              │   ├─ /api/v1/stats   → scoped GA4 stats       │
               │   └─ /*              → 静态 SPA (dist/web)   │
               └──────────┬───────────────────────────────────┘
                          │ postgres-js + Drizzle
@@ -56,7 +56,7 @@ flowchart TB
   RED -.->|async UPSERT| PG
   RED -.->|async page_view| GA4[GA4 Measurement Protocol]
 
-  BR -->|/dashboard, /create| SRV
+  BR -->|/dashboard, /create, /claim/:slug| SRV
   SRV --> SPA
   SPA -->|fetch /api/v1/*| API
   API --> PG
@@ -78,8 +78,10 @@ flowchart TB
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - `owner=me` 时列出当前用户链接 (require JWT, cursor/q/limit); 默认 `owner=public` 保持公开列表
-  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流; 写 CREATE audit
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 写 CREATE audit
+  - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 `metadata.legacy_author_email` 认领的未归属链接
   - `GET /:slug` - 获取单链接
+  - `POST /:slug/claim` - requireAuth; fingerprint 或 legacy author email 匹配时写 `owner_id`, 写 CLAIM audit
   - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`, 写 UPDATE audit
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
@@ -92,6 +94,7 @@ flowchart TB
   - 首次见到 JWT `sub` 时 lazy upsert `public.users`, 供 `links.owner_id` / `audit_logs.actor_id` 外键使用
 - **`src/middleware/audit.ts`** - `writeAudit(c, action, slug, diff?)`, 对低频 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 写 `audit_logs`; `VISIT` 不写 audit.
 - **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
+- **`src/lib/fingerprint.ts`** - 浏览器端 64-hex fingerprint: canvas + UA + timezone + screen; canvas 不可用时用本地持久 fallback token. 服务端只校验格式和比对已有值.
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
@@ -106,7 +109,8 @@ flowchart TB
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
   - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删.
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
-  - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions.
+  - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
+  - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
   - `/create` 复用 Landing 创建体验; `/warn/:slug` 当前为 stub (`pages/ComingSoon.tsx`), 走客户端 lazy chunk.
   - `src/web/hooks/useAuth.ts` 维护 Supabase session store, 暴露 `signInWithMagicLink`, `signOut`, `authFetch`; `src/web/hooks/useApi.ts` 封装 JSON API 请求.
   - 客户端 `src/web/main.tsx:14-32` 智能切换 `hydrateRoot` (Landing 命中预渲染) / `createRoot` (其他路径).
@@ -121,6 +125,7 @@ flowchart TB
 ### 脚本
 - **`scripts/migrate-from-legacy.ts`** - MongoDB → Postgres 一次性迁移 (复用 v2-next)
 - **`scripts/inspect-mongo.ts`** - 检查源数据形态
+- **`scripts/reconcile-legacy-owners.ts`** - F5 legacy owner dry-run/backfill: 统计未归属链接覆盖率, 可用 `--apply` 按 `metadata.legacy_author_email` 匹配 `users.email` 回填 `owner_id`.
 
 ### 外部服务
 - **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.
@@ -137,11 +142,18 @@ flowchart TB
 6. 异步: 事务内累加 `links.visits` + UPSERT `daily_visits`; fire-and-forget 上报 GA4 `page_view`
 
 ### 创建短链
-1. 用户在 Landing (或 `/edit/<slug>`, slug 自动预填) 填表, SPA POST `/api/v1/links` JSON `{slug, url}`
-2. Hono `links.ts` zod 校验
+1. 用户在 Landing (或 `/edit/<slug>`, slug 自动预填) 填表; 浏览器计算 fingerprint, SPA POST `/api/v1/links` JSON `{slug, url}` + `X-Fingerprint`
+2. Hono `links.ts` zod 校验; 登录请求忽略 fingerprint 并写 `owner_id`, 匿名请求保存 `created_by_fingerprint`
 3. INSERT, 唯一约束失败 (Drizzle 把 PG 的 23505 包成 `DrizzleQueryError`, 从 `err.cause.code` 解出) 返回 `SLUG_TAKEN` 409
 4. 客户端拿到 409 后, 自动生成的 slug 重试一次; 用户自定义的 slug 则在表单内提示
 5. 已登录请求写 `owner_id`; 匿名请求进入 IP+UA rate limit; CREATE 写 `audit_logs`
+
+### 匿名链接认领
+1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
+2. 用户登录后进 `/dashboard`, `ClaimBanner` 计算当前浏览器 fingerprint 并调 `GET /api/v1/links/claimable?fingerprint=<64hex>`
+3. 后端返回两类未归属链接: `created_by_fingerprint` 匹配, 或 `metadata.legacy_author_email` 等于当前用户 email
+4. 用户点击 Claim 后, `POST /api/v1/links/:slug/claim` 写 `owner_id`, 记录 `audit_logs.action = CLAIM`
+5. Dashboard reload 后, 被认领链接通过 `GET /api/v1/links?owner=me` 出现在 owner 列表
 
 ## 环境变量
 
@@ -174,9 +186,8 @@ flowchart TB
 ## 当前未实现 (TODO)
 
 - Turnstile 校验
-- 指纹 (`createdByFingerprint`) 计算
 - audit log UI; VISIT 明确不写 `audit_logs`
 - `/warn/:slug` 警告页
-- Analytics 页面; 当前 Landing/Create/Edit/Login/Dashboard 实装, Warn 仍 stub
+- Analytics 详情页; 当前 Landing/Create/Edit/Login/Dashboard/Claim 实装, Warn 仍 stub
 - 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)

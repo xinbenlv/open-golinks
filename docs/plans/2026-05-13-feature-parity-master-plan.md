@@ -148,19 +148,20 @@ expect(v.commit).toBe(process.env.GITHUB_SHA || lastLocalCommit);
 | Drizzle schema | **已完整** — `users` / `links` / `audit_logs` / `daily_visits` 全部字段就绪 (deletedAt, urlHistory, metadata, createdByFingerprint, isPublic) | `src/db/schema.ts` |
 | JWT 验证 + 用户落库 | **已实现** — `requireAuth` / `optionalAuth`, 首次见到 JWT 时 lazy `ensureUserRow` upsert public.users (不需要 webhook/触发器) | `src/middleware/auth.ts:70-82` |
 | `GET /api/v1/me` | **已实现** | `src/routes/api/me.ts` |
-| Redirect + 异步访问计数 | **已实现** — 不存在的合法 slug → `/edit/:slug`; 命中后 queueMicrotask 异步 update `visits` + UPSERT `daily_visits`. **F4 落地前需加**: 同 queueMicrotask 里 fire-and-forget GA4 Measurement Protocol 上报 (不要像 master 那样 await, 别拖慢 redirect) | `src/routes/redirect.ts` |
-| `POST /api/v1/links` (create) | **已实现** (但还未接 Turnstile + 指纹 + audit) | `src/routes/api/links.ts:39-63` |
-| `GET /api/v1/links` (public list) | **已实现 stub** — 仅返回最近 50 条公开链接, 未分页 / 未鉴权 | `src/routes/api/links.ts:18-36` |
-| `GET /api/v1/links/:slug` | **已实现** | `src/routes/api/links.ts:66-80` |
+| Redirect + 异步访问计数 | **已实现** — 不存在的合法 slug → `/edit/:slug`; 命中后 queueMicrotask 异步 update `visits` + UPSERT `daily_visits` + fire-and-forget GA4 `page_view` | `src/routes/redirect.ts` |
+| `POST /api/v1/links` (create) | **已实现** — 登录写 `owner_id`; 匿名写 `created_by_fingerprint`; CREATE audit; 匿名限流 | `src/routes/api/links.ts` |
+| `GET /api/v1/links` (public / owner list) | **已实现** — `owner=me` requireAuth, cursor/q/limit; 默认公开列表 | `src/routes/api/links.ts` |
+| `GET /api/v1/links/:slug` | **已实现** | `src/routes/api/links.ts` |
+| `GET /api/v1/links/claimable` / `POST /api/v1/links/:slug/claim` | **已实现** — fingerprint claim + legacy author email claim | `src/routes/api/links.ts` |
 | Landing 页 SSR | **已实现** | `src/web/pages/Landing/` |
-| Edit/Create/Dashboard 页面 | **占位 stub** (~10 行) | `src/web/pages/{Edit,Create,Dashboard}.tsx` |
+| Edit/Create/Dashboard/Claim 页面 | **已实现** | `src/web/pages/{Edit,Create,Dashboard,Claim}.tsx` |
 
 **已知 gap (不属于任何单一 feature)**:
 
 - Redirect 命中时没写 audit_logs.VISIT 事件 (只更新计数). **决定: VISIT 不进 audit_logs**, 因为高频事件会撑爆表, 且 GA4 已有完整 page_view 数据. `audit_logs.action` enum 中的 `VISIT` 值保留但实际不使用.
-- `POST /api/v1/links` **没写 audit_logs.CREATE 事件**. F2 引入 `middleware/audit.ts` 时补 (这个是低频, 适合 audit).
-- `src/lib/` / `src/web/{components,hooks,lib}/` 目录目前都**不存在**, 由各 sub-plan 首次落地时创建.
-- `redirect.ts` 没接 GA4 Measurement Protocol 上报. F4 sub-plan 内补.
+- `POST /api/v1/links` 已写 `audit_logs.CREATE`; F5 追加匿名 `created_by_fingerprint`.
+- `src/lib/` / `src/web/{components,hooks,lib}/` 已由 F1-F5 落地.
+- `redirect.ts` 已接 GA4 Measurement Protocol 上报.
 
 ## 文件夹决策
 
@@ -236,7 +237,7 @@ tests/e2e/
 - [x] **F2. 链接编辑 (PATCH) + 删除 (软删) + 统一 audit** — master 有, v2-hono 仅有 POST; 顺便补齐 CREATE audit 写入; VISIT 明确不进 audit
 - [x] **F3. 个人链接列表 (User Dashboard)** — 对应 master `user-links.vue`
 - [x] **F4. 基础 stats dashboard** — 日访问折线 + 总点击
-- [ ] **F5. 匿名链接认领 (Claim)** — master 关键差异化功能
+- [x] **F5. 匿名链接认领 (Claim)** — master 关键差异化功能
 
 ### 🟡 P1 - 切流后 1 个月内补齐
 
@@ -429,7 +430,7 @@ tests/e2e/
 - [ ] F12 公开链接发现 do/drop (W4 末)
 - [ ] 软删后是否暴露 "回收站"
 - [ ] F11 transfer 是否需要被接收方确认 (当前默认: 不需要, 直接转)
-- [ ] dump 进来的老链接 owner_id + legacy author email 覆盖率: 待查. 默认先 email backfill, fingerprint 只处理 v2-hono 新匿名链接; 无 email/fingerprint 的 legacy 链接走 F5 manual review, 未闭环不切流
+- [x] dump 进来的老链接 owner_id + legacy author email 覆盖率已查 (2026-05-13 dry-run): `total=5804`, `unowned=4959`, `unowned_with_legacy_email=0`, `unowned_with_fingerprint=0`. 无自动 email backfill 空间; 这 4959 条需 manual review/批量归属策略, 未闭环不切 DNS
 - [ ] ~~历史 visits 计数迁移~~ — **不需要**, 历史数据全在 GA4
 - [ ] 是否做 dark mode / i18n / cookie banner (GDPR — **GA4 上报有 IP/UA, 加 cookie banner 是合规需求**, 优先级提到 P1)
 - [ ] Dashboard 默认分页大小 (当前默认 20) / 默认排序 (当前默认 created_at desc)

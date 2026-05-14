@@ -10,6 +10,7 @@ export const redirectRoute = new Hono();
 const RESERVED = new Set([
   "api",
   "auth",
+  "claim",
   "create",
   "dashboard",
   "edit",

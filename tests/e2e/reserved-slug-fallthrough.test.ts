@@ -26,6 +26,7 @@ const SPA_SENTINEL = "SPA_FALLBACK";
 const EXPECTED_RESERVED = [
   "api",
   "auth",
+  "claim",
   "create",
   "dashboard",
   "edit",

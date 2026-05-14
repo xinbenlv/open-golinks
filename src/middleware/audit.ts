@@ -32,12 +32,14 @@ export async function writeAudit(
   slug: string,
   diff?: JsonObject,
   metadata: JsonObject = {},
+  actorFingerprint?: string | null,
 ) {
   const user = c.get("user");
   const userAgent = c.req.header("user-agent") ?? null;
   await db.insert(schema.auditLogsTable).values({
     linkSlug: slug,
     actorId: user?.id ?? null,
+    actorFingerprint: actorFingerprint ?? null,
     actorIpHash: hashIp(requestIp(c)),
     action,
     diff: diff ?? null,

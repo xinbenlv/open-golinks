@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 3 天
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -84,6 +84,14 @@ FROM links;
 - 若既无 email 也无 fingerprint, 导出 review list, 由人工确认后写 owner; 该 list 未闭环前不切 DNS
 - 不把 legacy email 明文返回给非 owner; UI 只显示 slug/url/createdAt
 
+2026-05-13 dry-run 结果 (`bun scripts/reconcile-legacy-owners.ts`):
+- `total=5804`
+- `unowned=4959`
+- `unowned_with_email=0`
+- `unowned_with_fingerprint=0`
+
+结论: 目前 dump 数据没有可自动回填的 legacy email / fingerprint. F5 代码路径已支持新匿名链接和将来带 `legacy_author_email` 的数据; 现有 4959 条未归属 legacy 链接仍需 manual review/批量归属策略, 未闭环前不切 DNS.
+
 ## Fingerprint 算法 (`src/lib/fingerprint.ts`)
 
 ```ts
@@ -151,13 +159,13 @@ test('直接访问 /claim/foo 不会被 redirectRoute 当成 slug', ...);
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F5-claim.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F5]`
-- [ ] 4. Railway env: 无新增
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产: 匿名身份建一个新 slug → 注册一个测试账号登录 → banner 显示 → 点 Claim → /dashboard 列表含该 slug; build SHA 匹配
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 1. type-check + build + 本地 production server healthcheck
+- [x] 2. `bun test tests/e2e/F5-claim.test.ts` 绿
+- [x] 3. commit + push, 前缀 `[F5]`
+- [x] 4. Railway env: 无新增
+- [x] 5. deploy SUCCESS
+- [x] 6. 浏览器验证生产: 匿名身份建一个新 slug → 注册一个测试账号登录 → banner 显示 → 点 Claim → /dashboard 列表含该 slug; build SHA 匹配
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 

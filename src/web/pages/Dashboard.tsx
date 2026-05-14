@@ -4,6 +4,7 @@ import {
   type DashboardLink,
   LinkRow,
 } from "../components/LinkRow";
+import { ClaimBanner } from "../components/ClaimBanner";
 import { StatsChart } from "../components/StatsChart";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../hooks/useAuth";
@@ -126,6 +127,7 @@ export default function Dashboard() {
           />
         </div>
 
+        <ClaimBanner />
         <StatsChart />
 
         {error ? (

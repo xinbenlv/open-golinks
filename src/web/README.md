@@ -24,6 +24,7 @@ src/web/
 ├── components/
 │   ├── AuthGuard.tsx        # owner-only route guard
 │   ├── BuildStamp.tsx       # 全局构建版本水印
+│   ├── ClaimBanner.tsx      # Dashboard 匿名/legacy 可认领链接提示
 │   ├── LinkRow.tsx          # Dashboard 链接行
 │   └── StatsChart.tsx       # Dashboard 30 日 GA4 折线
 └── pages/
@@ -42,6 +43,7 @@ src/web/
     ├── Dashboard.tsx        # /dashboard owner 链接列表 + 搜索 + 分页 + stats
     ├── Login.tsx            # /login, magic link form
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
+    ├── Claim.tsx            # /claim/:slug, 匿名链接登录后认领
     ├── Create.tsx           # /create 复用 Landing 创建体验
     ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接
     ├── Warn.tsx             # /warn/:slug (lazy stub)
@@ -55,6 +57,7 @@ src/web/
 | `/` | `pages/Landing` | 构建期 **SSG 预渲染** + 客户端 hydrate |
 | `/login` | `pages/Login` | 客户端 lazy chunk, Supabase magic link |
 | `/auth/callback` | `pages/AuthCallback` | 客户端 lazy chunk, PKCE code exchange |
+| `/claim/:slug` | `pages/Claim` | 客户端 lazy chunk, 登录后认领匿名/legacy 链接 |
 | `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录; owner 链接列表 |
 | `/create` | `pages/Create` | 客户端 lazy chunk; Landing 创建体验 |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
@@ -99,6 +102,7 @@ bun run build:web
 - `AuthCallback.tsx` 优先读取 `?code=` 并调用 `exchangeCodeForSession`; Admin generated-link / legacy hash token 回跳则调用 `setSession`
 - `AuthGuard` 保护 `/dashboard`, 但 `/edit/:slug` 保持公开以保留 "未找到 → 创建" 流程
 - Header 根据 session 显示登录/登出状态
+- `/claim/:slug` 允许未登录用户先查看认领入口; 登录后用浏览器 fingerprint 或 legacy author email 调 `POST /api/v1/links/:slug/claim`
 
 Vite client env:
 - `VITE_SUPABASE_URL`
@@ -110,6 +114,7 @@ Vite client env:
 `Hero` 内嵌的创建表单直连 `POST /api/v1/links`:
 - 客户端先做 URL/slug 格式校验 (与后端 schema 对齐, 失败原地报错不发请求)
 - 提交成功 (201) → 显示真实短链 (`window.location.host` 拼出) + 复制按钮 + "打开"按钮 (打到 `/<slug>` 走 redirect)
+- 匿名提交会先计算 `src/lib/fingerprint.ts` 的 64-hex fingerprint, 通过 `X-Fingerprint` 传给后端, 并把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
 - slug 留空时, 客户端用 `genSlug()` 生成; 撞库 (409) 时自动重试一次
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
@@ -133,7 +138,7 @@ bun run start                  # NODE_ENV=production, Hono 托管 dist/web
 ## 已知限制
 
 - `/favicon.ico` / `/favicon.svg` / `/robots.txt` 等带 `.` 的根路径在生产被 redirect handler 当成无效 slug 拦截 → 404. 因此 favicon 用 inline data URL 处理. 后端逻辑由 `src/routes/redirect.ts` 决定, 本目录不修改.
-- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login` 等已覆盖.
+- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login`、`/claim` 等已覆盖.
 
 ## 相关
 

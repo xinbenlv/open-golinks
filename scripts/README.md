@@ -200,6 +200,22 @@ metadata         → metadata
 - MongoDB 源数据的字段名称发生变化
 - 需要特殊的数据转换逻辑
 
+## reconcile-legacy-owners.ts
+
+F5 claim 配套维护脚本。默认 dry-run 打印当前 `owner_id IS NULL` 的覆盖率和最多 100 条 review sample:
+
+```bash
+bun scripts/reconcile-legacy-owners.ts
+```
+
+确认 `metadata->>'legacy_author_email'` 能匹配 `public.users.email` 后，可执行回填:
+
+```bash
+bun scripts/reconcile-legacy-owners.ts --apply
+```
+
+脚本只处理仍未归属、未删除、且 legacy email 能匹配现有用户的链接；无法自动匹配的链接仍需人工 review 或由用户通过 `/claim/:slug` 认领。
+
 ---
 
-**最后更新**: 2026-02-10
+**最后更新**: 2026-05-13
