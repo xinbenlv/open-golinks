@@ -285,6 +285,26 @@ svg {
   line-height: var(--leading-relaxed);
 }
 
+.transfer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.transfer-panel h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.transfer-panel__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: var(--space-2);
+}
+
 .audit-timeline {
   display: flex;
   flex-direction: column;
@@ -732,6 +752,10 @@ svg {
   .audit-event__main {
     grid-template-columns: 1fr;
     align-items: start;
+  }
+
+  .transfer-panel__row {
+    grid-template-columns: 1fr;
   }
 
   .url-history__current,

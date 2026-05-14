@@ -129,7 +129,7 @@ Vite client env:
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
 
-`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning` 或 DELETE 软删, 底部 `UrlHistory` 展示历史目标 URL, `AuditTimeline` 展示 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 历史并支持展开 diff. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
+`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning`、TRANSFER 到另一个已注册用户或 DELETE 软删, 底部 `UrlHistory` 展示历史目标 URL, `AuditTimeline` 展示 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 历史并支持展开 diff. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
 
 ## QR Editor
 

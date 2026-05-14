@@ -27,18 +27,25 @@ export default function Edit() {
   const { user, loading: authLoading } = useAuth();
   const urlId = useId();
   const warnId = useId();
+  const transferId = useId();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [url, setUrl] = useState("");
   const [showWarning, setShowWarning] = useState(false);
+  const [transferEmail, setTransferEmail] = useState("");
+  const [transferComplete, setTransferComplete] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [transferError, setTransferError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [transferring, setTransferring] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading" });
     setMessage(null);
     setError(null);
+    setTransferError(null);
+    setTransferComplete(null);
 
     async function load() {
       const res = await fetch(`/api/v1/links/${slug}`);
@@ -80,6 +87,16 @@ export default function Edit() {
 
   if (state.status === "error") {
     return <EditNotice title="无法编辑链接" message={state.message} />;
+  }
+
+  if (transferComplete) {
+    return (
+      <EditNotice
+        title="Ownership transferred"
+        message={`/${slug} now belongs to ${transferComplete}.`}
+        action={<Link to="/dashboard" className="btn btn--primary">Dashboard</Link>}
+      />
+    );
   }
 
   if (!user) {
@@ -145,6 +162,36 @@ export default function Edit() {
     }
   }
 
+  async function onTransfer(e: FormEvent) {
+    e.preventDefault();
+    const toEmail = transferEmail.trim();
+    if (!toEmail) return;
+    if (
+      !window.confirm(
+        `Transfer /${slug} to ${toEmail}? You will lose ownership immediately.`,
+      )
+    ) {
+      return;
+    }
+    setTransferring(true);
+    setTransferError(null);
+    try {
+      const res = await authFetch(`/api/v1/links/${slug}/transfer`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ toEmail }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: string } | null;
+        setTransferError(body?.error ?? `Transfer failed: HTTP ${res.status}`);
+        return;
+      }
+      setTransferComplete(toEmail);
+    } finally {
+      setTransferring(false);
+    }
+  }
+
   return (
     <main className="auth-page">
       <section className="auth-panel">
@@ -193,6 +240,40 @@ export default function Edit() {
           updatedAt={state.link.updatedAt}
           history={state.link.urlHistory}
         />
+        <form className="transfer-panel" onSubmit={onTransfer}>
+          <div className="auth-copy">
+            <p className="dashboard-kicker">Danger zone</p>
+            <h2>Transfer ownership</h2>
+            <p>Move this link to another registered user by email.</p>
+          </div>
+          <label className="auth-label" htmlFor={transferId}>
+            Recipient email
+          </label>
+          <div className="transfer-panel__row">
+            <input
+              id={transferId}
+              className="auth-input"
+              type="email"
+              value={transferEmail}
+              onChange={(event) => setTransferEmail(event.target.value)}
+              placeholder="teammate@example.com"
+              disabled={transferring}
+              required
+            />
+            <button
+              className="btn btn--ghost"
+              type="submit"
+              disabled={transferring || !transferEmail.trim()}
+            >
+              {transferring ? "Transferring..." : "Transfer"}
+            </button>
+          </div>
+          {transferError ? (
+            <p className="auth-message auth-message--error" role="alert">
+              {transferError}
+            </p>
+          ) : null}
+        </form>
         <AuditTimeline slug={slug} />
       </section>
     </main>

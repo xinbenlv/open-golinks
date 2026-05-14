@@ -18,6 +18,7 @@ bun test tests/e2e/F7-qr.test.ts                       # F7 QR PNG and compat ro
 bun test tests/e2e/F8-detailed-stats.test.ts           # F8 detailed analytics scoped query smoke
 bun test tests/e2e/F9-audit.test.ts                    # F9 owner audit timeline API smoke
 bun test tests/e2e/F10-url-history.test.ts             # F10 URL history data/normalizer smoke
+bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer API smoke
 ```
 
 ## 目录
@@ -34,6 +35,7 @@ bun test tests/e2e/F10-url-history.test.ts             # F10 URL history data/no
   - `F8-detailed-stats.test.ts` — `/api/v1/stats/query` 鉴权、owner scope、单 slug 非 owner 404、allowlist validation、GA4 failure downgrade.
   - `F9-audit.test.ts` — `/api/v1/audit/:slug` owner-only、CREATE/CLAIM/UPDATE diff、404/403、cursor pagination.
   - `F10-url-history.test.ts` — PATCH url_history 写入顺序、never-edited 空状态、malformed legacy history normalize.
+  - `F11-transfer.test.ts` — owner transfer to registered user、A/B dashboard scope、TRANSFER audit、USER_NOT_FOUND/SELF_TRANSFER/FORBIDDEN.
 - `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖. F1-F8 的完整 magic-link/browser smoke 需要 `SUPABASE_URL` + `SUPABASE_SECRET_KEY`; 缺少时只跑公开页面 smoke 或跳过需登录用例.
   - `F5.spec.ts` — 生产 golden path: 匿名创建 → `/claim/:slug` 不被短链路由截获 → magic-link 登录 → Dashboard banner → Claim all → owner 列表出现该 slug.
   - `F6.spec.ts` — 生产 golden path: owner 打开 warning toggle → 访客进入 `/warn/:slug` → Proceed → 关闭 warning 后直接 302.
@@ -41,6 +43,7 @@ bun test tests/e2e/F10-url-history.test.ts             # F10 URL history data/no
   - `F8.spec.ts` — 生产 golden path: 登录 → 创建链接 → `/stats` 控件交互 → `/stats/:slug` 详情 → stats query 200 + build SHA 校验.
   - `F9.spec.ts` — 生产 golden path: 登录 → 创建并更新链接 → `/edit/:slug` History → 展开 UPDATE diff.
   - `F10.spec.ts` — 生产 golden path: 登录 → 创建并更新链接 → `/edit/:slug` URL History 显示 current/previous/original.
+  - `F11.spec.ts` — 生产 golden path: A 创建链接 → Edit 页 transfer 给已注册 B → A 列表消失, B 列表出现.
 
 ## 约定
 

@@ -98,6 +98,7 @@ flowchart TB
   - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 `metadata.legacy_author_email` 认领的未归属链接
   - `GET /:slug` - 获取单链接
   - `POST /:slug/claim` - requireAuth; fingerprint 或 legacy author email 匹配时写 `owner_id`, 写 CLAIM audit
+  - `POST /:slug/transfer` - owner-only; 按 recipient email 转移给已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER`
   - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`; F6 允许最小 `metadata.show_warning` boolean patch, 其他 metadata key 等 F14; 写 UPDATE audit
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
@@ -189,6 +190,12 @@ flowchart TB
 2. `PATCH /api/v1/links/:slug` 把旧 URL 追加到 `links.url_history` (`{ url, changedAt, changedBy }`)
 3. Edit 页 `UrlHistory` 直接使用 `GET /api/v1/links/:slug` 返回的 `urlHistory`, newest-first 展示历史目标 URL
 4. 旧数据若不是数组或条目缺少 `url`, 前端 normalize 后忽略, 显示 "No previous URLs" 而不崩溃
+
+### Ownership transfer
+1. Owner 在 `/edit/:slug` 的 Danger zone 输入接收方 email 并确认
+2. `POST /api/v1/links/:slug/transfer` 要求接收方已登录过并存在于 `public.users`
+3. 后端校验当前用户仍是 owner, 更新 `links.owner_id`, 写 `audit_logs.action = TRANSFER`
+4. 发起方立即失去 owner 权限; 接收方的 `/dashboard` 可看到该链接
 
 ### QR code
 1. 用户进入 `/qr/:slug`, SPA 读取 `/api/v1/links/:slug` 获取目标 URL 并用 `QrCanvas` 实时预览短链 QR

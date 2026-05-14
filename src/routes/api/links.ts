@@ -53,6 +53,10 @@ const claimSchema = z.object({
   fingerprint: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 });
 
+const transferSchema = z.object({
+  toEmail: z.string().trim().email().max(255),
+});
+
 const listQuerySchema = z.object({
   owner: z.enum(["me", "public"]).default("public"),
   limit: z.coerce.number().int().min(1).max(50).default(20),
@@ -352,6 +356,63 @@ linksRoute.post("/:slug/claim", requireAuth, async (c) => {
     { before: { ownerId: null }, after: { ownerId: user.id } },
     { claim_method: fingerprintMatches ? "fingerprint" : "legacy_email" },
     fingerprint,
+  );
+  return c.json({ link: row });
+});
+
+// POST /api/v1/links/:slug/transfer - owner-only ownership transfer by recipient email.
+linksRoute.post("/:slug/transfer", requireAuth, async (c) => {
+  const slug = c.req.param("slug");
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = transferSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
+  }
+
+  const user = c.get("user")!;
+  const toEmail = parsed.data.toEmail.toLowerCase();
+  const [recipient] = await db
+    .select({
+      id: schema.usersTable.id,
+      email: schema.usersTable.email,
+    })
+    .from(schema.usersTable)
+    .where(sql`lower(${schema.usersTable.email}) = ${toEmail}`)
+    .limit(1);
+
+  if (!recipient) return c.json({ error: "USER_NOT_FOUND" }, 404);
+  if (recipient.id === user.id) return c.json({ error: "SELF_TRANSFER" }, 400);
+
+  const existing = await findLink(slug);
+  const ownershipError = ensureOwner(existing, user);
+  if (ownershipError === "NOT_FOUND") return c.json({ error: "NOT_FOUND" }, 404);
+  if (ownershipError === "FORBIDDEN") return c.json({ error: "FORBIDDEN" }, 403);
+  if (!existing) return c.json({ error: "NOT_FOUND" }, 404);
+
+  const [updated] = await db
+    .update(schema.linksTable)
+    .set({ ownerId: recipient.id, updatedAt: new Date() })
+    .where(
+      and(
+        eq(schema.linksTable.slug, slug),
+        eq(schema.linksTable.ownerId, user.id),
+        isNull(schema.linksTable.deletedAt),
+      ),
+    )
+    .returning();
+  if (!updated) return c.json({ error: "FORBIDDEN" }, 403);
+  const row = expectReturned(updated);
+
+  await writeAudit(
+    c,
+    "TRANSFER",
+    slug,
+    { before: { ownerId: user.id }, after: { ownerId: recipient.id } },
+    {
+      from_owner_id: user.id,
+      to_owner_id: recipient.id,
+      to_email: recipient.email,
+    },
   );
   return c.json({ link: row });
 });
