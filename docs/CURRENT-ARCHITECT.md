@@ -17,7 +17,7 @@
               │   ├─ /api/v1/health  → JSON                  │
               │   ├─ /api/v1/links   → CRUD + claim + audit  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
-              │   ├─ /api/v1/stats   → scoped GA4 stats       │
+              │   ├─ /api/v1/stats   → scoped GA4 stats/query │
               │   └─ /*              → 静态 SPA (dist/web)   │
               └──────────┬───────────────────────────────────┘
                          │ postgres-js + Drizzle
@@ -100,7 +100,9 @@ flowchart TB
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 - **`src/routes/api/qr.ts`** (`GET /api/v1/qr/:slug`) - 公开 QR PNG endpoint; `format=png`, `caption<=100`, `logo=true`; 不存在/软删返回 404.
-- **`src/routes/api/stats.ts`** (`GET /api/v1/stats/summary`) - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
+- **`src/routes/api/stats.ts`** (`/api/v1/stats`)
+  - `GET /summary` - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
+  - `POST /query` - requireAuth; 受控详细查询, 只接受 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 后端自动注入当前用户 owned slug scope, 单 slug 非 owner 返回 404.
 
 ### Middleware
 - **`src/middleware/auth.ts`** - Supabase Auth JWT 验证 middleware:
@@ -126,6 +128,7 @@ flowchart TB
   - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删.
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
+  - `/stats` / `/stats/:slug` 由 `AuthGuard` 保护, 调 `/api/v1/stats/query` 展示 GA4 path 表、path share 饼图、date 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换.
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
   - `/qr/:slug` 是 QR editor; 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
   - `/create` 复用 Landing 创建体验.
@@ -147,7 +150,7 @@ flowchart TB
 
 ### 外部服务
 - **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.
-- **`src/lib/ga4.ts`** - GA4 Data API summary 查询 + Measurement Protocol `page_view` 上报 helper.
+- **`src/lib/ga4.ts`** - GA4 Data API summary/detail 查询 + Measurement Protocol `page_view` 上报 helper.
 
 ## 数据流
 
@@ -177,6 +180,13 @@ flowchart TB
 2. 下载按钮指向 `/qr/d/:slug.png?caption=...&addLogo=true`
 3. 兼容旧路径 `/qr/:slug.png` 返回 inline PNG; `/qr/d/:slug.png` 返回 attachment PNG
 4. 服务端 QR PNG 始终编码短链 URL (`PUBLIC_BASE_URL` 或请求 origin + `/:slug`), 不直接编码 destination URL
+
+### Detailed analytics
+1. 登录用户访问 `/stats` 或 `/stats/:slug`
+2. SPA 并行 POST 两次 `/api/v1/stats/query`: 一次 `groupBy=path`, 一次 `groupBy=date`
+3. 后端根据 JWT 查当前用户未删除链接; `/stats/:slug` 只保留该 owner 的目标 slug, 非 owner 返回 404
+4. `src/lib/ga4.ts#queryStatsForSlugs` 用 GA4 Data API 查询 `page_view`, 并强制 `pagePath` 匹配当前用户 slug scope; 可选用户 `pathRegex` 只作为额外过滤条件
+5. SPA 渲染 path 表、path share 饼图、day 折线; 空数据展示 "No data yet", GA4 错误降级为页面 alert
 
 ### 匿名链接认领
 1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
@@ -217,6 +227,5 @@ flowchart TB
 
 - Turnstile 校验
 - audit log UI; VISIT 明确不写 `audit_logs`
-- Analytics 详情页; 当前 Landing/Create/Edit/Login/Dashboard/Claim 实装, `/warn/:slug` 由 Hono SSR 实装
 - 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)

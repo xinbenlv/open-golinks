@@ -112,9 +112,14 @@ export default function Dashboard() {
             <h1>My links</h1>
             <p>{user?.email ?? "Signed in"}</p>
           </div>
-          <Link className="btn btn--primary" to="/create">
-            New link
-          </Link>
+          <div className="dashboard-header__actions">
+            <Link className="btn btn--ghost" to="/stats">
+              Stats
+            </Link>
+            <Link className="btn btn--primary" to="/create">
+              New link
+            </Link>
+          </div>
         </header>
 
         <div className="dashboard-toolbar">

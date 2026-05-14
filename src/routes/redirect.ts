@@ -16,6 +16,7 @@ const RESERVED = new Set([
   "edit",
   "login",
   "qr",
+  "stats",
   "warn",
   "assets",
   "static",

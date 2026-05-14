@@ -14,6 +14,31 @@ export type StatsSummary = {
   scope: { slugCount: number };
 };
 
+export type StatsQueryGroupBy = "path" | "date";
+
+export type StatsQueryRow = {
+  dimension: string;
+  eventCount: number;
+  activeUsers: number;
+};
+
+export type StatsQueryInput = {
+  slugs: string[];
+  range: 7 | 30 | 90 | 180;
+  groupBy: StatsQueryGroupBy;
+  limit: number;
+  pathRegex?: string;
+  usePathPlusQueryString: boolean;
+};
+
+export type StatsQueryResult = {
+  rows: StatsQueryRow[];
+  totalEvents: number;
+  source: "ga4";
+  scope: { slugCount: number };
+  dimension: "date" | "pagePath" | "pagePathPlusQueryString";
+};
+
 type ReportRedirectInput = {
   clientId: string;
   slug: string;
@@ -22,12 +47,18 @@ type ReportRedirectInput = {
 };
 
 type StatsProvider = (slugs: string[], days: number) => Promise<StatsSummary>;
+type StatsQueryProvider = (input: StatsQueryInput) => Promise<StatsQueryResult>;
 
 let client: BetaAnalyticsDataClient | null = null;
 let statsProviderForTests: StatsProvider | null = null;
+let statsQueryProviderForTests: StatsQueryProvider | null = null;
 
 export function setStatsSummaryProviderForTests(provider: StatsProvider | null) {
   statsProviderForTests = provider;
+}
+
+export function setStatsQueryProviderForTests(provider: StatsQueryProvider | null) {
+  statsQueryProviderForTests = provider;
 }
 
 export function newGaClientId() {
@@ -69,6 +100,10 @@ function blankDays(days: number): StatsDay[] {
 function gaDateToIso(value: string) {
   if (!/^\d{8}$/.test(value)) return value;
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
+}
+
+function slugScopeRegex(slugs: string[]) {
+  return `^/(${slugs.map(escapeRegex).join("|")})$`;
 }
 
 export async function reportRedirectToGA4(input: ReportRedirectInput) {
@@ -128,7 +163,7 @@ export async function getStatsSummaryForSlugs(
   const propertyId = process.env.GA4_PROPERTY_ID;
   if (!propertyId) throw new Error("GA4_PROPERTY_ID is not configured");
 
-  const pathRegex = `^/(${slugs.map(escapeRegex).join("|")})$`;
+  const pathRegex = slugScopeRegex(slugs);
   const [response] = await ga4Client().runReport({
     property: `properties/${propertyId}`,
     dateRanges: [{ startDate: `${normalizedDays - 1}daysAgo`, endDate: "today" }],
@@ -169,5 +204,92 @@ export async function getStatsSummaryForSlugs(
     days: series,
     source: "ga4",
     scope: { slugCount: slugs.length },
+  };
+}
+
+export async function queryStatsForSlugs(
+  input: StatsQueryInput,
+): Promise<StatsQueryResult> {
+  if (statsQueryProviderForTests) return statsQueryProviderForTests(input);
+  if (!input.slugs.length) {
+    return {
+      rows: [],
+      totalEvents: 0,
+      source: "ga4",
+      scope: { slugCount: 0 },
+      dimension: input.groupBy === "date"
+        ? "date"
+        : input.usePathPlusQueryString
+          ? "pagePathPlusQueryString"
+          : "pagePath",
+    };
+  }
+
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) throw new Error("GA4_PROPERTY_ID is not configured");
+
+  const dimension =
+    input.groupBy === "date"
+      ? "date"
+      : input.usePathPlusQueryString
+        ? "pagePathPlusQueryString"
+        : "pagePath";
+  const expressions = [
+    {
+      filter: {
+        fieldName: "eventName",
+        stringFilter: { matchType: "EXACT" as const, value: "page_view" },
+      },
+    },
+    {
+      filter: {
+        fieldName: "pagePath",
+        stringFilter: {
+          matchType: "PARTIAL_REGEXP" as const,
+          value: slugScopeRegex(input.slugs),
+        },
+      },
+    },
+  ];
+  if (input.pathRegex?.trim()) {
+    expressions.push({
+      filter: {
+        fieldName: dimension === "date" ? "pagePath" : dimension,
+        stringFilter: {
+          matchType: "PARTIAL_REGEXP" as const,
+          value: input.pathRegex.trim(),
+        },
+      },
+    });
+  }
+
+  const [response] = await ga4Client().runReport({
+    property: `properties/${propertyId}`,
+    dateRanges: [{ startDate: `${input.range - 1}daysAgo`, endDate: "today" }],
+    dimensions: [{ name: dimension }],
+    metrics: [{ name: "eventCount" }, { name: "activeUsers" }],
+    dimensionFilter: { andGroup: { expressions } },
+    orderBys:
+      dimension === "date"
+        ? [{ dimension: { dimensionName: "date" } }]
+        : [{ metric: { metricName: "eventCount" }, desc: true }],
+    limit: input.limit,
+  });
+
+  const rows = (response.rows ?? []).map((row) => {
+    const rawDimension = row.dimensionValues?.[0]?.value ?? "";
+    return {
+      dimension: dimension === "date" ? gaDateToIso(rawDimension) : rawDimension,
+      eventCount: Number(row.metricValues?.[0]?.value ?? 0),
+      activeUsers: Number(row.metricValues?.[1]?.value ?? 0),
+    };
+  });
+
+  return {
+    rows,
+    totalEvents: rows.reduce((sum, row) => sum + row.eventCount, 0),
+    source: "ga4",
+    scope: { slugCount: input.slugs.length },
+    dimension,
   };
 }

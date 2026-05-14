@@ -28,6 +28,7 @@ src/web/
 │   ├── LinkRow.tsx          # Dashboard 链接行
 │   ├── QrCanvas.tsx         # QR editor 客户端 canvas 预览
 │   ├── StatsChart.tsx       # Dashboard 30 日 GA4 折线
+│   ├── stats/               # 详细 Analytics 控件与图表
 │   └── WarnToggle.tsx       # Edit 页 warning interstitial 开关
 └── pages/
     ├── Landing/             # Landing 页 (`/`), 构建期被 SSG 预渲染
@@ -49,6 +50,7 @@ src/web/
     ├── Create.tsx           # /create 复用 Landing 创建体验
     ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接
     ├── QrEditor.tsx         # /qr/:slug, QR 预览 + PNG 下载
+    ├── Stats/               # /stats 和 /stats/:slug 详细 GA4 analytics
     └── NotFound.tsx         # * (lazy stub)
 ```
 
@@ -61,6 +63,8 @@ src/web/
 | `/auth/callback` | `pages/AuthCallback` | 客户端 lazy chunk, PKCE code exchange |
 | `/claim/:slug` | `pages/Claim` | 客户端 lazy chunk, 登录后认领匿名/legacy 链接 |
 | `/qr/:slug` | `pages/QrEditor` | 客户端 lazy chunk, QR 预览与 PNG 下载 |
+| `/stats` | `AuthGuard(pages/Stats)` | 客户端 lazy chunk, 需登录; 当前用户全部链接详细 analytics |
+| `/stats/:slug` | `AuthGuard(pages/Stats/SlugStats)` | 客户端 lazy chunk, 需登录; 单 slug analytics |
 | `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录; owner 链接列表 |
 | `/create` | `pages/Create` | 客户端 lazy chunk; Landing 创建体验 |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
@@ -103,7 +107,8 @@ bun run build:web
 `useAuth()` 通过 `@supabase/supabase-js` 维护浏览器 session:
 - `Login.tsx` 调 `signInWithMagicLink(email)`, redirect 到 `/auth/callback`
 - `AuthCallback.tsx` 优先读取 `?code=` 并调用 `exchangeCodeForSession`; Admin generated-link / legacy hash token 回跳则调用 `setSession`
-- `AuthGuard` 保护 `/dashboard`, 但 `/edit/:slug` 保持公开以保留 "未找到 → 创建" 流程
+- `AuthGuard` 保护 `/dashboard`、`/stats`、`/stats/:slug`, 但 `/edit/:slug` 保持公开以保留 "未找到 → 创建" 流程
+- `/stats/:slug` 的 owner 权限由后端 `/api/v1/stats/query` 二次校验
 - Header 根据 session 显示登录/登出状态
 - `/claim/:slug` 允许未登录用户先查看认领入口; 登录后用浏览器 fingerprint 或 legacy author email 调 `POST /api/v1/links/:slug/claim`
 
@@ -128,6 +133,14 @@ Vite client env:
 
 `/qr/<slug>` 读取 `/api/v1/links/:slug` 后展示 QR 预览。预览由 `QrCanvas.tsx` 在浏览器端实时绘制, caption 输入不会打服务端。下载 PNG 使用 master-compatible `/qr/d/<slug>.png?caption=...&addLogo=true`, QR 内容始终是短链 URL, 不是 destination URL.
 
+## Stats
+
+`/stats` 与 `/stats/<slug>` 调 `/api/v1/stats/query` 获取 scoped GA4 数据:
+- path query: `groupBy: "path"`, `limit` 为 Top 10/20/50, 可切 `pagePathPlusQueryString`
+- date query: `groupBy: "date"`, `limit` 跟随 7/30/90/180 天范围
+- `pathRegex` 是额外过滤条件; 后端仍强制 current user's owned slug scope
+- 组件位于 `components/stats/`: `DateRangePicker`, `PathRegexInput`, `StatsPieChart`, `StatsLineChart`
+
 校验规则:
 - `url`: 必填, http/https URL
 - `slug`: 可选, 正则 `^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$`, 不能是保留路径
@@ -145,7 +158,7 @@ bun run start                  # NODE_ENV=production, Hono 托管 dist/web
 ## 已知限制
 
 - `/favicon.ico` / `/favicon.svg` / `/robots.txt` 等带 `.` 的根路径在生产被 redirect handler 当成无效 slug 拦截 → 404. 因此 favicon 用 inline data URL 处理. 后端逻辑由 `src/routes/redirect.ts` 决定, 本目录不修改.
-- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login`、`/claim`、`/qr` 等已覆盖.
+- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login`、`/claim`、`/qr`、`/stats` 等已覆盖.
 
 ## 相关
 

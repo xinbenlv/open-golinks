@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 3 天
 **Priority**: P1
-**Status**: 📋 Planning
+**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -32,6 +32,13 @@
 
 - F4 完成 (端点 + 凭据 + 上报)
 - env: 无新增
+
+## Implementation Notes (2026-05-14)
+
+- 已实现 `POST /api/v1/stats/query`, 参数 allowlist 为 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 后端强制 current user owned slug scope.
+- `groupBy` 在 v2 API 中固定为 `"path" | "date"`; `pagePathPlusQueryString` 通过 `usePathPlusQueryString` 控制, 避免暴露任意 GA4 dimension passthrough.
+- `/stats` 与 `/stats/:slug` 已接入 React Router + `AuthGuard`, UI 包含 7/30/90/180 天范围、Top 10/20/50 path 表、path share 饼图、day 折线、path regex 和 query string toggle.
+- `/stats` 已加入 redirect RESERVED 与 reserved-slug regression.
 
 ## 实施要点 (移植自 master)
 
@@ -92,8 +99,8 @@ test('直接访问 /stats 不会被 redirectRoute 当成 slug', ...);
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F8-detailed-stats.test.ts` 绿
+- [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3108 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
+- [x] 2. `bun test tests/e2e/F8-detailed-stats.test.ts` 绿
 - [ ] 3. commit + push, 前缀 `[F8]`
 - [ ] 4. Railway env: 无新增 (F4 已配 GA4)
 - [ ] 5. deploy SUCCESS

@@ -10,4 +10,8 @@
 - `LinkRow.tsx` — Dashboard 单行链接展示, 含 slug/url/visits/created/actions.
 - `QrCanvas.tsx` — QR editor 的浏览器 canvas 预览, 用 `qrcode` 矩阵本地绘制 caption/logo.
 - `StatsChart.tsx` — Dashboard 近 30 天总点击与折线图, 数据来自 `/api/v1/stats/summary`.
+- `stats/DateRangePicker.tsx` — `/stats` 7/30/90/180 天范围 segmented control.
+- `stats/PathRegexInput.tsx` — `/stats` path regex 输入 + Apply.
+- `stats/PieChart.tsx` — `/stats` path event share 饼图.
+- `stats/LineChart.tsx` — `/stats` date event/user 折线图.
 - `WarnToggle.tsx` — Edit 页 warning interstitial 开关, 只写 `metadata.show_warning`.
