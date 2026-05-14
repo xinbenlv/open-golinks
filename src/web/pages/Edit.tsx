@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
+import { AuditTimeline } from "../components/AuditTimeline";
 import { WarnToggle } from "../components/WarnToggle";
 import { authFetch, useAuth } from "../hooks/useAuth";
 import { Landing } from "./Landing";
@@ -185,6 +186,7 @@ export default function Edit() {
             </button>
           </div>
         </form>
+        <AuditTimeline slug={slug} />
       </section>
     </main>
   );

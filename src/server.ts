@@ -6,6 +6,7 @@ import { redirectRoute } from "./routes/redirect.ts";
 import { warnRoute } from "./routes/warn.ts";
 import { qrRoute } from "./routes/qr.ts";
 import { healthRoute } from "./routes/api/health.ts";
+import { auditRoute } from "./routes/api/audit.ts";
 import { linksRoute } from "./routes/api/links.ts";
 import { meRoute } from "./routes/api/me.ts";
 import { qrApiRoute } from "./routes/api/qr.ts";
@@ -31,6 +32,7 @@ app.use("*", async (c, next) => {
 
 // API 路由 (兼容 v2-next /api/v1/* 命名空间, 但具体 schema 可能演进)
 app.route("/api/v1/health", healthRoute);
+app.route("/api/v1/audit", auditRoute);
 app.route("/api/v1/links", linksRoute);
 app.route("/api/v1/me", meRoute);
 app.route("/api/v1/qr", qrApiRoute);

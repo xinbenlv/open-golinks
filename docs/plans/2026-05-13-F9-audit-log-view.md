@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 1.5 天
 **Priority**: P1
-**Status**: 📋 Planning
+**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -26,6 +26,12 @@ owner 在 Edit 页底部看到自己链接的完整操作历史 (CREATE / UPDATE
 - F2 (audit middleware) 完成 — 此 feature 仅读, 写已在 F2 内
 - DB: `audit_logs` 表完整 (`schema.ts:102-133`), 索引 `idx_audit_logs_link_slug` 已存在
 - env: 无新增
+
+## Implementation Notes (2026-05-14)
+
+- 已实现 `GET /api/v1/audit/:slug?limit=20&cursor=...`, requireAuth + owner-only, 非 owner 403, 不存在/已删除 404.
+- API 按 `timestamp DESC, id DESC` 排序, cursor 为 base64url JSON `{ timestamp, id }`; 返回 `actorEmail`, `actorFingerprint`, `diff`.
+- Edit 页底部嵌入 `AuditTimeline`, 支持 Load more 与 diff 展开.
 
 ## API 设计
 
@@ -87,8 +93,8 @@ test('分页: 25 条 audit 显示前 20 → cursor next → 剩 5 条', ...);
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F9-audit.test.ts` 绿
+- [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3109 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
+- [x] 2. `bun test tests/e2e/F9-audit.test.ts` 绿
 - [ ] 3. commit + push, 前缀 `[F9]`
 - [ ] 4. Railway env: 无新增
 - [ ] 5. deploy SUCCESS

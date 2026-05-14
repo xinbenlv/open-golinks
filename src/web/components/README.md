@@ -5,6 +5,7 @@
 ## 文件
 
 - `AuthGuard.tsx` — 保护 owner-only SPA 路由. loading 时显示轻量 spinner; 未登录时跳 `/login`, 并保留原始 location.
+- `AuditTimeline.tsx` — Edit 页 owner-only 审计日志时间线, 调 `/api/v1/audit/:slug`, 支持 Load more 和 diff 展开.
 - `BuildStamp.tsx` — 全局右下角的构建版本水印 (version · sha · 时间). 在 `App.tsx` 顶层挂载, 所有路由可见. 样式见 `../styles/global.css` 的 `.build-stamp` class. 数据来源: `../version.ts` (由 `scripts/prerender.ts` 构建期注入 `globalThis.__OGL_VERSION__`).
 - `ClaimBanner.tsx` — Dashboard 顶部匿名/legacy 可认领链接提示, 调 `/api/v1/links/claimable` 并支持批量 claim.
 - `LinkRow.tsx` — Dashboard 单行链接展示, 含 slug/url/visits/created/actions.

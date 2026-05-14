@@ -23,6 +23,7 @@ src/web/
 │   └── supabase.ts          # supabase-js PKCE client singleton
 ├── components/
 │   ├── AuthGuard.tsx        # owner-only route guard
+│   ├── AuditTimeline.tsx    # Edit 页 owner 审计日志时间线
 │   ├── BuildStamp.tsx       # 全局构建版本水印
 │   ├── ClaimBanner.tsx      # Dashboard 匿名/legacy 可认领链接提示
 │   ├── LinkRow.tsx          # Dashboard 链接行
@@ -48,7 +49,7 @@ src/web/
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
     ├── Claim.tsx            # /claim/:slug, 匿名链接登录后认领
     ├── Create.tsx           # /create 复用 Landing 创建体验
-    ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接
+    ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接 + audit timeline
     ├── QrEditor.tsx         # /qr/:slug, QR 预览 + PNG 下载
     ├── Stats/               # /stats 和 /stats/:slug 详细 GA4 analytics
     └── NotFound.tsx         # * (lazy stub)
@@ -127,7 +128,7 @@ Vite client env:
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
 
-`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning` 或 DELETE 软删. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
+`/edit/<slug>` 会先查 `/api/v1/links/:slug`: 不存在时复用同一表单 (Landing 整页), CreateForm 拿到 `initialSlug` prop 后预填 slug 字段并把焦点放到 URL 输入框; 已存在时, 登录 owner 可以 PATCH 更新目标 URL、切换 `metadata.show_warning` 或 DELETE 软删, 底部 `AuditTimeline` 展示 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 历史并支持展开 diff. 配合 redirect.ts (没找到的 slug → 302 `/edit/<slug>`), 形成 "访问没找到 → 直接进创建页" 的闭环.
 
 ## QR Editor
 

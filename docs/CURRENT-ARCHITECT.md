@@ -15,6 +15,7 @@
               │   ├─ /warn/:slug     → SSR warning HTML      │
               │   ├─ /qr/:slug.png    → QR PNG compat         │
               │   ├─ /api/v1/health  → JSON                  │
+              │   ├─ /api/v1/audit   → owner audit timeline   │
               │   ├─ /api/v1/links   → CRUD + claim + audit  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
               │   ├─ /api/v1/stats   → scoped GA4 stats/query │
@@ -90,6 +91,7 @@ flowchart TB
   - master-compatible QR PNG paths; `/d/` 变体加 `Content-Disposition: attachment`
   - 接受 `caption` 和 `addLogo=true`, 返回 `image/png`
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
+- **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - `owner=me` 时列出当前用户链接 (require JWT, cursor/q/limit); 默认 `owner=public` 保持公开列表
   - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 写 CREATE audit
@@ -125,7 +127,7 @@ flowchart TB
 ### 前端 (SPA)
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
-  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删.
+  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 `AuditTimeline`.
   - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
   - `/stats` / `/stats/:slug` 由 `AuthGuard` 保护, 调 `/api/v1/stats/query` 展示 GA4 path 表、path share 饼图、date 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换.
@@ -174,6 +176,13 @@ flowchart TB
 2. 访客访问 `/:slug`, redirect handler 发现 `metadata.show_warning` 且没有 `?confirm=1`, 返回 302 `/warn/:slug`
 3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets
 4. 用户点 Proceed 访问 `/:slug?confirm=1`, redirect handler 跳过 warning, 返回目标 URL 302 并记录 visits/GA4
+
+### Audit history
+1. Owner 打开 `/edit/:slug`, 页面确认当前用户拥有该链接
+2. `AuditTimeline` 调 `GET /api/v1/audit/:slug?limit=20`
+3. 后端先校验 `links.owner_id = JWT sub`; 非 owner 403, 不存在/已删除 404
+4. 返回按 `timestamp DESC, id DESC` 排序的审计日志, `UPDATE` 等带 diff 的事件可在 UI 展开查看 JSON
+5. `Load more` 用 base64url cursor 继续取下一页
 
 ### QR code
 1. 用户进入 `/qr/:slug`, SPA 读取 `/api/v1/links/:slug` 获取目标 URL 并用 `QrCanvas` 实时预览短链 QR
@@ -226,6 +235,5 @@ flowchart TB
 ## 当前未实现 (TODO)
 
 - Turnstile 校验
-- audit log UI; VISIT 明确不写 `audit_logs`
 - 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)
