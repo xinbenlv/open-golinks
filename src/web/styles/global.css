@@ -254,6 +254,14 @@ svg {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.auth-textarea {
+  min-height: 88px;
+  height: auto;
+  resize: vertical;
+  padding-block: var(--space-3);
+  line-height: var(--leading-relaxed);
+}
+
 .auth-input:disabled,
 .auth-submit:disabled {
   opacity: 0.65;
@@ -546,6 +554,10 @@ svg {
   max-width: 420px;
 }
 
+.dashboard-tag-filter {
+  max-width: 220px;
+}
+
 .dashboard-alert {
   border: 1px solid color-mix(in oklab, var(--danger) 35%, var(--border));
   background: color-mix(in oklab, var(--danger) 10%, transparent);
@@ -657,7 +669,7 @@ svg {
 }
 
 .link-row__slug,
-.link-row__url,
+.link-row__url-wrap,
 .link-row__date,
 .link-row__metric {
   min-width: 0;
@@ -677,9 +689,87 @@ svg {
 }
 
 .link-row__url {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.link-row__url-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.link-row__description {
+  color: var(--text);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-row__tags,
+.tag-input__box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tag-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tag-input__box {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  padding: var(--space-2);
+}
+
+.tag-input__box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.tag-input__box input {
+  min-width: 120px;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  outline: 0;
+  padding: var(--space-1);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  border: 1px solid var(--accent-soft);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 11%, transparent);
+  color: var(--text);
+  padding: 2px var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.tag-chip button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.tag-chip--static {
   color: var(--text-muted);
 }
 
@@ -746,6 +836,10 @@ svg {
   }
 
   .dashboard-search {
+    max-width: none;
+  }
+
+  .dashboard-tag-filter {
     max-width: none;
   }
 

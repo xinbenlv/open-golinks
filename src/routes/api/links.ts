@@ -28,16 +28,21 @@ const slugSchema = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$/);
 
-const createLinkSchema = z.object({
-  slug: slugSchema,
-  url: z.string().url(),
-});
+const tagSchema = z.string().trim().min(1).max(20);
 
 const metadataPatchSchema = z
   .object({
-    show_warning: z.boolean(),
+    description: z.string().trim().max(280).optional(),
+    tags: z.array(tagSchema).max(10).optional(),
+    show_warning: z.boolean().optional(),
   })
   .strict();
+
+const createLinkSchema = z.object({
+  slug: slugSchema,
+  url: z.string().url(),
+  metadata: metadataPatchSchema.optional(),
+});
 
 const updateLinkSchema = z
   .object({
@@ -62,6 +67,7 @@ const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.string().optional(),
   q: z.string().trim().max(120).optional(),
+  tag: tagSchema.optional(),
 });
 
 type UrlHistoryEntry = {
@@ -86,6 +92,29 @@ function normalizeMetadata(value: unknown): Record<string, unknown> {
 
 function showWarning(metadata: unknown) {
   return normalizeMetadata(metadata).show_warning === true;
+}
+
+function description(metadata: unknown) {
+  const value = normalizeMetadata(metadata).description;
+  return typeof value === "string" ? value : "";
+}
+
+function tags(metadata: unknown) {
+  const value = normalizeMetadata(metadata).tags;
+  if (!Array.isArray(value)) return [];
+  return value.filter((tag): tag is string => typeof tag === "string");
+}
+
+function mergeMetadata(
+  existing: unknown,
+  patch: z.infer<typeof metadataPatchSchema> | undefined,
+) {
+  if (!patch) return existing;
+  const next = normalizeMetadata(existing);
+  if (patch.description !== undefined) next.description = patch.description;
+  if (patch.tags !== undefined) next.tags = Array.from(new Set(patch.tags));
+  if (patch.show_warning !== undefined) next.show_warning = patch.show_warning;
+  return next;
 }
 
 function legacyAuthorEmail(metadata: unknown): string | null {
@@ -145,11 +174,12 @@ linksRoute.get("/", requireAuth, async (c) => {
     limit: c.req.query("limit") ?? undefined,
     cursor: c.req.query("cursor") ?? undefined,
     q: c.req.query("q") ?? undefined,
+    tag: c.req.query("tag") ?? undefined,
   });
   if (!parsed.success) {
     return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
   }
-  const { limit, q } = parsed.data;
+  const { limit, q, tag } = parsed.data;
   const user = c.get("user")!;
 
   const conditions: SQL[] = [
@@ -164,6 +194,12 @@ linksRoute.get("/", requireAuth, async (c) => {
         ilike(schema.linksTable.slug, pattern),
         ilike(schema.linksTable.url, pattern),
       )!,
+    );
+  }
+
+  if (tag) {
+    conditions.push(
+      sql`(${schema.linksTable.metadata}->'tags') @> ${JSON.stringify([tag])}::jsonb`,
     );
   }
 
@@ -189,6 +225,7 @@ linksRoute.get("/", requireAuth, async (c) => {
       createdAt: schema.linksTable.createdAt,
       updatedAt: schema.linksTable.updatedAt,
       isPublic: schema.linksTable.isPublic,
+      metadata: schema.linksTable.metadata,
     })
     .from(schema.linksTable)
     .where(and(...conditions))
@@ -221,6 +258,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
         ownerId: user?.id ?? null,
         createdByFingerprint: user ? null : fingerprint ?? null,
         isPublic: false,
+        metadata: mergeMetadata(null, parsed.data.metadata),
       })
       .returning();
     const row = expectReturned(inserted);
@@ -241,6 +279,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
             urlHistory: [],
             visits: 0,
             isPublic: false,
+            metadata: mergeMetadata(existing.metadata, parsed.data.metadata),
             updatedAt: new Date(),
           })
           .where(eq(schema.linksTable.slug, parsed.data.slug))
@@ -446,12 +485,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
         { url: existing.url, changedAt: new Date().toISOString(), changedBy: user.id },
       ]
     : normalizeUrlHistory(existing.urlHistory);
-  const metadata = parsed.data.metadata
-    ? {
-        ...normalizeMetadata(existing.metadata),
-        show_warning: parsed.data.metadata.show_warning,
-      }
-    : existing.metadata;
+  const metadata = mergeMetadata(existing.metadata, parsed.data.metadata);
   const diff: Record<string, unknown> = {};
   if (parsed.data.url) {
     diff.before = { ...(diff.before as object | undefined), url: existing.url };
@@ -460,11 +494,19 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   if (parsed.data.metadata) {
     diff.before = {
       ...(diff.before as object | undefined),
-      metadata: { show_warning: showWarning(existing.metadata) },
+      metadata: {
+        description: description(existing.metadata),
+        tags: tags(existing.metadata),
+        show_warning: showWarning(existing.metadata),
+      },
     };
     diff.after = {
       ...(diff.after as object | undefined),
-      metadata: { show_warning: parsed.data.metadata.show_warning },
+      metadata: {
+        description: description(metadata),
+        tags: tags(metadata),
+        show_warning: showWarning(metadata),
+      },
     };
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AuditTimeline } from "../components/AuditTimeline";
+import { TagInput } from "../components/TagInput";
 import { UrlHistory } from "../components/UrlHistory";
 import { WarnToggle } from "../components/WarnToggle";
 import { authFetch, useAuth } from "../hooks/useAuth";
@@ -13,7 +14,11 @@ type LinkRecord = {
   deletedAt: string | null;
   urlHistory: unknown[];
   updatedAt: string;
-  metadata: { show_warning?: boolean } | null;
+  metadata: {
+    description?: string;
+    tags?: string[];
+    show_warning?: boolean;
+  } | null;
 };
 
 type LoadState =
@@ -26,10 +31,14 @@ export default function Edit() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { user, loading: authLoading } = useAuth();
   const urlId = useId();
+  const descriptionId = useId();
+  const tagsId = useId();
   const warnId = useId();
   const transferId = useId();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [url, setUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [showWarning, setShowWarning] = useState(false);
   const [transferEmail, setTransferEmail] = useState("");
   const [transferComplete, setTransferComplete] = useState<string | null>(null);
@@ -61,6 +70,8 @@ export default function Edit() {
       const body = (await res.json()) as { link: LinkRecord };
       setState({ status: "edit", link: body.link });
       setUrl(body.link.url);
+      setDescription(body.link.metadata?.description ?? "");
+      setTags(Array.isArray(body.link.metadata?.tags) ? body.link.metadata.tags : []);
       setShowWarning(body.link.metadata?.show_warning === true);
     }
 
@@ -127,7 +138,14 @@ export default function Edit() {
       const res = await authFetch(`/api/v1/links/${slug}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url, metadata: { show_warning: showWarning } }),
+        body: JSON.stringify({
+          url,
+          metadata: {
+            description,
+            tags,
+            show_warning: showWarning,
+          },
+        }),
       });
       if (!res.ok) {
         setError(`保存失败: HTTP ${res.status}`);
@@ -136,6 +154,8 @@ export default function Edit() {
       const body = (await res.json()) as { link: LinkRecord };
       setState({ status: "edit", link: body.link });
       setUrl(body.link.url);
+      setDescription(body.link.metadata?.description ?? "");
+      setTags(Array.isArray(body.link.metadata?.tags) ? body.link.metadata.tags : []);
       setShowWarning(body.link.metadata?.show_warning === true);
       setMessage("已保存。");
     } finally {
@@ -208,6 +228,22 @@ export default function Edit() {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             required
+          />
+          <label className="auth-label" htmlFor={descriptionId}>Description</label>
+          <textarea
+            id={descriptionId}
+            className="auth-input auth-textarea"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={280}
+            placeholder="Short note for this link"
+            rows={3}
+          />
+          <TagInput
+            id={tagsId}
+            value={tags}
+            onChange={setTags}
+            disabled={submitting}
           />
           <WarnToggle
             id={warnId}

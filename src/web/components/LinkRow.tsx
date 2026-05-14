@@ -7,6 +7,10 @@ export type DashboardLink = {
   createdAt: string;
   updatedAt: string;
   isPublic: boolean;
+  metadata: {
+    description?: string;
+    tags?: string[];
+  } | null;
 };
 
 function formatDate(value: string) {
@@ -27,6 +31,9 @@ export function LinkRow({
   onDelete: (slug: string) => void;
   deleting?: boolean;
 }) {
+  const tags = Array.isArray(link.metadata?.tags) ? link.metadata.tags : [];
+  const description = link.metadata?.description;
+
   return (
     <div className="link-row">
       <div className="link-row__slug">
@@ -35,15 +42,27 @@ export function LinkRow({
         </a>
         <span>{link.isPublic ? "Public" : "Private"}</span>
       </div>
-      <a
-        className="link-row__url"
-        href={link.url}
-        target="_blank"
-        rel="noreferrer"
-        title={link.url}
-      >
-        {link.url}
-      </a>
+      <div className="link-row__url-wrap">
+        <a
+          className="link-row__url"
+          href={link.url}
+          target="_blank"
+          rel="noreferrer"
+          title={link.url}
+        >
+          {link.url}
+        </a>
+        {description ? (
+          <span className="link-row__description">{description}</span>
+        ) : null}
+        {tags.length ? (
+          <div className="link-row__tags">
+            {tags.map((tag) => (
+              <span className="tag-chip tag-chip--static" key={tag}>{tag}</span>
+            ))}
+          </div>
+        ) : null}
+      </div>
       <div className="link-row__metric">{link.visits.toLocaleString()}</div>
       <div className="link-row__date">{formatDate(link.createdAt)}</div>
       <div className="link-row__actions">

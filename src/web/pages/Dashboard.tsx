@@ -22,12 +22,15 @@ export default function Dashboard() {
   const [links, setLinks] = useState<DashboardLink[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [tag, setTag] = useState("");
+  const [tagOptions, setTagOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const queryKey = query.trim();
+  const tagKey = tag.trim();
 
   const listUrl = useCallback(
     (cursor?: string | null) => {
@@ -36,11 +39,24 @@ export default function Dashboard() {
         limit: String(PAGE_SIZE),
       });
       if (queryKey) params.set("q", queryKey);
+      if (tagKey) params.set("tag", tagKey);
       if (cursor) params.set("cursor", cursor);
       return `/api/v1/links?${params.toString()}`;
     },
-    [queryKey],
+    [queryKey, tagKey],
   );
+
+  function rememberTags(nextLinks: DashboardLink[]) {
+    const nextTags = nextLinks.flatMap((link) =>
+      Array.isArray(link.metadata?.tags) ? link.metadata.tags : [],
+    );
+    if (!nextTags.length) return;
+    setTagOptions((current) =>
+      Array.from(new Set([...current, ...nextTags])).sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    );
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +69,7 @@ export default function Dashboard() {
           if (cancelled) return;
           setLinks(body.links);
           setNextCursor(body.nextCursor);
+          rememberTags(body.links);
         })
         .catch((err: unknown) => {
           if (cancelled) return;
@@ -77,6 +94,7 @@ export default function Dashboard() {
       const body = await api.request<LinksResponse>(listUrl(nextCursor));
       setLinks((current) => [...current, ...body.links]);
       setNextCursor(body.nextCursor);
+      rememberTags(body.links);
     } catch (err) {
       setError(err instanceof Error ? err.message : "加载失败");
     } finally {
@@ -99,9 +117,9 @@ export default function Dashboard() {
   }
 
   const emptyMessage = useMemo(() => {
-    if (queryKey) return "No links match this search.";
+    if (queryKey || tagKey) return "No links match this filter.";
     return "You have not created any links yet.";
-  }, [queryKey]);
+  }, [queryKey, tagKey]);
 
   return (
     <main className="dashboard-page">
@@ -130,6 +148,19 @@ export default function Dashboard() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+          <select
+            className="auth-input dashboard-tag-filter"
+            aria-label="Filter by tag"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+          >
+            <option value="">All tags</option>
+            {tagOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
 
         <ClaimBanner />
@@ -163,7 +194,7 @@ export default function Dashboard() {
           ) : (
             <div className="dashboard-empty">
               <p>{emptyMessage}</p>
-              {!queryKey ? (
+              {!queryKey && !tagKey ? (
                 <Link className="btn btn--primary btn--sm" to="/create">
                   Create your first link
                 </Link>

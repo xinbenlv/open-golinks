@@ -157,16 +157,16 @@ describe("F6 warning interstitial", () => {
     expect(direct.headers.get("location")).toBe(targetUrl);
   }, 30_000);
 
-  it("only accepts metadata.show_warning as a boolean patch", async () => {
+  it("keeps metadata.show_warning boolean validation strict", async () => {
     const token = await generateAccessToken("metadata");
     const slug = uniqueSlug("f6-meta");
     await cleanupSlug(slug);
     expect((await createOwnedLink(slug, token, "https://example.com/f6/meta")).status).toBe(201);
 
-    const extraKey = await patchLink(slug, token, {
-      metadata: { show_warning: true, tags: ["blocked"] },
+    const unknownKey = await patchLink(slug, token, {
+      metadata: { show_warning: true, ownerId: "blocked" },
     });
-    expect(extraKey.status).toBe(400);
+    expect(unknownKey.status).toBe(400);
 
     const wrongType = await patchLink(slug, token, {
       metadata: { show_warning: "yes" },
