@@ -1,6 +1,8 @@
 import { Hono } from "hono";
+import { getCookie, setCookie } from "hono/cookie";
 import { eq, sql } from "drizzle-orm";
 import { db, schema } from "../db/db.ts";
+import { newGaClientId, reportRedirectToGA4 } from "../lib/ga4.ts";
 
 export const redirectRoute = new Hono();
 
@@ -50,11 +52,32 @@ redirectRoute.get("/:slug", async (c, next) => {
     return c.text("Not found", 404);
   }
 
+  const existingClientId = getCookie(c, "_ga");
+  const clientId = existingClientId || newGaClientId();
+  if (!existingClientId) {
+    setCookie(c, "_ga", clientId, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 400,
+      sameSite: "Lax",
+      secure: new URL(c.req.url).protocol === "https:",
+    });
+  }
+
   // 异步累加访问数 + daily_visits UPSERT, 不阻塞 redirect
   // (queueMicrotask 在 Bun 里能让响应先 flush)
   queueMicrotask(() => {
     void recordVisit(slug).catch((err) => {
       console.error("[redirect] recordVisit failed", err);
+    });
+  });
+  queueMicrotask(() => {
+    void reportRedirectToGA4({
+      clientId,
+      slug,
+      userAgent: c.req.header("user-agent"),
+      referer: c.req.header("referer"),
+    }).catch((err) => {
+      console.error("[redirect] GA4 report failed", err);
     });
   });
 

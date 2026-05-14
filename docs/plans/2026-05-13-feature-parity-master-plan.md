@@ -235,7 +235,7 @@ tests/e2e/
 - [x] **F1. 用户认证 + 登录 UI** — Supabase Auth 替代 Auth0
 - [x] **F2. 链接编辑 (PATCH) + 删除 (软删) + 统一 audit** — master 有, v2-hono 仅有 POST; 顺便补齐 CREATE audit 写入; VISIT 明确不进 audit
 - [x] **F3. 个人链接列表 (User Dashboard)** — 对应 master `user-links.vue`
-- [ ] **F4. 基础 stats dashboard** — 日访问折线 + 总点击
+- [x] **F4. 基础 stats dashboard** — 日访问折线 + 总点击
 - [ ] **F5. 匿名链接认领 (Claim)** — master 关键差异化功能
 
 ### 🟡 P1 - 切流后 1 个月内补齐

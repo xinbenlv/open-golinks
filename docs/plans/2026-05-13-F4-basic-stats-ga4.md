@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 2.5 天
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -123,24 +123,24 @@ test('未登录调 stats/summary → 401', ...);
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动 (本地 .env 已有 GA4 凭据)
-- [ ] 2. `bun test tests/e2e/F4-stats.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F4]`
-- [ ] 4. Railway env (一次性把 4 个 GA4/GCP 推到生产):
+- [x] 1. type-check + build + 本地启动 (本地 .env 已有 GA4 凭据)
+- [x] 2. `bun test tests/e2e/F4-stats.test.ts` 绿
+- [x] 3. commit + push, 前缀 `[F4]`
+- [x] 4. Railway env (一次性把 4 个 GA4/GCP 推到生产):
   - `GA4_MEASUREMENT_ID` (从本地 .env 复制)
   - `GA4_API_SECRET` (从本地 .env 复制)
   - `GA4_PROPERTY_ID` (从本地 .env 复制)
   - `GOOGLE_APPLICATION_CREDENTIALS_JSON` (从本地 .env 复制)
   - **建议同时**: 生成独立的 v2-hono GCP service account (不复用 master), IAM 给 GA4 Data API Viewer + Measurement Protocol Sender; 替换上面的 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 值
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产:
+- [x] 5. deploy SUCCESS
+- [x] 6. 浏览器验证生产:
   - 访问任意 slug 触发 redirect (3-5 次)
   - 等待 ~1 分钟 (GA4 摄入延迟)
   - 登录 → /dashboard → 顶部 stats 折线图显示数据 (≥ 刚才的次数)
   - 检查 Network 面板 `/api/v1/stats/summary` 返回 200
   - 检查 console 无 GA4 上报错误
   - build SHA 匹配
-- [ ] 7. README 勾选; CURRENT-ARCHITECT 更新 (加 `routes/api/stats.ts`, `lib/gcp.ts`, `lib/ga4.ts`)
+- [x] 7. README 勾选; CURRENT-ARCHITECT 更新 (加 `routes/api/stats.ts`, `lib/gcp.ts`, `lib/ga4.ts`)
 
 ## 风险
 

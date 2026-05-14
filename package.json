@@ -20,6 +20,7 @@
     "migrate:legacy:dry": "bun scripts/migrate-from-legacy.ts --dry-run"
   },
   "dependencies": {
+    "@google-analytics/data": "^6.0.0",
     "@supabase/supabase-js": "^2.105.4",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.6.0",
@@ -30,6 +31,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7",
+    "recharts": "^3.8.1",
     "uuid": "^14.0.0",
     "zod": "^3.22.0"
   },

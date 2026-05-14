@@ -4,6 +4,7 @@ import {
   type DashboardLink,
   LinkRow,
 } from "../components/LinkRow";
+import { StatsChart } from "../components/StatsChart";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../hooks/useAuth";
 
@@ -124,6 +125,8 @@ export default function Dashboard() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+
+        <StatsChart />
 
         {error ? (
           <div className="dashboard-alert" role="alert">

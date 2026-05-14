@@ -14,7 +14,8 @@
    Extension  │   ├─ /:slug          → 302 + 异步 analytics  │
               │   ├─ /api/v1/health  → JSON                  │
   │   ├─ /api/v1/links   → CRUD + audit          │
-              │   ├─ /api/v1/me      → JWT 当前用户          │
+  │   ├─ /api/v1/me      → JWT 当前用户          │
+  │   ├─ /api/v1/stats   → scoped GA4 stats      │
               │   └─ /*              → 静态 SPA (dist/web)   │
               └──────────┬───────────────────────────────────┘
                          │ postgres-js + Drizzle
@@ -53,6 +54,7 @@ flowchart TB
   RED -->|SELECT| PG
   RED -->|302| BR
   RED -.->|async UPSERT| PG
+  RED -.->|async page_view| GA4[GA4 Measurement Protocol]
 
   BR -->|/dashboard, /create| SRV
   SRV --> SPA
@@ -81,6 +83,7 @@ flowchart TB
   - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`, 写 UPDATE audit
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
+- **`src/routes/api/stats.ts`** (`GET /api/v1/stats/summary`) - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
 
 ### Middleware
 - **`src/middleware/auth.ts`** - Supabase Auth JWT 验证 middleware:
@@ -119,6 +122,10 @@ flowchart TB
 - **`scripts/migrate-from-legacy.ts`** - MongoDB → Postgres 一次性迁移 (复用 v2-next)
 - **`scripts/inspect-mongo.ts`** - 检查源数据形态
 
+### 外部服务
+- **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.
+- **`src/lib/ga4.ts`** - GA4 Data API summary 查询 + Measurement Protocol `page_view` 上报 helper.
+
 ## 数据流
 
 ### 短链重定向 (hot path)
@@ -127,7 +134,7 @@ flowchart TB
 3. Hono `redirect.ts:slug` handler
 4. Drizzle 查 `links WHERE slug=$1 AND deleted_at IS NULL`
 5. 命中 → 返回 302 (响应已 flush 给客户端)
-6. 异步: 事务内累加 `links.visits` + UPSERT `daily_visits`
+6. 异步: 事务内累加 `links.visits` + UPSERT `daily_visits`; fire-and-forget 上报 GA4 `page_view`
 
 ### 创建短链
 1. 用户在 Landing (或 `/edit/<slug>`, slug 自动预填) 填表, SPA POST `/api/v1/links` JSON `{slug, url}`
@@ -143,12 +150,16 @@ flowchart TB
 | `DATABASE_URL` | ✅ | Supabase Postgres 连接串 (用 pooler `:6543`) |
 | `PORT` | - | Railway 自动注入, 本地默认 3000 |
 | `NODE_ENV` | - | `production` 时托管 SPA |
-| `PUBLIC_BASE_URL` | 待用 | 生成完整短链时使用 |
 | `SUPABASE_JWKS_URL` | ✅ | JWT 验证 JWKS URL |
 | `SUPABASE_JWT_ISSUER` | ✅ | JWT issuer 校验 |
 | `VITE_SUPABASE_URL` | ✅ | 前端 Supabase client URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | 前端 Supabase publishable key |
 | `VITE_BASE_URL` | ✅ | magic link redirect base URL |
+| `PUBLIC_BASE_URL` | ✅ | GA4 `page_location` / 完整短链 base URL |
+| `GA4_MEASUREMENT_ID` | ✅ | Measurement Protocol |
+| `GA4_API_SECRET` | ✅ | Measurement Protocol |
+| `GA4_PROPERTY_ID` | ✅ | GA4 Data API |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | ✅ | GCP service account JSON |
 | `TURNSTILE_SECRET_KEY` | 待用 | 创建链接的 bot 防护 |
 | `TURNSTILE_SITE_KEY` | 待用 | 前端嵌入 |
 

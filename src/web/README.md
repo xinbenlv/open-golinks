@@ -24,7 +24,8 @@ src/web/
 ├── components/
 │   ├── AuthGuard.tsx        # owner-only route guard
 │   ├── BuildStamp.tsx       # 全局构建版本水印
-│   └── LinkRow.tsx          # Dashboard 链接行
+│   ├── LinkRow.tsx          # Dashboard 链接行
+│   └── StatsChart.tsx       # Dashboard 30 日 GA4 折线
 └── pages/
     ├── Landing/             # Landing 页 (`/`), 构建期被 SSG 预渲染
     │   ├── index.tsx        # 组合 Header / Hero / Features / HowItWorks / ForTeams / Footer
@@ -38,7 +39,7 @@ src/web/
     │   ├── icons.tsx        # 内联 SVG icons, 不引图标库
     │   └── landing.css      # Landing 专属样式
     ├── ComingSoon.tsx       # Warn / NotFound 通用占位
-    ├── Dashboard.tsx        # /dashboard owner 链接列表 + 搜索 + 分页
+    ├── Dashboard.tsx        # /dashboard owner 链接列表 + 搜索 + 分页 + stats
     ├── Login.tsx            # /login, magic link form
     ├── AuthCallback.tsx     # /auth/callback, PKCE code exchange
     ├── Create.tsx           # /create 复用 Landing 创建体验

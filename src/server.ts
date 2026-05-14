@@ -6,10 +6,14 @@ import { redirectRoute } from "./routes/redirect.ts";
 import { healthRoute } from "./routes/api/health.ts";
 import { linksRoute } from "./routes/api/links.ts";
 import { meRoute } from "./routes/api/me.ts";
+import { statsRoute } from "./routes/api/stats.ts";
 import { versionRoute } from "./routes/api/version.ts";
 import { BUILD_INFO, formatBuildLine } from "./build-info.ts";
+import { loadGcpCredentials } from "./lib/gcp.ts";
 
 const app = new Hono();
+
+loadGcpCredentials();
 
 app.use("*", logger());
 app.use("/api/*", cors());
@@ -26,6 +30,7 @@ app.use("*", async (c, next) => {
 app.route("/api/v1/health", healthRoute);
 app.route("/api/v1/links", linksRoute);
 app.route("/api/v1/me", meRoute);
+app.route("/api/v1/stats", statsRoute);
 app.route("/api/v1/version", versionRoute);
 
 // 短链重定向: GET /:slug -> 302 to target_url

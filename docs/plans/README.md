@@ -15,7 +15,7 @@
 - [x] [F1. 用户认证 + 登录 UI](./2026-05-13-F1-auth-and-login.md) — 3 天
 - [x] [F2. 链接 CRUD + audit + ratelimit](./2026-05-13-F2-link-crud-audit-ratelimit.md) — 3 天
 - [x] [F3. 个人链接列表 Dashboard](./2026-05-13-F3-user-dashboard.md) — 3 天
-- [ ] [F4. 基础 Stats + GA4 上报](./2026-05-13-F4-basic-stats-ga4.md) — 2.5 天
+- [x] [F4. 基础 Stats + GA4 上报](./2026-05-13-F4-basic-stats-ga4.md) — 2.5 天
 - [ ] [F5. 匿名链接认领 (Claim)](./2026-05-13-F5-anonymous-claim.md) — 3 天
 
 ### 🟡 P1 (切流后 1 月内)
