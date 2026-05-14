@@ -49,11 +49,16 @@ const createLinkSchema = z.object({
 const updateLinkSchema = z
   .object({
     url: z.string().url().optional(),
+    isPublic: z.boolean().optional(),
     metadata: metadataPatchSchema.optional(),
   })
   .strict()
-  .refine((value) => value.url !== undefined || value.metadata !== undefined, {
-    message: "url or metadata is required",
+  .refine((value) => (
+    value.url !== undefined ||
+    value.isPublic !== undefined ||
+    value.metadata !== undefined
+  ), {
+    message: "url, isPublic, or metadata is required",
   });
 
 const claimSchema = z.object({
@@ -96,6 +101,15 @@ function showWarning(metadata: unknown) {
   return normalizeMetadata(metadata).show_warning === true;
 }
 
+function addLogo(metadata: unknown) {
+  return normalizeMetadata(metadata).addLogo !== false;
+}
+
+function caption(metadata: unknown) {
+  const value = normalizeMetadata(metadata).caption;
+  return typeof value === "string" ? value : "";
+}
+
 function description(metadata: unknown) {
   const value = normalizeMetadata(metadata).description;
   return typeof value === "string" ? value : "";
@@ -105,15 +119,6 @@ function tags(metadata: unknown) {
   const value = normalizeMetadata(metadata).tags;
   if (!Array.isArray(value)) return [];
   return value.filter((tag): tag is string => typeof tag === "string");
-}
-
-function addLogo(metadata: unknown) {
-  return normalizeMetadata(metadata).addLogo !== false;
-}
-
-function caption(metadata: unknown) {
-  const value = normalizeMetadata(metadata).caption;
-  return typeof value === "string" ? value : "";
 }
 
 function mergeMetadata(
@@ -492,6 +497,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   if (!existing) return c.json({ error: "NOT_FOUND" }, 404);
 
   const nextUrl = parsed.data.url ?? existing.url;
+  const nextIsPublic = parsed.data.isPublic ?? existing.isPublic;
   const urlHistory = parsed.data.url
     ? [
         ...normalizeUrlHistory(existing.urlHistory),
@@ -503,6 +509,10 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   if (parsed.data.url) {
     diff.before = { ...(diff.before as object | undefined), url: existing.url };
     diff.after = { ...(diff.after as object | undefined), url: nextUrl };
+  }
+  if (parsed.data.isPublic !== undefined) {
+    diff.before = { ...(diff.before as object | undefined), isPublic: existing.isPublic };
+    diff.after = { ...(diff.after as object | undefined), isPublic: nextIsPublic };
   }
   if (parsed.data.metadata) {
     diff.before = {
@@ -531,6 +541,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
     .update(schema.linksTable)
     .set({
       url: nextUrl,
+      isPublic: nextIsPublic,
       urlHistory,
       metadata,
       updatedAt: new Date(),

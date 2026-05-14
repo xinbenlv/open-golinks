@@ -179,12 +179,12 @@ describe("F2 link CRUD + audit + rate limit", () => {
     expect(deleted.status).toBe(403);
   }, 30_000);
 
-  it("persists QR caption and logo settings through modern link metadata", async () => {
-    const token = await generateAccessToken("qr-metadata");
-    const slug = uniqueSlug("f2-qr");
+  it("persists public discovery and QR settings through PATCH", async () => {
+    const token = await generateAccessToken("public-qr");
+    const slug = uniqueSlug("f2-public-qr");
     await cleanupSlug(slug);
 
-    expect((await postLink(slug, "https://example.com/qr", token)).status).toBe(201);
+    expect((await postLink(slug, "https://example.com/public-qr", token)).status).toBe(201);
 
     const patch = await app.request(`/api/v1/links/${slug}`, {
       method: "PATCH",
@@ -193,7 +193,9 @@ describe("F2 link CRUD + audit + rate limit", () => {
         authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
+        isPublic: true,
         metadata: {
+          show_warning: true,
           addLogo: false,
           caption: "Launch handout",
         },
@@ -202,7 +204,9 @@ describe("F2 link CRUD + audit + rate limit", () => {
 
     expect(patch.status).toBe(200);
     const body = await patch.json();
+    expect(body.link.isPublic).toBe(true);
     expect(body.link.metadata).toMatchObject({
+      show_warning: true,
       addLogo: false,
       caption: "Launch handout",
     });
