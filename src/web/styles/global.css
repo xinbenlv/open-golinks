@@ -146,6 +146,25 @@ svg {
   color: var(--text);
 }
 
+/* —— Loading spinner —— */
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-rotate 0.7s linear infinite;
+  vertical-align: -2px;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* —— Build stamp (全局右下角版本水印) —— */
 
 .build-stamp {
