@@ -125,6 +125,7 @@ Vite client env:
 - 客户端先做 URL/slug 格式校验 (与后端 schema 对齐, 失败原地报错不发请求)
 - 提交成功 (201) → 显示真实短链 (`window.location.host` 拼出) + 复制按钮 + "打开"按钮 (打到 `/<slug>` 走 redirect)
 - 匿名提交会先计算 `src/lib/fingerprint.ts` 的 64-hex fingerprint, 通过 `X-Fingerprint` 传给后端, 并把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
+- F12 已 drop 公开 browse 能力: 创建表单不展示公开开关, 后端新建/恢复链接均写 `is_public=false`
 - slug 留空时, 客户端用 `genSlug()` 生成; 撞库 (409) 时自动重试一次
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
@@ -146,7 +147,7 @@ Vite client env:
 校验规则:
 - `url`: 必填, http/https URL
 - `slug`: 可选, 正则 `^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$`, 不能是保留路径
-- `is_public`: UI 上有勾选, 但当前后端 POST 未读这个字段 (DB 默认 true), 待后端补
+- `is_public`: 创建 UI 不展示公开开关; 后端 POST/restore 显式写 `false`, DB 默认值也是 `false`
 
 ## 开发
 

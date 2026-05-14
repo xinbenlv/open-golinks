@@ -29,7 +29,7 @@
 ### 🟢 P2 (长尾, 视用户反馈)
 
 - [x] [F11. 所有权转移 (Transfer)](./2026-05-13-F11-ownership-transfer.md) — 1.5 天
-- [ ] [F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md) — TBD (W4 末决策)
+- [x] [F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md) — Drop (关闭公开发现面)
 - [ ] [F13. Chrome Extension 兼容性](./2026-05-13-F13-chrome-extension-compat.md) — 2 天 含 spike
 - [ ] [F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md) — 2 天
 

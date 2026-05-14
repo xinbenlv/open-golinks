@@ -93,8 +93,8 @@ flowchart TB
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
-  - `GET /` - `owner=me` 时列出当前用户链接 (require JWT, cursor/q/limit); 默认 `owner=public` 保持公开列表
-  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 写 CREATE audit
+  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 新建/恢复默认 `is_public=false`; 写 CREATE audit
   - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 `metadata.legacy_author_email` 认领的未归属链接
   - `GET /:slug` - 获取单链接
   - `POST /:slug/claim` - requireAuth; fingerprint 或 legacy author email 匹配时写 `owner_id`, 写 CLAIM audit

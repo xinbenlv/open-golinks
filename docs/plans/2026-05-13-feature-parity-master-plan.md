@@ -150,7 +150,7 @@ expect(v.commit).toBe(process.env.GITHUB_SHA || lastLocalCommit);
 | `GET /api/v1/me` | **已实现** | `src/routes/api/me.ts` |
 | Redirect + 异步访问计数 | **已实现** — 不存在的合法 slug → `/edit/:slug`; 命中后 queueMicrotask 异步 update `visits` + UPSERT `daily_visits` + fire-and-forget GA4 `page_view` | `src/routes/redirect.ts` |
 | `POST /api/v1/links` (create) | **已实现** — 登录写 `owner_id`; 匿名写 `created_by_fingerprint`; CREATE audit; 匿名限流 | `src/routes/api/links.ts` |
-| `GET /api/v1/links` (public / owner list) | **已实现** — `owner=me` requireAuth, cursor/q/limit; 默认公开列表 | `src/routes/api/links.ts` |
+| `GET /api/v1/links` (owner list) | **已实现** — requireAuth, 只允许当前用户 owner list, cursor/q/limit; F12 已 drop 公开列表 | `src/routes/api/links.ts` |
 | `GET /api/v1/links/:slug` | **已实现** | `src/routes/api/links.ts` |
 | `GET /api/v1/links/claimable` / `POST /api/v1/links/:slug/claim` | **已实现** — fingerprint claim + legacy author email claim | `src/routes/api/links.ts` |
 | Landing 页 SSR | **已实现** | `src/web/pages/Landing/` |
@@ -250,7 +250,7 @@ tests/e2e/
 ### 🟢 P2 - 长尾, 视用户反馈
 
 - [x] **F11. 链接所有权转移 (Transfer)**
-- [ ] **F12. 公开链接发现页 (Browse Public Links)** — master 无, 新功能 (决策 deadline: W4 末)
+- [x] **F12. 公开链接发现页 (Browse Public Links)** — Drop, 关闭公开发现面; `GET /api/v1/links` owner-only, 新建/恢复默认 private
 - [ ] **F13. Chrome Extension 兼容性验证** (W1 必须先 spike 一次, 决定走 shim 还是发新版)
 - [ ] **F14. 链接 metadata (tags, description)** — schema 已有
 
@@ -281,7 +281,7 @@ tests/e2e/
 ### 🟢 P2 (长尾, 视用户反馈)
 
 - **[F11. 所有权转移 (Transfer)](./2026-05-13-F11-ownership-transfer.md)** (1.5 天) — `POST /:slug/transfer { toEmail }`, 接收方必须先注册
-- **[F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md)** (TBD) — **W4 末决策 do/drop**; do 则 2 天
+- **[F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md)** (Done) — 2026-05-14 决策 Drop; 关闭公开发现面
 - **[F13. Chrome Extension 兼容性](./2026-05-13-F13-chrome-extension-compat.md)** (2 天 含 W0 spike) — shim / 发新版 / 弃用三选一
 - **[F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md)** (2 天) — JSONB tags + description + Dashboard tag 过滤
 
@@ -427,7 +427,7 @@ tests/e2e/
 
 - [ ] 登录方式范围: 仅 magic link / + Google OAuth / + 邮箱密码?
 - [ ] F6 /warn 警告页文案 (中英? 默认 warn 哪类链接?)
-- [ ] F12 公开链接发现 do/drop (W4 末)
+- [x] F12 公开链接发现 do/drop (2026-05-14 决策: Drop)
 - [ ] 软删后是否暴露 "回收站"
 - [ ] F11 transfer 是否需要被接收方确认 (当前默认: 不需要, 直接转)
 - [x] dump 进来的老链接 owner_id + legacy author email 覆盖率已查 (2026-05-13 dry-run): `total=5804`, `unowned=4959`, `unowned_with_legacy_email=0`, `unowned_with_fingerprint=0`. 无自动 email backfill 空间; 这 4959 条需 manual review/批量归属策略, 未闭环不切 DNS
@@ -460,7 +460,7 @@ tests/e2e/
 - 软删的 slug → redirect 返回 404
 - F11 transfer 目标 email 未注册 → 404 `USER_NOT_FOUND` (不做 invite)
 - F5 fingerprint 主算法 = SHA-256(canvas + UA + tz + screen), fallback 不含 canvas
-- F12 默认 drop (除非 W4 末有反向决策)
+- F12 已按默认决策 drop: 不新增 `/browse`, 关闭公开 list, 新建/恢复链接默认 private
 - 分页: cursor based, 默认 20/页, 用 `created_at` 排序
 - 搜索: PG `ILIKE` (规模 < 1M 行够用), 不上 fulltext
 - audit_logs 永久保留 (磁盘成本 < $0.01/GB·月); VISIT 事件**不写** audit, 走 GA4
