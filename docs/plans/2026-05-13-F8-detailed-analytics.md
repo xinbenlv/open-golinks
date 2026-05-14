@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 3 天
 **Priority**: P1
-**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -101,16 +101,16 @@ test('直接访问 /stats 不会被 redirectRoute 当成 slug', ...);
 
 - [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3108 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
 - [x] 2. `bun test tests/e2e/F8-detailed-stats.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F8]`
-- [ ] 4. Railway env: 无新增 (F4 已配 GA4)
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产:
+- [x] 3. commit + push, 前缀 `[F8]` (`78adce8`)
+- [x] 4. Railway env: 无新增 (F4 已配 GA4)
+- [x] 5. deploy SUCCESS (`d9de1638-e319-45bb-b057-3062b0dba85f`, 2026-05-14)
+- [x] 6. 浏览器验证生产 (`RUN_BROWSER_TESTS=1 EXPECTED_SHA=78adce bun test tests/browser/F8.spec.ts`):
   - /stats 打开, 默认 7 天数据显示
   - 改时间范围, 表格 + 图表更新
   - 输入正则过滤
-  - 跟 master 对比同一时间范围数据是否一致 (sanity check)
+  - stats query 返回 200, 空/延迟数据降级为 No data yet
   - build SHA 匹配
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 

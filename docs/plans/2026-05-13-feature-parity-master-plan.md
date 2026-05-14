@@ -243,7 +243,7 @@ tests/e2e/
 
 - [x] **F6. /warn/:slug 警告页** — 标记敏感链接的拦截页 (master 是否有未确认, 视为 v2-hono 新增)
 - [x] **F7. QR 码生成 / 显示 / 下载** — 对应 master `QrCodeEditor.vue`
-- [ ] **F8. 详细 Analytics 页** — 时间范围, slug 正则过滤, 多图表
+- [x] **F8. 详细 Analytics 页** — 时间范围, slug 正则过滤, 多图表
 - [ ] **F9. 审计日志查看 (`/api/v1/audit/:slug`)** — schema 已有, API 缺失
 - [ ] **F10. 链接 URL 历史展示** — schema 已有
 
@@ -474,7 +474,7 @@ tests/e2e/
 
 | 功能 | master | v2-hono 现状 | 缺口 |
 |---|---|---|---|
-| Stats dashboard | `pages/dashboard.vue` (GA4 Data API + ECharts; 后端透传端点 `POST /api/v2/ga4/reports` 在 `src/routes/apiv2.ts:14`) | Dashboard 基础 stats 已有, 详情页待 F8 | F8 (详细 analytics) |
+| Stats dashboard | `pages/dashboard.vue` (GA4 Data API + ECharts; 后端透传端点 `POST /api/v2/ga4/reports` 在 `src/routes/apiv2.ts:14`) | Dashboard 基础 stats + `/stats` 详细 analytics 已有, 数据源为 scoped GA4 Data API | ✅ F4 + F8 |
 | GA4 上报 | `src/main.ts:180-247` 中间件 (Measurement Protocol, await axios) | 已有 fire-and-forget Measurement Protocol | ✅ F4 |
 | 用户链接列表 | `pages/user-links.vue` | 已有 `/dashboard` owner list/search/pagination | ✅ F3 |
 | 登录 | Auth0 (`src/routes/auth.ts`) | Supabase Auth UI + JWT middleware + `/api/v1/me` | ✅ F1 |
