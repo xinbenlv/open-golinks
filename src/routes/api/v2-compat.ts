@@ -76,7 +76,7 @@ function legacyLink(row: LinkRow, user: AuthUser | undefined) {
     destHistory: normalizeHistory(row.urlHistory),
     goDest: row.url,
     author: legacyAuthor(row, user),
-    addLogo: metadata.addLogo === true,
+    addLogo: metadata.addLogo !== false,
     caption: typeof metadata.caption === "string" ? metadata.caption : "",
     user: user
       ? { emails: user.email ? [{ value: user.email }] : [] }
@@ -113,7 +113,7 @@ function editSuccess(row: LinkRow, user: AuthUser | undefined) {
     golink: row.slug,
     oldDest: row.url,
     author: legacyAuthor(row, user),
-    addLogo: metadata.addLogo === true,
+    addLogo: metadata.addLogo !== false,
     caption: typeof metadata.caption === "string" ? metadata.caption : "",
     user: user
       ? { emails: user.email ? [{ value: user.email }] : [] }

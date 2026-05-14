@@ -276,6 +276,37 @@ svg {
   color: var(--danger);
 }
 
+.edit-qr-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(240px, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+}
+
+.edit-qr-panel h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.edit-qr-panel__preview,
+.edit-qr-panel__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.edit-qr-panel .qr-preview-wrap {
+  margin-top: 0;
+}
+
+.edit-qr-panel .qr-preview {
+  box-shadow: var(--shadow-sm);
+}
+
 .warn-toggle {
   display: flex;
   flex-direction: column;
@@ -802,6 +833,10 @@ svg {
 
 @media (max-width: 900px) {
   .stats-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-qr-panel {
     grid-template-columns: 1fr;
   }
 

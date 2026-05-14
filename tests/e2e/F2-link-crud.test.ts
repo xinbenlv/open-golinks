@@ -179,6 +179,35 @@ describe("F2 link CRUD + audit + rate limit", () => {
     expect(deleted.status).toBe(403);
   }, 30_000);
 
+  it("persists QR caption and logo settings through modern link metadata", async () => {
+    const token = await generateAccessToken("qr-metadata");
+    const slug = uniqueSlug("f2-qr");
+    await cleanupSlug(slug);
+
+    expect((await postLink(slug, "https://example.com/qr", token)).status).toBe(201);
+
+    const patch = await app.request(`/api/v1/links/${slug}`, {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        metadata: {
+          addLogo: false,
+          caption: "Launch handout",
+        },
+      }),
+    });
+
+    expect(patch.status).toBe(200);
+    const body = await patch.json();
+    expect(body.link.metadata).toMatchObject({
+      addLogo: false,
+      caption: "Launch handout",
+    });
+  }, 30_000);
+
   it("allows the same owner to recreate a soft-deleted slug", async () => {
     const token = await generateAccessToken("restore-owner");
     const slug = uniqueSlug("f2-restore");

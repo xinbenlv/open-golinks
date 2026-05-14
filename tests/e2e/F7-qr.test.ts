@@ -25,13 +25,18 @@ async function cleanupSlug(slug: string) {
   await db.delete(schema.linksTable).where(eq(schema.linksTable.slug, slug));
 }
 
-async function insertLink(slug: string, url = `https://example.com/${slug}`) {
+async function insertLink(
+  slug: string,
+  url = `https://example.com/${slug}`,
+  metadata?: Record<string, unknown>,
+) {
   touchedSlugs.add(slug);
   await cleanupSlug(slug);
   await db.insert(schema.linksTable).values({
     slug,
     url,
     urlHistory: [],
+    metadata,
   });
 }
 
@@ -107,6 +112,24 @@ describe("F7 QR codes", () => {
       `attachment; filename="${slug}.png"`,
     );
     expectPng(await pngBytes(download));
+  });
+
+  it("uses stored QR caption and logo defaults when query params are omitted", async () => {
+    const slug = uniqueSlug("f7-stored");
+    await insertLink(slug, `https://example.com/${slug}`, {
+      caption: "Stored QR caption",
+      addLogo: false,
+    });
+
+    const inline = await app.request(`/qr/${slug}.png`);
+    expect(inline.status).toBe(200);
+    expect(inline.headers.get("content-type")).toContain("image/png");
+    expectPng(await pngBytes(inline));
+
+    const api = await app.request(`/api/v1/qr/${slug}`);
+    expect(api.status).toBe(200);
+    expect(api.headers.get("content-type")).toContain("image/png");
+    expectPng(await pngBytes(api));
   });
 
   it("validates format, caption length, missing links, and deleted links", async () => {

@@ -6,6 +6,7 @@ import {
   type FormEvent,
 } from "react";
 import { authFetch } from "../../hooks/useAuth";
+import { QrCanvas } from "../../components/QrCanvas";
 import {
   computeFingerprint,
   rememberCreatedLink,
@@ -68,6 +69,8 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
   const [errors, setErrors] = useState<{ url?: string; slug?: string; form?: string }>({});
   const [result, setResult] = useState<Result | null>(null);
   const [copied, setCopied] = useState(false);
+  const [successCaption, setSuccessCaption] = useState("");
+  const [successAddLogo, setSuccessAddLogo] = useState(true);
   // submit 期间的 loading 状态. 不能用 useTransition: startTransition 只覆盖回调的同步部分,
 // 异步 fetch 会跑出 transition, pending 立刻翻回 false, 按钮永远看不到 loading 态.
   const [submitting, setSubmitting] = useState(false);
@@ -193,12 +196,21 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
     setSlug(initialSlug ?? "");
     setErrors({});
     setCopied(false);
+    setSuccessCaption("");
+    setSuccessAddLogo(true);
   }
 
   if (result) {
     const protocol =
       typeof window !== "undefined" ? window.location.protocol : "https:";
     const shortUrl = `${protocol}//${host}/${result.slug}`;
+    const fallbackQrCaption = Array.from(shortUrl).length <= 100 ? shortUrl : `/${result.slug}`;
+    const qrCaptionForImage = successCaption.trim() || fallbackQrCaption;
+    const qrParams = new URLSearchParams({
+      caption: qrCaptionForImage,
+      addLogo: successAddLogo ? "true" : "false",
+    });
+    const qrDownloadPath = `/qr/d/${result.slug}.png?${qrParams.toString()}`;
     return (
       <div className="create-form" role="status" aria-live="polite">
         <div className="create-success">
@@ -218,6 +230,42 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
           <p className="create-success__hint">
             指向 <span style={{ color: "var(--text)" }}>{result.url}</span>
           </p>
+          <section className="edit-qr-panel" aria-label="QRCode">
+            <div className="edit-qr-panel__preview">
+              <div className="qr-preview-wrap">
+                <QrCanvas
+                  value={shortUrl}
+                  caption={qrCaptionForImage}
+                  addLogo={successAddLogo}
+                />
+              </div>
+            </div>
+            <div className="edit-qr-panel__controls">
+              <label className="auth-label" htmlFor="create-success-qr-caption">
+                Annotation
+              </label>
+              <textarea
+                id="create-success-qr-caption"
+                className="auth-input auth-textarea"
+                value={successCaption}
+                onChange={(event) => setSuccessCaption(event.target.value)}
+                maxLength={100}
+                placeholder={fallbackQrCaption}
+                rows={3}
+              />
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={successAddLogo}
+                  onChange={(event) => setSuccessAddLogo(event.target.checked)}
+                />
+                <span>Include site logo</span>
+              </label>
+              <a className="btn btn--primary btn--sm" href={qrDownloadPath} download>
+                Download QR
+              </a>
+            </div>
+          </section>
           <div className="create-success__row">
             <a
               className="btn btn--primary btn--sm"

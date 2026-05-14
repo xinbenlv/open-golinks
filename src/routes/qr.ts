@@ -16,19 +16,27 @@ function addLogo(value: string | undefined) {
   return value === "1" || value === "true" || value === "yes";
 }
 
+function metadataCaption(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return "";
+  const value = (metadata as { caption?: unknown }).caption;
+  return typeof value === "string" ? value : "";
+}
+
+function metadataAddLogo(metadata: unknown) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return true;
+  return (metadata as { addLogo?: unknown }).addLogo !== false;
+}
+
 async function renderCompatQr(c: Context, file: string, download: boolean) {
   const match = SLUG_PNG_RE.exec(file);
   if (!match) return null;
   const slug = match[1]!;
-  const caption = c.req.query("caption") ?? "";
-  if (Array.from(caption).length > QR_MAX_CAPTION_LENGTH) {
-    return c.json({ error: "CAPTION_TOO_LONG" }, 400);
-  }
 
   const [link] = await db
     .select({
       slug: schema.linksTable.slug,
       url: schema.linksTable.url,
+      metadata: schema.linksTable.metadata,
     })
     .from(schema.linksTable)
     .where(
@@ -40,9 +48,20 @@ async function renderCompatQr(c: Context, file: string, download: boolean) {
     .limit(1);
   if (!link) return c.text("Not found", 404);
 
-  const png = renderQrPng(`${publicBaseUrl(c.req.url)}/${slug}`, {
+  const shortUrl = `${publicBaseUrl(c.req.url)}/${slug}`;
+  const fallbackCaption = metadataCaption(link.metadata) || shortUrl;
+  const caption = c.req.query("caption") ?? (
+    Array.from(fallbackCaption).length <= QR_MAX_CAPTION_LENGTH ? fallbackCaption : `/${slug}`
+  );
+  if (Array.from(caption).length > QR_MAX_CAPTION_LENGTH) {
+    return c.json({ error: "CAPTION_TOO_LONG" }, 400);
+  }
+
+  const png = renderQrPng(shortUrl, {
     caption,
-    addLogo: addLogo(c.req.query("addLogo")),
+    addLogo: c.req.query("addLogo") === undefined
+      ? metadataAddLogo(link.metadata)
+      : addLogo(c.req.query("addLogo")),
   });
   const headers = new Headers({
     "content-type": "image/png",

@@ -35,6 +35,8 @@ const metadataPatchSchema = z
     description: z.string().trim().max(280).optional(),
     tags: z.array(tagSchema).max(10).optional(),
     show_warning: z.boolean().optional(),
+    addLogo: z.boolean().optional(),
+    caption: z.string().trim().max(100).optional(),
   })
   .strict();
 
@@ -105,6 +107,15 @@ function tags(metadata: unknown) {
   return value.filter((tag): tag is string => typeof tag === "string");
 }
 
+function addLogo(metadata: unknown) {
+  return normalizeMetadata(metadata).addLogo !== false;
+}
+
+function caption(metadata: unknown) {
+  const value = normalizeMetadata(metadata).caption;
+  return typeof value === "string" ? value : "";
+}
+
 function mergeMetadata(
   existing: unknown,
   patch: z.infer<typeof metadataPatchSchema> | undefined,
@@ -114,6 +125,8 @@ function mergeMetadata(
   if (patch.description !== undefined) next.description = patch.description;
   if (patch.tags !== undefined) next.tags = Array.from(new Set(patch.tags));
   if (patch.show_warning !== undefined) next.show_warning = patch.show_warning;
+  if (patch.addLogo !== undefined) next.addLogo = patch.addLogo;
+  if (patch.caption !== undefined) next.caption = patch.caption;
   return next;
 }
 
@@ -498,6 +511,8 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
         description: description(existing.metadata),
         tags: tags(existing.metadata),
         show_warning: showWarning(existing.metadata),
+        addLogo: addLogo(existing.metadata),
+        caption: caption(existing.metadata),
       },
     };
     diff.after = {
@@ -506,6 +521,8 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
         description: description(metadata),
         tags: tags(metadata),
         show_warning: showWarning(metadata),
+        addLogo: addLogo(metadata),
+        caption: caption(metadata),
       },
     };
   }

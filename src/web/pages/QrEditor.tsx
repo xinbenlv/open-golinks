@@ -5,6 +5,10 @@ import { QrCanvas } from "../components/QrCanvas";
 type LinkRecord = {
   slug: string;
   url: string;
+  metadata: {
+    caption?: string;
+    addLogo?: boolean;
+  } | null;
 };
 
 export default function QrEditor() {
@@ -25,7 +29,11 @@ export default function QrEditor() {
         return (await res.json()) as { link: LinkRecord };
       })
       .then((body) => {
-        if (!cancelled) setLink(body.link);
+        if (!cancelled) {
+          setLink(body.link);
+          setCaption(body.link.metadata?.caption ?? "");
+          setAddLogo(body.link.metadata?.addLogo !== false);
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) {
