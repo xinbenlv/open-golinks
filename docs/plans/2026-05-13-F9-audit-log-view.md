@@ -3,7 +3,7 @@
 **Date**: 2026-05-13
 **Duration**: 1.5 天
 **Priority**: P1
-**Status**: 🚧 In Progress — local implementation verified, deploy/browser verification pending
+**Status**: ✅ Done
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -95,15 +95,15 @@ test('分页: 25 条 audit 显示前 20 → cursor next → 剩 5 条', ...);
 
 - [x] 1. type-check + 本地启动 (`bun run type-check`, `bun run build`, `PORT=3109 NODE_ENV=production bun src/server.ts` + `/api/v1/health`)
 - [x] 2. `bun test tests/e2e/F9-audit.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F9]`
-- [ ] 4. Railway env: 无新增
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产:
+- [x] 3. commit + push, 前缀 `[F9]` (`6845a24`)
+- [x] 4. Railway env: 无新增
+- [x] 5. deploy SUCCESS (`55865a55-acee-4a90-a2a1-38bef9b5c3e5`, 2026-05-14)
+- [x] 6. 浏览器验证生产 (`RUN_BROWSER_TESTS=1 EXPECTED_SHA=6845a2 bun test tests/browser/F9.spec.ts`):
   - 对一个测试 slug 做 CREATE + 2 次 UPDATE
   - /edit/<slug> 底部 History 显示 3 行
   - UPDATE 展开看 diff
   - build SHA 匹配
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 

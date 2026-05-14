@@ -244,7 +244,7 @@ tests/e2e/
 - [x] **F6. /warn/:slug 警告页** — 标记敏感链接的拦截页 (master 是否有未确认, 视为 v2-hono 新增)
 - [x] **F7. QR 码生成 / 显示 / 下载** — 对应 master `QrCodeEditor.vue`
 - [x] **F8. 详细 Analytics 页** — 时间范围, slug 正则过滤, 多图表
-- [ ] **F9. 审计日志查看 (`/api/v1/audit/:slug`)** — schema 已有, API 缺失
+- [x] **F9. 审计日志查看 (`/api/v1/audit/:slug`)** — owner-only timeline + diff 展开
 - [ ] **F10. 链接 URL 历史展示** — schema 已有
 
 ### 🟢 P2 - 长尾, 视用户反馈
@@ -485,7 +485,7 @@ tests/e2e/
 | Redirect | 基础 302 + GA4 `page_view` | 智能 (不存在 → /edit/:slug) + 异步 visit + daily_visits UPSERT | ✅ v2-hono 更好; F4 补 GA4 `page_view`, VISIT 不写 audit |
 | Landing 页 | 无 | 有 (`Landing/*`, SSR prerender) | ✅ v2-hono 新增 |
 | 警告页 | 未确认 | 已有 `/warn/:slug` SSR + Edit toggle | ✅ F6 (按新增处理) |
-| 审计日志 | 无 | schema 完整, API 无 | F9 |
+| 审计日志 | 无 | 已有 owner-only `/api/v1/audit/:slug` + Edit 页 timeline | ✅ F9 |
 | URL 历史 | 有 | schema 有 (jsonb 默认 []), API 无 | F10 |
 | 所有权转移 | 无 | enum 已含 `TRANSFER`, 无 API | F11 (新增) |
 | Chrome Extension | 待 W0 spike 确认 | 未验证 | F13 |

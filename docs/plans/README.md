@@ -23,7 +23,7 @@
 - [x] [F6. /warn/:slug 警告页](./2026-05-13-F6-warn-page.md) — 1.5 天
 - [x] [F7. QR 码生成 / 下载](./2026-05-13-F7-qr-codes.md) — 3 天 + W0 spike
 - [x] [F8. 详细 Analytics 页](./2026-05-13-F8-detailed-analytics.md) — 3 天
-- [ ] [F9. 审计日志查看](./2026-05-13-F9-audit-log-view.md) — 1.5 天
+- [x] [F9. 审计日志查看](./2026-05-13-F9-audit-log-view.md) — 1.5 天
 - [ ] [F10. URL 历史展示](./2026-05-13-F10-url-history-display.md) — 0.5 天
 
 ### 🟢 P2 (长尾, 视用户反馈)
