@@ -31,7 +31,7 @@
 - [x] [F11. 所有权转移 (Transfer)](./2026-05-13-F11-ownership-transfer.md) — 1.5 天
 - [x] [F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md) — Drop (关闭公开发现面)
 - [x] [F13. Chrome Extension 兼容性](./2026-05-13-F13-chrome-extension-compat.md) — `/api/v2` shim
-- [ ] [F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md) — 2 天
+- [x] [F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md) — tags + description + dashboard filter
 
 > 完成一个 feature 后, 在上面对应行的 `[ ]` 改成 `[x]` (按 [SOP 步骤 7](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done)).
 

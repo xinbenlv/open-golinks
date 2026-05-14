@@ -252,7 +252,7 @@ tests/e2e/
 - [x] **F11. 链接所有权转移 (Transfer)**
 - [x] **F12. 公开链接发现页 (Browse Public Links)** — Drop, 关闭公开发现面; `GET /api/v1/links` owner-only, 新建/恢复默认 private
 - [x] **F13. Chrome Extension 兼容性验证** — 独立扩展源码未找到; 已实现 `/api/v2` shim, 旧 Auth0 cookie `my-links` 不兼容但 Bearer 可用
-- [ ] **F14. 链接 metadata (tags, description)** — schema 已有
+- [x] **F14. 链接 metadata (tags, description)** — `metadata.description/tags`, Edit 表单, Dashboard tag filter
 
 ---
 
@@ -283,7 +283,7 @@ tests/e2e/
 - **[F11. 所有权转移 (Transfer)](./2026-05-13-F11-ownership-transfer.md)** (1.5 天) — `POST /:slug/transfer { toEmail }`, 接收方必须先注册
 - **[F12. 公开链接发现 (Browse)](./2026-05-13-F12-public-link-browse.md)** (Done) — 2026-05-14 决策 Drop; 关闭公开发现面
 - **[F13. Chrome Extension 兼容性](./2026-05-13-F13-chrome-extension-compat.md)** (Done) — 方案 A `/api/v2` shim
-- **[F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md)** (2 天) — JSONB tags + description + Dashboard tag 过滤
+- **[F14. 链接 metadata (tags, description)](./2026-05-13-F14-link-metadata.md)** (Done) — JSONB tags + description + Dashboard tag 过滤
 
 ---
 

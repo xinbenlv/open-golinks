@@ -1,28 +1,42 @@
 # F14. 链接 metadata (tags, description)
 
 **Date**: 2026-05-13
-**Duration**: 2 天
+**Duration**: 1 天
 **Priority**: P2
-**Status**: 📋 Planning
+**Status**: ✅ Done (2026-05-14)
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
 
 用 `links.metadata` JSONB 存 `description` (短文本) + `tags` (string[]); Dashboard 支持按 tag 过滤.
 
+## 验证记录
+
+- Implementation commit: `9e5f48d [F14] add link metadata tags`
+- Local:
+  - `bun run type-check`
+  - `bun run build`
+  - `bun test tests/e2e/F14-metadata.test.ts`
+  - `bun test tests/e2e/F6-warn.test.ts tests/e2e/F14-metadata.test.ts tests/e2e/F13-extension-compat.test.ts`
+  - local production smoke: `/dashboard` SPA fallback 200, unauth `/api/v1/links` 401
+- Production:
+  - Railway deployment `1484891b-fd92-4fb9-842a-e0b722999a55` SUCCESS
+  - `RUN_BROWSER_TESTS=1 EXPECTED_SHA=9e5f48 bun test tests/browser/F14.spec.ts` PASS
+
 ## Deliverables
 
 新文件:
-- `src/web/components/TagInput.tsx` — 多 tag 输入 (Chip 风格)
-- `tests/e2e/F14-metadata.test.ts`
-- `tests/browser/F14.spec.ts`
+- [x] `src/web/components/TagInput.tsx` — 多 tag 输入 (Chip 风格)
+- [x] `tests/e2e/F14-metadata.test.ts`
+- [x] `tests/browser/F14.spec.ts`
 
 修改:
 - `src/routes/api/links.ts`:
-  - `POST` + `PATCH` 接受 `metadata.{description, tags}` (zod schema 验证: tags max 10, 每个 max 20 chars; description max 280 chars)
-  - `GET /?owner=me&tag=<tag>` 加按 tag 过滤
-- `src/web/pages/Edit.tsx`: 加 description textarea + TagInput
-- `src/web/pages/Dashboard.tsx` (F3 完成的): 加 Tag 多选过滤器
+  - [x] `POST` + `PATCH` 接受 `metadata.{description, tags, show_warning}` (zod strict whitelist: tags max 10, 每个 max 20 chars; description max 280 chars)
+  - [x] `GET /?owner=me&tag=<tag>` 加按 tag 过滤
+- [x] `src/web/pages/Edit.tsx`: 加 description textarea + TagInput
+- [x] `src/web/pages/Dashboard.tsx`: 加 Tag filter
+- [x] `src/web/components/LinkRow.tsx`: Dashboard 行显示 description + tag chips
 
 ## 依赖与现状
 
@@ -99,13 +113,13 @@ test('description > 280 chars → 400', ...);
 
 ## DoD checklist (遵循 [SOP](./2026-05-13-feature-parity-master-plan.md#-per-feature-推进-sop-definition-of-done))
 
-- [ ] 1. type-check + 本地启动
-- [ ] 2. `bun test tests/e2e/F14-metadata.test.ts` 绿
-- [ ] 3. commit + push, 前缀 `[F14]`
-- [ ] 4. Railway env: 无新增
-- [ ] 5. deploy SUCCESS
-- [ ] 6. 浏览器验证生产: 给一个 slug 加 description + tags, dashboard 过滤工作
-- [ ] 7. README 勾选 + CURRENT-ARCHITECT 更新
+- [x] 1. type-check + 本地启动
+- [x] 2. `bun test tests/e2e/F14-metadata.test.ts` 绿
+- [x] 3. commit + push, 前缀 `[F14]`
+- [x] 4. Railway env: 无新增
+- [x] 5. deploy SUCCESS
+- [x] 6. 浏览器验证生产: 给一个 slug 加 description + tags, dashboard 过滤工作
+- [x] 7. README 勾选 + CURRENT-ARCHITECT 更新
 
 ## 风险
 
