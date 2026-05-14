@@ -31,7 +31,7 @@
 
 ## Implementation Steps
 
-1. **W0 (本周)**: 评审本主计划, 创建 F1-F6 sub-plan 文件; ✅ GA4/GCP 4 个凭据已在本地 `.env`; ✅ 3 个 `VITE_*` 已补; **决定浏览器验证工具** (Playwright vs MCP, 见 Per-Feature SOP 步骤 6); 跑老链接 owner_id 占比确认 SQL; F7 Bun + `@napi-rs/canvas` spike; F13 Chrome ext spike
+1. **W0 (本周)**: 评审本主计划; ✅ GA4/GCP 4 个凭据已在本地 `.env`; ✅ 3 个 `VITE_*` 已补; ✅ 浏览器验证工具已定 (Puppeteer + 系统 Chrome, headless, 见 SOP 步骤 6); 跑老链接 owner_id 占比确认 SQL; F7 Bun + `@napi-rs/canvas` spike; F13 Chrome ext spike
 
 > 之后的 W1-W6 每一项都要遵循"Per-Feature 推进 SOP" — 不是"本周做完 F1+F2", 而是"F1 走完 7 步再开始 F2".
 2. **W1**: 实施 F1 (auth UI) + F2 (CRUD + audit + ratelimit), 合并 + e2e 绿
@@ -54,15 +54,35 @@
 | 6 | **浏览器验证生产** | 在 **`https://open-golinks-v2-hono-production.up.railway.app`** 用 browser tool 实际过一遍 feature 的 golden path + ≥ 1 个 edge case. 检查: (a) UI 行为正确; (b) browser console 无 error; (c) Network 面板无 5xx; (d) `/api/v1/version` 返回的 commit SHA = 刚 push 的 SHA (确认拿到的是新代码不是缓存) |
 | 7 | **关闭 feature ticket / 更新 README** | 在 `docs/plans/README.md` 的 feature checklist 上勾选 ✓; 更新 `docs/CURRENT-ARCHITECT.md` 反映新代码; 整理 `tests/e2e/F<N>` 和 `tests/browser/F<N>` 留作回归 |
 
-### 浏览器验证 (步骤 6) 工具选择
+### 浏览器验证 (步骤 6) 工具
 
-**W0 内必须确定**, 否则 F1 卡住:
+**已定 (2026-05-13)**: **Puppeteer (puppeteer-core) + 系统 Chrome + headless**, 脚本放 `tests/browser/F<N>.spec.ts` 用 `bun test` 跑.
 
-- **(推荐) Playwright headless** — 装 `@playwright/test`, 写 `tests/browser/F<N>.spec.ts`. 优点: 跟现有 `tests/e2e/` 一致, 可入 CI, 可截图; 缺点: package 较大 (~200MB browsers download)
-- **Claude browser MCP** — 如果环境装了 browser-use / Puppeteer MCP, agent 可以直接控浏览器. 优点: agent 实时可见; 缺点: 不能入 CI 跑回归
-- **手动**: agent 把链接给用户, 用户人肉点击 — 最稳但慢
+配置:
 
-不论选哪个, **每个 P0/P1 feature 在 `tests/browser/F<N>.spec.ts` 留一个可重复跑的脚本** (即使是 manual checklist md 也行). 这是为了切流后的回归.
+```ts
+// 不下载 puppeteer 自带 Chromium, 用系统 Chrome
+// package.json: { "dependencies": { "puppeteer-core": "^23.x" } }
+// (PUPPETEER_SKIP_DOWNLOAD 不再需要 — puppeteer-core 默认不下载)
+
+import puppeteer from 'puppeteer-core';
+const CHROME_PATH = process.platform === 'darwin'
+  ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  : '/usr/bin/google-chrome'; // Linux / Railway 容器
+const browser = await puppeteer.launch({
+  executablePath: CHROME_PATH,
+  headless: 'new',
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
+```
+
+理由 (vs Playwright):
+- 包小 ~10MB (vs Playwright ~200MB), 不下载额外 browser
+- 直接走 CDP, 调试时能 fallback 到 raw 命令
+- v2-hono 仅 Chromium 一种用户场景, 不需要多 browser 矩阵
+- 跟 `bun test` 集成顺滑, 跟 `tests/e2e/` 风格一致
+
+每个 P0/P1 feature 必须留 `tests/browser/F<N>.spec.ts` 可重复脚本, 为切流后回归.
 
 ### Build SHA 校验 (步骤 6.d)
 
@@ -107,7 +127,8 @@ expect(v.commit).toBe(process.env.GITHUB_SHA || lastLocalCommit);
 | 反滥用 | ~~Cloudflare Turnstile~~ → **暂缓 (P2 评估)**; 用 IP+UA token bucket 兜底 | 不引入外部依赖, 单容器内存计数即可 |
 | **Analytics 数据源** | **GA4 Data API (读) + Measurement Protocol (写)**, 沿用 master | 保留几年的历史数据连续性, 切流无缝; daily_visits 仍写但作为冷备 |
 | **GA4 SDK (后端)** | `@google-analytics/data` | 移植自 master |
-| e2e 测试 | Playwright + Vitest (已在 `tests/e2e/`) | 沿用现有约定 |
+| e2e (API 级) | `bun test tests/e2e/` | Bun 内置, 跟现有 `tests/e2e/` 一致 |
+| 浏览器验证 (E2E) | **Puppeteer (puppeteer-core) + 系统 Chrome + headless**, `bun test tests/browser/` | 轻量 (~10MB), CDP-based, F1 落地前装 |
 
 ## V0 已有基础 (避免重复造轮子)
 
@@ -409,7 +430,7 @@ tests/e2e/
 - [ ] 魔法链接邮件在 e2e 中怎么收? 候选:
   - (a) Supabase test 模式 / Admin API 直接发 magic link token (推荐)
   - (b) Mailosaur 或类似邮箱测试服务
-- [ ] Playwright vs Bun 内置 test: 当前 `package.json` 仅有 `bun test tests/e2e`, **未见 Playwright 依赖**. F1 落地前需补 (或确认用 Bun + 无浏览器的 API 级 e2e)
+- [x] 浏览器验证工具已定 = Puppeteer + 系统 Chrome (见 SOP 步骤 6). F1 落地前 `bun add -D puppeteer-core`. **跑在哪**: 本地开发机 / agent 工作目录, 指向生产 URL `https://open-golinks-v2-hono-production.up.railway.app`. Railway 容器**不需要**装 Chrome (它跑服务, 不跑 browser test). CI (若启用): 用 GitHub Actions `browser-actions/setup-chrome@v1` 装 Chrome.
 - [ ] CI 平台: GitHub Actions? 现有 `.github/workflows/` 是否就位?
 - [ ] e2e 测试账号/数据生命周期: 每次跑前清表 / 用临时 schema / Supabase Local
 
