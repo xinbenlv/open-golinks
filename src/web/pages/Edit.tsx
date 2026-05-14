@@ -1,9 +1,9 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AuditTimeline } from "../components/AuditTimeline";
+import { QrCanvas } from "../components/QrCanvas";
 import { TagInput } from "../components/TagInput";
 import { UrlHistory } from "../components/UrlHistory";
-import { WarnToggle } from "../components/WarnToggle";
 import { authFetch, useAuth } from "../hooks/useAuth";
 import { Landing } from "./Landing";
 
@@ -19,6 +19,8 @@ type LinkRecord = {
     description?: string;
     tags?: string[];
     show_warning?: boolean;
+    addLogo?: boolean;
+    caption?: string;
   } | null;
 };
 
@@ -31,21 +33,28 @@ type LoadState =
 export default function Edit() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { user, loading: authLoading } = useAuth();
+  const slugId = useId();
   const urlId = useId();
   const descriptionId = useId();
   const tagsId = useId();
   const warnId = useId();
+  const publicId = useId();
+  const qrCaptionId = useId();
   const transferId = useId();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [url, setUrl] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [showWarning, setShowWarning] = useState(false);
+  const [qrCaption, setQrCaption] = useState("");
+  const [qrAddLogo, setQrAddLogo] = useState(true);
   const [transferEmail, setTransferEmail] = useState("");
   const [transferComplete, setTransferComplete] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [transferError, setTransferError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [transferring, setTransferring] = useState(false);
 
@@ -71,9 +80,12 @@ export default function Edit() {
       const body = (await res.json()) as { link: LinkRecord };
       setState({ status: "edit", link: body.link });
       setUrl(body.link.url);
+      setIsPublic(body.link.isPublic);
       setDescription(body.link.metadata?.description ?? "");
       setTags(Array.isArray(body.link.metadata?.tags) ? body.link.metadata.tags : []);
       setShowWarning(body.link.metadata?.show_warning === true);
+      setQrCaption(body.link.metadata?.caption ?? "");
+      setQrAddLogo(body.link.metadata?.addLogo !== false);
     }
 
     if (slug) void load();
@@ -112,9 +124,20 @@ export default function Edit() {
   }
 
   const canEdit = Boolean(user && state.link.ownerId === user.id);
-  const readOnlyReason = !user
-    ? "这个短链已存在。登录 owner 账号后可以修改或删除。"
-    : "这个短链不属于当前登录账号，所以这里仅显示只读信息。";
+  const shortUrl = typeof window === "undefined" ? `/${slug}` : `${window.location.origin}/${slug}`;
+  const qrParams = new URLSearchParams({ addLogo: qrAddLogo ? "true" : "false" });
+  if (qrCaption.trim()) qrParams.set("caption", qrCaption.trim());
+  const qrPngPath = `/qr/${slug}.png?${qrParams.toString()}`;
+  const qrDownloadPath = `/qr/d/${slug}.png?${qrParams.toString()}`;
+  const publicTooltip =
+    "只决定这个短链是否参与推荐、趋势榜等公开发现入口；不影响通过 slug 查看或跳转。";
+  const warningTooltip = "访问者会先看到 warning page，再继续跳转到目标链接。";
+
+  async function copyShortUrl() {
+    await navigator.clipboard.writeText(shortUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -128,10 +151,13 @@ export default function Edit() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           url,
+          isPublic,
           metadata: {
             description,
             tags,
             show_warning: showWarning,
+            addLogo: qrAddLogo,
+            caption: qrCaption,
           },
         }),
       });
@@ -142,9 +168,12 @@ export default function Edit() {
       const body = (await res.json()) as { link: LinkRecord };
       setState({ status: "edit", link: body.link });
       setUrl(body.link.url);
+      setIsPublic(body.link.isPublic);
       setDescription(body.link.metadata?.description ?? "");
       setTags(Array.isArray(body.link.metadata?.tags) ? body.link.metadata.tags : []);
       setShowWarning(body.link.metadata?.show_warning === true);
+      setQrCaption(body.link.metadata?.caption ?? "");
+      setQrAddLogo(body.link.metadata?.addLogo !== false);
       setMessage("已保存。");
     } finally {
       setSubmitting(false);
@@ -205,102 +234,160 @@ export default function Edit() {
   return (
     <main className="auth-page">
       <section className="auth-panel edit-panel">
-        <div className="auth-copy">
-          <h1>编辑 /{slug}</h1>
-          <p>
-            {canEdit
-              ? "更新目标链接会保留旧 URL 历史。删除后该 slug 访问返回 404。"
-              : readOnlyReason}
-          </p>
-        </div>
-        {!canEdit ? (
-          <div className="edit-readonly-banner" role="status">
-            <strong>只读模式</strong>
-            <span>可以查看 slug、目标链接和推荐状态，但不能保存更改。</span>
-            {!user ? (
-              <Link to="/login" className="btn btn--ghost btn--sm">
-                登录
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
         <form className="auth-form" onSubmit={onSubmit}>
-          <label className="auth-label" htmlFor={urlId}>目标链接</label>
-          <input
-            id={urlId}
-            className="auth-input"
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={submitting || !canEdit}
-            required
-          />
-          <dl className="edit-facts" aria-label="Link details">
+          <div className="edit-header">
             <div>
-              <dt>Slug</dt>
-              <dd>/{state.link.slug}</dd>
+              <p className="dashboard-kicker">Link</p>
+              <h1>Editing a Link</h1>
             </div>
-            <div>
-              <dt>URL</dt>
-              <dd>
-                <a href={state.link.url} target="_blank" rel="noreferrer">
-                  {state.link.url}
+            <div className="edit-header__actions">
+              {!canEdit ? (
+                <span className="edit-status" title="Login as the owner to edit">
+                  Read only
+                </span>
+              ) : null}
+              {!user ? (
+                <Link to="/login" className="btn btn--ghost btn--sm">
+                  Login
+                </Link>
+              ) : null}
+              {canEdit ? (
+                <button
+                  className="btn btn--primary btn--sm"
+                  type="submit"
+                  disabled={submitting}
+                >
+                  {submitting ? "Saving..." : "Update"}
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="edit-layout">
+            <div className="edit-fields">
+              <label className="auth-label" htmlFor={slugId}>Slug</label>
+              <div className="edit-input-row">
+                <input
+                  id={slugId}
+                  className="auth-input"
+                  type="text"
+                  value={state.link.slug}
+                  readOnly
+                />
+                <button className="btn btn--ghost" type="button" onClick={copyShortUrl}>
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+
+              <label className="auth-label" htmlFor={urlId}>目标链接</label>
+              <input
+                id={urlId}
+                className="auth-input"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                disabled={submitting || !canEdit}
+                required
+              />
+
+              <div className="edit-meta-row">
+                <span className="edit-owner">Owner: {state.link.ownerId ? "registered" : "anonymous"}</span>
+                <label className="edit-switch" htmlFor={publicId} title={publicTooltip}>
+                  <input
+                    id={publicId}
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={(event) => setIsPublic(event.target.checked)}
+                    disabled={submitting || !canEdit}
+                  />
+                  <span aria-hidden="true" />
+                  <strong>Public</strong>
+                </label>
+                <label className="edit-switch" htmlFor={warnId} title={warningTooltip}>
+                  <input
+                    id={warnId}
+                    type="checkbox"
+                    checked={showWarning}
+                    onChange={(event) => setShowWarning(event.target.checked)}
+                    disabled={submitting || !canEdit}
+                  />
+                  <span aria-hidden="true" />
+                  <strong>Warning</strong>
+                </label>
+              </div>
+
+              <label className="auth-label" htmlFor={descriptionId}>Description</label>
+              <textarea
+                id={descriptionId}
+                className="auth-input auth-textarea"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={280}
+                placeholder="Short note for this link"
+                rows={3}
+                disabled={submitting || !canEdit}
+              />
+              <TagInput
+                id={tagsId}
+                value={tags}
+                onChange={setTags}
+                disabled={submitting || !canEdit}
+              />
+              {message ? <p className="auth-message">{message}</p> : null}
+              {error ? (
+                <p className="auth-message auth-message--error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              {canEdit ? (
+                <button
+                  className="btn btn--ghost"
+                  type="button"
+                  onClick={onDelete}
+                  disabled={submitting}
+                >
+                  Delete
+                </button>
+              ) : null}
+            </div>
+
+            <aside className="edit-qr-card" aria-labelledby="edit-qr-title">
+              <div className="edit-qr-card__head">
+                <div>
+                  <p className="dashboard-kicker">QRCode</p>
+                  <h2 id="edit-qr-title">QR for /{slug}</h2>
+                </div>
+                <a className="btn btn--ghost btn--sm" href={qrDownloadPath} download>
+                  Download
                 </a>
-              </dd>
-            </div>
-            <div>
-              <dt>is_public</dt>
-              <dd>{state.link.isPublic ? "true" : "false"}</dd>
-            </div>
-          </dl>
-          <p className="auth-message">
-            is_public 只决定这个短链是否参与推荐、趋势榜等公开发现入口；不影响通过 slug 查看或跳转。
-          </p>
-          <label className="auth-label" htmlFor={descriptionId}>Description</label>
-          <textarea
-            id={descriptionId}
-            className="auth-input auth-textarea"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={280}
-            placeholder="Short note for this link"
-            rows={3}
-            disabled={submitting || !canEdit}
-          />
-          <TagInput
-            id={tagsId}
-            value={tags}
-            onChange={setTags}
-            disabled={submitting || !canEdit}
-          />
-          <WarnToggle
-            id={warnId}
-            checked={showWarning}
-            disabled={submitting || !canEdit}
-            onChange={setShowWarning}
-          />
-          {message ? <p className="auth-message">{message}</p> : null}
-          {error ? (
-            <p className="auth-message auth-message--error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div className="create-success__row">
-            <button
-              className="btn btn--primary"
-              type="submit"
-              disabled={submitting || !canEdit}
-            >
-              {submitting ? "保存中..." : "保存"}
-            </button>
-            <button
-              className="btn btn--ghost"
-              type="button"
-              onClick={onDelete}
-              disabled={submitting || !canEdit}
-            >
-              删除
-            </button>
+              </div>
+              <div className="qr-preview-wrap">
+                <QrCanvas value={shortUrl} caption={qrCaption} addLogo={qrAddLogo} />
+              </div>
+              <label className="auth-label" htmlFor={qrCaptionId}>Caption</label>
+              <textarea
+                id={qrCaptionId}
+                className="auth-input auth-textarea"
+                value={qrCaption}
+                onChange={(event) => setQrCaption(event.target.value)}
+                maxLength={100}
+                placeholder="add a description"
+                rows={3}
+                disabled={submitting || !canEdit}
+              />
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={qrAddLogo}
+                  onChange={(event) => setQrAddLogo(event.target.checked)}
+                  disabled={submitting || !canEdit}
+                />
+                <span>logo</span>
+              </label>
+              <a className="btn btn--ghost" href={qrPngPath} target="_blank" rel="noreferrer">
+                Open PNG
+              </a>
+            </aside>
           </div>
         </form>
         {canEdit ? (

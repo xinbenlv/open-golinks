@@ -35,6 +35,8 @@ const metadataPatchSchema = z
     description: z.string().trim().max(280).optional(),
     tags: z.array(tagSchema).max(10).optional(),
     show_warning: z.boolean().optional(),
+    addLogo: z.boolean().optional(),
+    caption: z.string().trim().max(100).optional(),
   })
   .strict();
 
@@ -47,11 +49,16 @@ const createLinkSchema = z.object({
 const updateLinkSchema = z
   .object({
     url: z.string().url().optional(),
+    isPublic: z.boolean().optional(),
     metadata: metadataPatchSchema.optional(),
   })
   .strict()
-  .refine((value) => value.url !== undefined || value.metadata !== undefined, {
-    message: "url or metadata is required",
+  .refine((value) => (
+    value.url !== undefined ||
+    value.isPublic !== undefined ||
+    value.metadata !== undefined
+  ), {
+    message: "url, isPublic, or metadata is required",
   });
 
 const claimSchema = z.object({
@@ -94,6 +101,15 @@ function showWarning(metadata: unknown) {
   return normalizeMetadata(metadata).show_warning === true;
 }
 
+function addLogo(metadata: unknown) {
+  return normalizeMetadata(metadata).addLogo !== false;
+}
+
+function caption(metadata: unknown) {
+  const value = normalizeMetadata(metadata).caption;
+  return typeof value === "string" ? value : "";
+}
+
 function description(metadata: unknown) {
   const value = normalizeMetadata(metadata).description;
   return typeof value === "string" ? value : "";
@@ -114,6 +130,8 @@ function mergeMetadata(
   if (patch.description !== undefined) next.description = patch.description;
   if (patch.tags !== undefined) next.tags = Array.from(new Set(patch.tags));
   if (patch.show_warning !== undefined) next.show_warning = patch.show_warning;
+  if (patch.addLogo !== undefined) next.addLogo = patch.addLogo;
+  if (patch.caption !== undefined) next.caption = patch.caption;
   return next;
 }
 
@@ -479,6 +497,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   if (!existing) return c.json({ error: "NOT_FOUND" }, 404);
 
   const nextUrl = parsed.data.url ?? existing.url;
+  const nextIsPublic = parsed.data.isPublic ?? existing.isPublic;
   const urlHistory = parsed.data.url
     ? [
         ...normalizeUrlHistory(existing.urlHistory),
@@ -491,6 +510,10 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
     diff.before = { ...(diff.before as object | undefined), url: existing.url };
     diff.after = { ...(diff.after as object | undefined), url: nextUrl };
   }
+  if (parsed.data.isPublic !== undefined) {
+    diff.before = { ...(diff.before as object | undefined), isPublic: existing.isPublic };
+    diff.after = { ...(diff.after as object | undefined), isPublic: nextIsPublic };
+  }
   if (parsed.data.metadata) {
     diff.before = {
       ...(diff.before as object | undefined),
@@ -498,6 +521,8 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
         description: description(existing.metadata),
         tags: tags(existing.metadata),
         show_warning: showWarning(existing.metadata),
+        addLogo: addLogo(existing.metadata),
+        caption: caption(existing.metadata),
       },
     };
     diff.after = {
@@ -506,6 +531,8 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
         description: description(metadata),
         tags: tags(metadata),
         show_warning: showWarning(metadata),
+        addLogo: addLogo(metadata),
+        caption: caption(metadata),
       },
     };
   }
@@ -514,6 +541,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
     .update(schema.linksTable)
     .set({
       url: nextUrl,
+      isPublic: nextIsPublic,
       urlHistory,
       metadata,
       updatedAt: new Date(),
