@@ -171,7 +171,7 @@ async function main() {
           await tx`
             UPDATE links
             SET metadata = COALESCE(metadata, '{}'::jsonb)
-              || jsonb_build_object('legacy_author_email', ${action.resolution.email})
+              || jsonb_build_object('legacy_author_email', ${action.resolution.email}::text)
             WHERE owner_id = ${syntheticId}
           `;
           await ensurePublicUserMirror(
@@ -189,7 +189,7 @@ async function main() {
             SET owner_id = NULL,
                 updated_at = now(),
                 metadata = COALESCE(metadata, '{}'::jsonb)
-                  || jsonb_build_object('legacy_author_email', ${action.email})
+                  || jsonb_build_object('legacy_author_email', ${action.email}::text)
             WHERE owner_id = ${syntheticId}
           `;
         } else {
