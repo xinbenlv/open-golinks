@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createCanvas, GlobalFonts } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts, Image } from "@napi-rs/canvas";
 import QRCode from "qrcode";
+import { getRuntimeBrandConfig } from "./brand.ts";
 
 export const QR_MAX_CAPTION_LENGTH = 100;
 
@@ -15,6 +17,7 @@ const CACHE_TTL_MS = 60 * 60 * 1000;
 const CACHE_MAX = 1000;
 const cache = new Map<string, { expiresAt: number; png: Buffer }>();
 let fontsLoaded = false;
+let zgzgLogo: Image | null | undefined;
 
 function loadFonts() {
   if (fontsLoaded) return;
@@ -30,9 +33,11 @@ function loadFonts() {
 }
 
 function cacheKey(value: string, options: RenderOptions) {
+  const brand = getRuntimeBrandConfig();
   return createHash("sha256")
     .update(
       JSON.stringify({
+        brand: brand.theme,
         value,
         caption: options.caption ?? "",
         addLogo: options.addLogo === true,
@@ -40,6 +45,19 @@ function cacheKey(value: string, options: RenderOptions) {
       }),
     )
     .digest("hex");
+}
+
+function loadZgzgLogo() {
+  if (zgzgLogo !== undefined) return zgzgLogo;
+  try {
+    const image = new Image();
+    image.src = readFileSync(resolve(import.meta.dir, "../assets/img/zgzg-round-logo.png"));
+    zgzgLogo = image;
+  } catch (err) {
+    console.error("[qr] failed to load ZGZG logo", err);
+    zgzgLogo = null;
+  }
+  return zgzgLogo;
 }
 
 function getCached(key: string) {
@@ -99,18 +117,24 @@ function drawLogo(
   centerX: number,
   centerY: number,
 ) {
+  const brand = getRuntimeBrandConfig();
   const size = 58;
   const x = centerX - size / 2;
   const y = centerY - size / 2;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(x - 7, y - 7, size + 14, size + 14);
-  ctx.fillStyle = "#ff7a45";
-  ctx.fillRect(x, y, size, size);
-  ctx.fillStyle = "#210900";
-  ctx.font = '700 24px "Noto Sans CJK SC", Inter, sans-serif';
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("o/", centerX, centerY + 1);
+  const logo = brand.theme === "zgzg" ? loadZgzgLogo() : null;
+  if (logo) {
+    ctx.drawImage(logo, x, y, size, size);
+  } else {
+    ctx.fillStyle = brand.primaryColor;
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = brand.primaryForegroundColor;
+    ctx.font = '700 24px "Noto Sans CJK SC", Inter, sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("o/", centerX, centerY + 1);
+  }
 }
 
 function wrapCaption(

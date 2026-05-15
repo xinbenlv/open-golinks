@@ -12,6 +12,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { BUILD_INFO, formatBuildLine } from "../src/build-info.ts";
+import { getBrandConfig } from "../src/lib/brand.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
 const DIST_HTML = resolve(ROOT, "dist", "web", "index.html");
@@ -22,6 +23,7 @@ const VERSION_PAYLOAD = {
   builtAt: BUILD_INFO.builtAt,
   branch: BUILD_INFO.branch,
 };
+const BRAND = getBrandConfig(process.env.OPEN_GOLINK_THEME);
 
 // 给 SSG render 用 (BuildStamp / Footer 在 render 期读 globalThis)
 globalThis.__OGL_VERSION__ = VERSION_PAYLOAD;
@@ -29,18 +31,18 @@ globalThis.__OGL_VERSION__ = VERSION_PAYLOAD;
 const { renderApp } = await import("../src/web/entry-ssr.tsx");
 
 const META_TAGS = `
-    <meta name="description" content="Open GoLinks: 开源、可自部署的 go/links 短链服务. 匿名可用, 公私可控, 内置访问统计与浏览器扩展." />
+    <meta name="description" content="${BRAND.instanceDescription}" />
     <meta name="x-version" content="v${BUILD_INFO.version} · ${BUILD_INFO.sha} · ${BUILD_INFO.builtAt}" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Open GoLinks · 开源 go/links 短链服务" />
-    <meta property="og:description" content="一个语义化的链接, 共享给整个团队. 开源、自部署、克制设计." />
+    <meta property="og:title" content="${BRAND.productName} · ${BRAND.shortDescription}" />
+    <meta property="og:description" content="${BRAND.instanceDescription}" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Open GoLinks · 开源 go/links 短链服务" />
-    <meta name="twitter:description" content="一个语义化的链接, 共享给整个团队. 开源、自部署、克制设计." />
+    <meta name="twitter:title" content="${BRAND.productName} · ${BRAND.shortDescription}" />
+    <meta name="twitter:description" content="${BRAND.instanceDescription}" />
     <meta name="theme-color" content="#0a0a0c" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#fafaf7" media="(prefers-color-scheme: light)" />`;
 
-const TITLE = "Open GoLinks · 开源 go/links 短链服务";
+const TITLE = `${BRAND.productName} · ${BRAND.shortDescription}`;
 
 async function main() {
   const tpl = await readFile(DIST_HTML, "utf8");
@@ -55,13 +57,14 @@ async function main() {
   );
 
   // 注入 lang
-  html = html.replace(/<html\b[^>]*>/, '<html lang="zh-CN">');
+  html = html.replace(/<html\b[^>]*>/, `<html lang="zh-CN" data-brand="${BRAND.theme}">`);
 
   // 主题闪烁防抖 + 客户端版本注入 (在 main.tsx 之前跑, 让 hydrate 阶段 BuildStamp 也读到同一份)
   const headScripts = `
     <script>
       (function () {
         try {
+          document.documentElement.dataset.brand = ${JSON.stringify(BRAND.theme)};
           var t = localStorage.getItem("ogl-theme");
           if (t === "light" || t === "dark") {
             document.documentElement.setAttribute("data-theme", t);

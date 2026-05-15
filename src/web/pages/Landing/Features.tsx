@@ -1,4 +1,5 @@
 import { useReveal } from "../../hooks/useReveal";
+import { webBrand } from "../../lib/brand";
 import { IconLink, IconShield, IconChart, IconCode } from "./icons";
 
 const ITEMS = [
@@ -30,7 +31,7 @@ export function Features() {
     <section className="section" id="features">
       <div className="container">
         <div ref={ref} className="reveal section__head">
-          <span className="section__eyebrow">为什么 Open GoLinks</span>
+          <span className="section__eyebrow">为什么 {webBrand.productName}</span>
           <h2 className="section__title">克制设计, 关键功能一个不少</h2>
           <p className="section__lead">
             围绕日常分享与团队协作的真实场景设计, 不堆砌, 不上锁.

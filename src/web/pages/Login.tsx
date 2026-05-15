@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { webBrand } from "../lib/brand";
 
 type LocationState = {
   from?: { pathname?: string };
@@ -46,15 +47,19 @@ export default function Login() {
   return (
     <main className="auth-page">
       <section className="auth-panel" aria-labelledby="login-title">
-        <Link to="/" className="brand auth-brand" aria-label="Open GoLinks 首页">
+        <Link to="/" className="brand auth-brand" aria-label={webBrand.homepageLabel}>
           <span className="brand__mark" aria-hidden>
-            o/
+            {webBrand.logoUrl ? (
+              <img className="brand__logo" src={webBrand.logoUrl} alt="" />
+            ) : (
+              "o/"
+            )}
           </span>
-          <span>Open GoLinks</span>
+          <span>{webBrand.productName}</span>
         </Link>
 
         <div className="auth-copy">
-          <h1 id="login-title">登录 Open GoLinks</h1>
+          <h1 id="login-title">登录 {webBrand.productName}</h1>
           <p>输入邮箱后, 我们会发送一封魔法链接邮件。</p>
         </div>
 
@@ -109,4 +114,3 @@ export default function Login() {
     </main>
   );
 }
-

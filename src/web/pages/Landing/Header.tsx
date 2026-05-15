@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../hooks/useAuth";
+import { webBrand } from "../../lib/brand";
 import { IconGitHub, IconSun, IconMoon, IconMonitor } from "./icons";
 
 const THEME_LABEL: Record<string, string> = {
@@ -26,11 +27,15 @@ export function Header() {
   return (
     <header className="landing-header" data-scrolled={scrolled}>
       <div className="container landing-header__inner">
-        <a href="/" className="brand" aria-label="Open GoLinks 首页">
+        <a href="/" className="brand" aria-label={webBrand.homepageLabel}>
           <span className="brand__mark" aria-hidden>
-            o/
+            {webBrand.logoUrl ? (
+              <img className="brand__logo" src={webBrand.logoUrl} alt="" />
+            ) : (
+              "o/"
+            )}
           </span>
-          <span>Open GoLinks</span>
+          <span>{webBrand.productName}</span>
         </a>
 
         <nav className="nav" aria-label="主导航">

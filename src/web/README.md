@@ -98,6 +98,8 @@ bun run build:web
 `useTheme()` 提供 `light` / `dark` / `system` 三态, 持久化到 `localStorage('ogl-theme')`.
 预渲染脚本在 `<head>` 注入一段防闪烁脚本, 在样式表加载前同步 `data-theme`.
 
+品牌主题由 `OPEN_GOLINK_THEME` 控制。默认显示 Open GoLinks；构建/运行环境设为 `zgzg` 时, 前端使用 `zgzg.li` 文案、红色 primary color 和 `src/assets/img/zgzg-round-logo.png`。
+
 ## CSS 约定
 
 - **所有 CSS 在 `main.tsx` 集中导入**, 组件 .tsx 文件保持纯 JSX. 这样 `entry-ssr.tsx` 可以无副作用地 `import` 组件树.

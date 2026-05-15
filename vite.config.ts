@@ -8,6 +8,11 @@ export default defineConfig({
   plugins: [react()],
   root: "src/web",
   publicDir: path.resolve(__dirname, "src/web/public"),
+  define: {
+    "import.meta.env.VITE_OPEN_GOLINK_THEME": JSON.stringify(
+      process.env.OPEN_GOLINK_THEME ?? process.env.VITE_OPEN_GOLINK_THEME ?? "",
+    ),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),

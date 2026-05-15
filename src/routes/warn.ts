@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "../db/db.ts";
+import { getRuntimeBrandConfig } from "../lib/brand.ts";
 
 export const warnRoute = new Hono();
 
@@ -47,6 +48,10 @@ warnRoute.get("/:slug", async (c) => {
 
   const escapedSlug = escapeHtml(link.slug);
   const escapedUrl = escapeHtml(link.url);
+  const brand = getRuntimeBrandConfig();
+  const escapedProductName = escapeHtml(brand.productName);
+  const escapedPrimary = escapeHtml(brand.primaryColor);
+  const escapedPrimaryForeground = escapeHtml(brand.primaryForegroundColor);
   return c.html(`<!doctype html>
 <html lang="zh-CN">
   <head>
@@ -54,7 +59,7 @@ warnRoute.get("/:slug", async (c) => {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff7a45'/%3E%3Cpath d='M32 12 56 52H8L32 12Z' fill='%23101014'/%3E%3Ccircle cx='32' cy='45' r='3' fill='%23ff7a45'/%3E%3Cpath d='M30 25h4v15h-4z' fill='%23ff7a45'/%3E%3C/svg%3E" />
-    <title>Warning: External link</title>
+    <title>${escapedProductName}: External link warning</title>
     <style>
       :root { color-scheme: dark light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
       body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #101014; color: #f6f1ed; }
@@ -65,13 +70,13 @@ warnRoute.get("/:slug", async (c) => {
       .meta { font-size: 14px; }
       .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
       a { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 8px; text-decoration: none; font-weight: 650; }
-      .btn-proceed { background: #ff7a45; color: #210900; }
+      .btn-proceed { background: ${escapedPrimary}; color: ${escapedPrimaryForeground}; }
       .btn-cancel { border: 1px solid rgba(255,255,255,.18); color: #f6f1ed; }
     </style>
   </head>
   <body>
     <main class="warn">
-      <h1>即将跳转外部链接</h1>
+      <h1>${escapedProductName} 即将跳转外部链接</h1>
       <p>You are about to visit:</p>
       <code class="dest">${escapedUrl}</code>
       <p class="meta">Short link: /${escapedSlug}</p>

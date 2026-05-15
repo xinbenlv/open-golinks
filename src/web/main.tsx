@@ -2,11 +2,14 @@ import { StrictMode } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
+import { applyBrandTheme } from "./lib/brand";
 
 // CSS 在客户端入口集中导入, 这样组件文件可被 SSG 脚本直接 import (无 CSS 副作用).
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./pages/Landing/landing.css";
+
+applyBrandTheme();
 
 const root = document.getElementById("root");
 if (!root) throw new Error("缺少 #root 元素");

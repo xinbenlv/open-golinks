@@ -27,6 +27,7 @@ Browser/Extension ──▶ Railway (us-west2) ──▶ Supabase Postgres
 │   │   ├── schema.ts          # 数据库 schema
 │   │   └── migrations/        # SQL migrations
 │   ├── lib/                   # identity / GA4 / QR / fingerprint helpers
+│   ├── assets/                # 字体与主题 logo 静态资源
 │   ├── routes/
 │   │   ├── redirect.ts        # GET /:slug
 │   │   └── api/
