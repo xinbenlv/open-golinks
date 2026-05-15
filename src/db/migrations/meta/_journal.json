@@ -15,6 +15,13 @@
       "when": 1778745656746,
       "tag": "0001_foamy_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778785200000,
+      "tag": "0002_identity_acl_email_canonical",
+      "breakpoints": true
     }
   ]
 }

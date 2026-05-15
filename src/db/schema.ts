@@ -33,6 +33,7 @@ export const usersTable = pgTable(
   (table) => [
     index('idx_users_email').on(table.email),
     index('idx_users_role').on(table.role),
+    uniqueIndex('unique_users_email_lower').on(sql`lower(${table.email})`),
   ]
 );
 

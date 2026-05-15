@@ -3,7 +3,7 @@
 **Date**: 2026-05-14
 **Duration**: 1-2 天实现；如果剩余 owner 需要人工 review，再另算
 **Priority**: P0
-**Status**: 📋 Planning
+**Status**: ✅ Implemented in v2-hono worktree (2026-05-14)
 **Parent plan**: [feature-parity-master-plan](./2026-05-13-feature-parity-master-plan.md)
 
 ## Overview
@@ -424,6 +424,15 @@ claim 成功后写 audit：
 - Claim Link 的 proof 条件在同一个原子 `UPDATE` 里检查。
 - 公开 API 和普通前端 API 不返回 `metadata.legacy_author_email`。
 - 切流前能清楚看到还有多少 unowned legacy links。
+
+## Implementation Notes (2026-05-14)
+
+- `scripts/migrate-from-legacy.ts` 已改为通过 Supabase Admin API resolve legacy email，不再生成 owner UUID。
+- `scripts/reconcile-legacy-owners.ts` 已升级为 synthetic owner repair dry-run/apply，apply 前写 JSON 备份并在 transaction 中 remap/null owner。
+- `src/routes/api/links.ts` 已对普通 link DTO 脱敏 `metadata.legacy_author_email`，Claim Link 改成 `owner_id IS NULL` + proof predicate 原子 UPDATE。
+- `src/middleware/auth.ts`、transfer lookup、migration/repair helper 共用 canonical email 规则。
+- `src/db/migrations/0002_identity_acl_email_canonical.sql` 增加 canonical email gate 和 `unique_users_email_lower`。
+- 验证：`bun run type-check` PASS；`bun test tests/e2e/identity-acl.test.ts` PASS；`env -u SUPABASE_SECRET_KEY bun test tests/e2e/F5-claim.test.ts` PASS。普通 `bun test tests/e2e/F5-claim.test.ts` 会被当前进程里已脱敏的 `SUPABASE_SECRET_KEY` shadow，需要 unset 后让 Bun 读取 `.env` 完整值。
 
 ## 已确认决策
 

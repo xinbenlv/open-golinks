@@ -24,8 +24,9 @@ curl -I http://localhost:3000/test   # 应返回 302 + Location
 ### 背景
 
 open-golinks v2 从 MongoDB（Heroku） 迁移到 PostgreSQL（Supabase）。此脚本用于：
-- 读取旧 MongoDB 数据库中的用户和链接
+- 读取旧 MongoDB `shortlinks` 中的链接
 - 规范化 schema（MongoDB 字段 → PostgreSQL 字段）
+- 用 Supabase Auth Admin API 把 legacy author email 映射为 `auth.users.id`
 - 将数据 upsert 到 PostgreSQL 数据库
 - 支持干运行（dry-run）模式进行测试
 - 默认保留只存在于 PostgreSQL 的链接，不做删除
@@ -49,7 +50,8 @@ bun run migrate:legacy
 - 对 MongoDB 和 PostgreSQL 都存在的 slug 覆盖 URL，并补充 `metadata.legacy_author_email`
 - 保留只存在于 PostgreSQL 的链接
 - 保留既有 visits、url_history、created_by_fingerprint、deleted_at、is_public
-- 仅当 legacy author 能映射到 `public.users.email` 时更新 owner；否则保留现有 owner
+- 仅当 legacy author 能解析到真实 Supabase Auth user 时写入 owner
+- 默认不覆盖已有非空 `links.owner_id`
 
 #### 3. **详细日志**
 ```bash
@@ -78,6 +80,10 @@ bun run migrate:legacy:replace
   - 自动从 `.env` 读取
   - 指向新的 Supabase 数据库
 
+- `SUPABASE_URL` 或 `VITE_SUPABASE_URL` - Supabase project URL
+
+- `SUPABASE_SECRET_KEY` 或 `SUPABASE_SERVICE_ROLE_KEY` - Supabase service-role/Admin key，用于 `listUsers` 和静默 `createUser`
+
 ### 工作流程
 
 1. **连接到 MongoDB**
@@ -85,17 +91,19 @@ bun run migrate:legacy:replace
    - 自动检测用户集合（users, accounts, profiles, user）
    - 自动检测链接集合（links, urls, shortlinks, golinks, link）
 
-2. **迁移用户**
-   - 从 MongoDB `shortlinks.author` 提取 email
-   - 复用 `public.users.email` 已存在用户
-   - 不存在时创建 `public.users` 记录
+2. **解析 owner identity**
+   - 从 MongoDB `shortlinks.author` 提取 email，统一 `trim().toLowerCase()`
+   - `"anonymous"`、空值和无效 email 迁移为 `owner_id = null`
+   - 用 Supabase Admin API 分页 `listUsers` 构建 `email -> auth.users.id`
+   - 已有 `public.users` 只能作为 mirror，必须验证 id 存在于 Supabase Auth
+   - Auth 中没有有效 legacy email 时，apply 模式静默创建 `email_confirm: true` 的 Auth user
 
 3. **迁移链接**
    - 读取 MongoDB 链接
    - 规范化字段：
      - `slug` → slug（小写）
      - `url` → url（验证为有效 URL）
-     - `owner` / `ownerId` / `owner_id` → ownerId（使用用户映射）
+     - `author` email → `ownerId`（使用 Supabase Auth UUID）
      - `createdAt` / `created_at` → createdAt
      - `updatedAt` / `updated_at` → updatedAt
      - `visits` / `visit_count` → visits
@@ -111,11 +119,10 @@ bun run migrate:legacy:replace
 
 ##### 用户
 ```
-MongoDB          → PostgreSQL
-_id/id           → id (UUID)
-email            → email
-role             → role
-createdAt        → createdAt
+Supabase Auth    → PostgreSQL public.users
+auth.users.id    → id
+canonical email  → email
+role             → role='user'
 ```
 
 ##### 链接
@@ -123,7 +130,8 @@ createdAt        → createdAt
 MongoDB          → PostgreSQL
 slug             → slug (normalized)
 url              → url (validated)
-owner/ownerId    → ownerId (with user mapping)
+author email     → ownerId (auth.users.id)
+author email     → metadata.legacy_author_email
 createdAt        → createdAt
 updatedAt        → updatedAt
 visits           → visits
@@ -134,9 +142,10 @@ metadata         → metadata
 
 #### UUID 处理
 
-- MongoDB 中的非 UUID ID 会自动转换为 UUID
-- 使用 `uuid.v4()` 生成新 UUID
-- 在 `userIdMap` 中追踪映射，以便链接可以引用正确的所有者
+- `links.owner_id` 只能来自 Supabase Auth `auth.users.id`
+- migration 不生成 owner UUID
+- `public.users.id` 只是 mirror，必须等于对应的 `auth.users.id`
+- existing synthetic `public.users` 由 `reconcile-legacy-owners.ts` dry-run/apply 修复
 
 #### URL 验证
 
@@ -158,6 +167,10 @@ metadata         → metadata
 迁移统计:
   👥 用户:  X/Y 已迁移
   🔗 链接:  X/Y 已迁移
+Owner coverage:
+  total=..., owned=..., unowned=...
+Identity consistency:
+  public_users_total=..., non_canonical_public_user_emails=...
   ⚠️  错误:  X
 ==================================================
 ```
@@ -180,13 +193,9 @@ metadata         → metadata
 - 确保 `.env` 文件包含 `LEGACY_MONGO_DB_READONLY_URL`
 - 检查连接字符串格式
 
-#### 无法找到集合
-```
-⚠️  未找到用户集合，跳过用户迁移
-```
-- 脚本尝试多个可能的集合名称
-- 如果仍然找不到，检查 MongoDB 中的实际集合名称
-- 手动更新脚本中的 `userCollectionNames` / `linkCollectionNames`
+#### Mongo 集合名称不同
+
+当前脚本读取固定集合 `shortlinks`。如果源库集合名称不同，需要先用 `scripts/inspect-mongo.ts` 确认实际集合，再改 `scripts/migrate-from-legacy.ts` 的读取位置。
 
 #### 数据验证错误
 - 查看错误消息了解哪些字段有问题
@@ -197,7 +206,7 @@ metadata         → metadata
 
 - [`.env`](../.env) - 环境变量配置
 - [`src/db/schema.ts`](../src/db/schema.ts) - 目标 PostgreSQL schema
-- [`docs/plans/2026-02-10-ga-backend-proxy.md`](../docs/plans/2026-02-10-ga-backend-proxy.md) - 迁移计划文档
+- [`docs/plans/2026-05-14-identity-acl-migration-plan.md`](../docs/plans/2026-05-14-identity-acl-migration-plan.md) - Identity / ACL 迁移计划
 
 ### 维护
 
@@ -208,20 +217,37 @@ metadata         → metadata
 
 ## reconcile-legacy-owners.ts
 
-F5 claim 配套维护脚本。默认 dry-run 打印当前 `owner_id IS NULL` 的覆盖率和最多 100 条 review sample:
+Identity/ACL repair 脚本。默认 dry-run 用 Supabase Admin API 对齐 `public.users` 与 `auth.users`，找出 synthetic mirror user、受影响链接和需要人工处理的 conflict:
 
 ```bash
 bun scripts/reconcile-legacy-owners.ts
 ```
 
-确认 `metadata->>'legacy_author_email'` 能匹配 `public.users.email` 后，可执行回填:
+确认报告后可执行 apply。apply 前会在 `var/identity-acl-backups/` 写出会修改的 `users`、`links`、`audit_logs` JSON 备份，并在 transaction 中 remap 或置空 synthetic owner:
 
 ```bash
 bun scripts/reconcile-legacy-owners.ts --apply
 ```
 
-脚本只处理仍未归属、未删除、且 legacy email 能匹配现有用户的链接；无法自动匹配的链接仍需人工 review 或由用户通过 `/claim/:slug` 认领。
+规则：
+
+- synthetic `public.users.email` 有效且 Auth 已有同 email → remap `links.owner_id` / `audit_logs.actor_id` 到真实 Auth id。
+- synthetic email 有效但 Auth 不存在 → 静默创建 confirmed Auth user，再 remap。
+- email 无效、canonical email 冲突或 Auth email 冲突 → 不创建 Auth user，相关 `links.owner_id` 置为 `null`，可用 email 写入 `metadata.legacy_author_email` 供后续 claim。
+- 删除 synthetic `public.users` 前会确认 `links.owner_id` 和 `audit_logs.actor_id` 都不再引用它。
+
+可用 `--backup-dir=<path>` 覆盖备份目录，`--verbose` 输出完整 action 列表。
+
+## lib/identity-acl.ts
+
+迁移脚本共享 helper：
+
+- `loadAuthIdentityMap` - 通过 Supabase Admin API 分页读取 Auth users。
+- `resolveOwnerByEmail` - idempotent `email -> auth.users.id` resolver，处理 synthetic mirror、Auth create 和 conflict。
+- `ensurePublicUserMirror` - 写入或修复 `public.users(id = auth.users.id)` mirror。
+- `loadOwnershipSummary` / `loadPublicUserEmailSummary` - dry-run/apply 后的覆盖率报告。
+- `backupIdentityAclRows` - apply 前 JSON 备份。
 
 ---
 
-**最后更新**: 2026-05-13
+**最后更新**: 2026-05-14

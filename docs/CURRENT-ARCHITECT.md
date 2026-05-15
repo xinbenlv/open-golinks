@@ -27,7 +27,7 @@
                  (links / audit_logs / daily_visits / users)
                          ▲
                          │
-                 Supabase Auth (JWT)
+                 Supabase Auth (JWT + Admin API for migration/repair)
 ```
 
 ### Mermaid 详细图
@@ -46,11 +46,13 @@ flowchart TB
     QR[qr.ts<br/>GET /qr/*.png]
     API[routes/api/*.ts]
     SPA[Vite SPA<br/>dist/web/]
+    SCRIPTS[scripts/*<br/>migration + repair]
   end
 
   subgraph Supabase[Supabase]
     PG[(Postgres)]
     AUTH[Auth JWT]
+    ADMIN[Auth Admin API]
   end
 
   BR -->|GET /:slug| SRV
@@ -69,6 +71,8 @@ flowchart TB
   API --> PG
   BR -->|登录| AUTH
   AUTH -->|JWT| BR
+  SCRIPTS --> PG
+  SCRIPTS --> ADMIN
 ```
 
 ## 模块说明
@@ -93,14 +97,14 @@ flowchart TB
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
 - **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
-  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`
-  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 新建/恢复默认 `is_public=false`; 可写 `metadata.description/tags/show_warning`; 写 CREATE audit
-  - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 `metadata.legacy_author_email` 认领的未归属链接
+  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:182-249`)
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 新建/恢复默认 `is_public=false`; 可写 `metadata.description/tags/show_warning`; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:252-310`)
+  - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 canonical `metadata.legacy_author_email` 认领的未归属链接 (`src/routes/api/links.ts:312-350`)
   - `GET /:slug/available` - public availability check, 返回 `{ available: boolean }`; F13 `/api/v2/available/:slug` shim 复用同一语义
-  - `GET /:slug` - 获取单链接
-  - `POST /:slug/claim` - requireAuth; fingerprint 或 legacy author email 匹配时写 `owner_id`, 写 CLAIM audit
-  - `POST /:slug/transfer` - owner-only; 按 recipient email 转移给已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER`
-  - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 写 UPDATE audit
+  - `GET /:slug` - 获取单链接, 公开返回中不包含 `metadata.legacy_author_email` (`src/routes/api/links.ts:361-375`)
+  - `POST /:slug/claim` - requireAuth; `owner_id IS NULL` + fingerprint/legacy email proof 在同一个原子 UPDATE 中检查, 成功后写 CLAIM audit (`src/routes/api/links.ts:378-432`)
+  - `POST /:slug/transfer` - owner-only; recipient email 先 canonicalize 再查找已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER` (`src/routes/api/links.ts:435-490`)
+  - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:493-564`)
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 - **`src/routes/api/qr.ts`** (`GET /api/v1/qr/:slug`) - 公开 QR PNG endpoint; `format=png`, `caption<=100`, `logo=true`; 不存在/软删返回 404.
@@ -118,19 +122,21 @@ flowchart TB
 - **`src/middleware/auth.ts`** - Supabase Auth JWT 验证 middleware:
   - `requireAuth`: 缺失或无效 Bearer token → 401
   - `optionalAuth`: 有 token 就验, 无 token 继续匿名
-  - 首次见到 JWT `sub` 时 lazy upsert `public.users`, 供 `links.owner_id` / `audit_logs.actor_id` 外键使用
+  - 首次见到 JWT `sub` 时 lazy upsert `public.users`, email 统一 `trim().toLowerCase()`, 供 `links.owner_id` / `audit_logs.actor_id` 外键使用 (`src/middleware/auth.ts:71-90`)
 - **`src/middleware/audit.ts`** - `writeAudit(c, action, slug, diff?)`, 对低频 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 写 `audit_logs`; `VISIT` 不写 audit.
 - **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
 - **`src/lib/fingerprint.ts`** - 浏览器端 64-hex fingerprint: canvas + UA + timezone + screen; canvas 不可用时用本地持久 fallback token. 服务端只校验格式和比对已有值.
+- **`src/lib/identity.ts`** - identity helper: canonical email、metadata normalize、link DTO 删除 `metadata.legacy_author_email` (`src/lib/identity.ts:1-27`).
 - **`src/lib/qr.ts`** - `qrcode` + `@napi-rs/canvas` 服务端 QR PNG 渲染, 支持 CJK caption、内置 logo、1h/1000-entry LRU cache, 字体来自 `src/assets/fonts/NotoSansCJKsc-Regular.otf`.
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
 - **`src/db/schema.ts`** - Drizzle schema, 4 张表:
-  - `users` (sync 自 Supabase auth.users)
+  - `users` (sync 自 Supabase auth.users; `id = auth.users.id`; email 有普通 unique 和 `lower(email)` unique index) (`src/db/schema.ts:23-37`)
   - `links` (slug 主键, soft delete, url_history JSONB)
   - `audit_logs` (CREATE/UPDATE/DELETE/CLAIM/VISIT/TRANSFER)
   - `daily_visits` (UNIQUE(slug, date), 用于 analytics)
+- **`src/db/migrations/0002_identity_acl_email_canonical.sql`** - apply 前阻止 duplicate canonical email, 将 `public.users.email` 规范为 lowercase/trim, 并创建 `unique_users_email_lower` (`src/db/migrations/0002_identity_acl_email_canonical.sql:1-16`).
 
 ### 前端 (SPA)
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
@@ -154,9 +160,10 @@ flowchart TB
   - 写回 `dist/web/index.html`
 
 ### 脚本
-- **`scripts/migrate-from-legacy.ts`** - MongoDB → Postgres 一次性迁移 (复用 v2-next)
+- **`scripts/lib/identity-acl.ts`** - migration/repair 共享 identity helper: Supabase Admin `listUsers`, `email -> auth.users.id` resolver, silent `createUser`, public mirror upsert/remap, coverage report 和 apply 前 JSON 备份 (`scripts/lib/identity-acl.ts:63-75`, `scripts/lib/identity-acl.ts:84-121`, `scripts/lib/identity-acl.ts:155-258`, `scripts/lib/identity-acl.ts:278-358`, `scripts/lib/identity-acl.ts:368-438`).
+- **`scripts/migrate-from-legacy.ts`** - MongoDB → Postgres 一次性迁移; legacy email 只映射到 Supabase Auth UUID, `"anonymous"`/无效 email 保持 `owner_id = null`, 默认不覆盖已有非空 owner, dry-run/apply 后输出 owner coverage 和 identity consistency (`scripts/migrate-from-legacy.ts:134-187`, `scripts/migrate-from-legacy.ts:222-295`, `scripts/migrate-from-legacy.ts:313-383`).
 - **`scripts/inspect-mongo.ts`** - 检查源数据形态
-- **`scripts/reconcile-legacy-owners.ts`** - F5 legacy owner dry-run/backfill: 统计未归属链接覆盖率, 可用 `--apply` 按 `metadata.legacy_author_email` 匹配 `users.email` 回填 `owner_id`.
+- **`scripts/reconcile-legacy-owners.ts`** - Identity ACL repair: dry-run 扫描 synthetic `public.users`, apply 前备份 `users/links/audit_logs`, transaction 中 remap 到真实 Auth user 或置空 owner/conflict (`scripts/reconcile-legacy-owners.ts:93-165`, `scripts/reconcile-legacy-owners.ts:167-218`).
 
 ### 外部服务
 - **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.
@@ -221,8 +228,8 @@ flowchart TB
 ### 匿名链接认领
 1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
 2. 用户登录后进 `/dashboard`, `ClaimBanner` 计算当前浏览器 fingerprint 并调 `GET /api/v1/links/claimable?fingerprint=<64hex>`
-3. 后端返回两类未归属链接: `created_by_fingerprint` 匹配, 或 `metadata.legacy_author_email` 等于当前用户 email
-4. 用户点击 Claim 后, `POST /api/v1/links/:slug/claim` 写 `owner_id`, 记录 `audit_logs.action = CLAIM`
+3. 后端返回两类未归属链接: `created_by_fingerprint` 匹配, 或 canonical `metadata.legacy_author_email` 等于当前用户 email
+4. 用户点击 Claim 后, `POST /api/v1/links/:slug/claim` 用单条原子 UPDATE 写 `owner_id`, 只有 `owner_id IS NULL` 且 proof predicate 同时成立才成功, 并记录 `audit_logs.action = CLAIM`
 5. Dashboard reload 后, 被认领链接通过 `GET /api/v1/links?owner=me` 出现在 owner 列表
 
 ## 环境变量
@@ -234,6 +241,8 @@ flowchart TB
 | `NODE_ENV` | - | `production` 时托管 SPA |
 | `SUPABASE_JWKS_URL` | ✅ | JWT 验证 JWKS URL |
 | `SUPABASE_JWT_ISSUER` | ✅ | JWT issuer 校验 |
+| `SUPABASE_URL` | 迁移/repair | Supabase Auth Admin API project URL；可由 `VITE_SUPABASE_URL` fallback |
+| `SUPABASE_SECRET_KEY` | 迁移/repair | Supabase service-role/Admin key；可由 `SUPABASE_SERVICE_ROLE_KEY` fallback |
 | `VITE_SUPABASE_URL` | ✅ | 前端 Supabase client URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | 前端 Supabase publishable key |
 | `VITE_BASE_URL` | ✅ | magic link redirect base URL |

@@ -6,7 +6,7 @@
 
 ## Current Gate
 
-Do not switch DNS until the owner strategy for legacy unowned links is explicitly accepted.
+Do not switch DNS until the Identity/ACL repair report has been reviewed and the owner strategy for remaining unowned legacy links is explicitly accepted.
 
 Latest legacy owner dry-run:
 
@@ -16,6 +16,20 @@ Latest legacy owner dry-run:
 - `unowned_with_fingerprint=0`
 
 There is no automatic email/fingerprint backfill path for those 4959 rows. Options are manual review, bulk assignment policy, or accepting that old unowned links remain claim-only/manual.
+
+Before cutover, refresh this with the current identity-aware scripts:
+
+```sh
+bun scripts/reconcile-legacy-owners.ts
+bun run migrate:legacy:dry
+```
+
+Required acceptance points:
+
+- `links.owner_id` non-null values must map to Supabase Auth users.
+- synthetic `public.users` rows must either be remapped/deleted or confirmed unreferenced by `links.owner_id` and `audit_logs.actor_id`.
+- any remaining `unowned` links, especially `unowned_with_legacy_email`, must have an accepted support/claim policy.
+- `public.users.email` must be canonical and pass the `unique_users_email_lower` migration gate.
 
 ## Pre-Cutover Checklist
 
@@ -32,6 +46,7 @@ There is no automatic email/fingerprint backfill path for those 4959 rows. Optio
   railway run --service open-golinks-v2-hono --environment production --no-local -- sh -c 'RUN_BROWSER_TESTS=1 EXPECTED_SHA=<sha6> bun test tests/browser/F14.spec.ts'
   ```
 - Confirm Supabase Auth redirect URLs include the production domain and future custom domain.
+- Confirm `SUPABASE_URL`/`SUPABASE_SECRET_KEY` or service-role equivalent are available only to migration/repair operators, not the public runtime.
 - Confirm GA4 env and GCP credentials are configured on Railway.
 - Confirm the DNS owner, cutover window, rollback approver, and alert receiver.
 

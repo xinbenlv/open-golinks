@@ -180,6 +180,11 @@ describe("F5 anonymous claim", () => {
       urlHistory: [],
     });
 
+    const publicLookup = await app.request(`/api/v1/links/${ownedSlug}`);
+    expect(publicLookup.status).toBe(200);
+    const publicBody = await publicLookup.json();
+    expect(publicBody.link.metadata).not.toHaveProperty("legacy_author_email");
+
     const list = await claimable(auth.token);
     expect(list.status).toBe(200);
     const body = await list.json();
@@ -189,10 +194,34 @@ describe("F5 anonymous claim", () => {
 
     const res = await claim(ownedSlug, auth.token);
     expect(res.status).toBe(200);
-    expect((await res.json()).link.ownerId).toBe(auth.userId);
+    const claimed = await res.json();
+    expect(claimed.link.ownerId).toBe(auth.userId);
+    expect(claimed.link.metadata).not.toHaveProperty("legacy_author_email");
 
     const forbidden = await claim(otherSlug, auth.token);
     expect(forbidden.status).toBe(403);
+  }, 30_000);
+
+  it("allows only one winner for concurrent claim attempts", async () => {
+    const slug = uniqueSlug("f5-race");
+    await cleanupSlug(slug);
+    expect((await anonymousCreate(slug, FP_A)).status).toBe(201);
+    const authA = await generateAuth("race-a");
+    const authB = await generateAuth("race-b");
+
+    const results = await Promise.all([
+      claim(slug, authA.token, FP_A),
+      claim(slug, authB.token, FP_A),
+    ]);
+    const statuses = results.map((res) => res.status).sort();
+    expect(statuses).toEqual([200, 409]);
+
+    const [row] = await db
+      .select({ ownerId: schema.linksTable.ownerId })
+      .from(schema.linksTable)
+      .where(eq(schema.linksTable.slug, slug))
+      .limit(1);
+    expect([authA.userId, authB.userId]).toContain(row?.ownerId);
   }, 30_000);
 
   it("rejects invalid fingerprint input", async () => {

@@ -19,6 +19,7 @@ bun test tests/e2e/F8-detailed-stats.test.ts           # F8 detailed analytics s
 bun test tests/e2e/F9-audit.test.ts                    # F9 owner audit timeline API smoke
 bun test tests/e2e/F10-url-history.test.ts             # F10 URL history data/normalizer smoke
 bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer API smoke
+bun test tests/e2e/identity-acl.test.ts                # Identity/ACL migration helper unit tests
 ```
 
 ## 目录
@@ -39,6 +40,7 @@ bun test tests/e2e/F11-transfer.test.ts                # F11 ownership transfer 
   - `F12-browse.test.ts` — F12 Drop 决策回归: links list requireAuth、`owner=public` 拒绝、创建/恢复默认 private、不泄露其他 owner 链接.
   - `F13-extension-compat.test.ts` — `/api/v2` legacy shim: link lookup、availability、edit create/update、Bearer my-links、owner-only update.
   - `F14-metadata.test.ts` — metadata description/tags PATCH/POST、tag filter、show_warning preserve、strict validation.
+  - `identity-acl.test.ts` — migration identity resolver: canonical email、DTO 脱敏、Auth user mapping、dry-run 不生成 synthetic UUID、duplicate email conflict.
 - `browser/` — Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests. 默认指向 Railway v2-hono URL, 可用 `BROWSER_BASE_URL` 和 `CHROME_PATH` 覆盖. F1-F8 的完整 magic-link/browser smoke 需要 `SUPABASE_URL` + `SUPABASE_SECRET_KEY`; 缺少时只跑公开页面 smoke 或跳过需登录用例.
   - `F5.spec.ts` — 生产 golden path: 匿名创建 → `/claim/:slug` 不被短链路由截获 → magic-link 登录 → Dashboard banner → Claim all → owner 列表出现该 slug.
   - `F6.spec.ts` — 生产 golden path: owner 打开 warning toggle → 访客进入 `/warn/:slug` → Proceed → 关闭 warning 后直接 302.

@@ -26,6 +26,7 @@ Browser/Extension ──▶ Railway (us-west2) ──▶ Supabase Postgres
 │   │   ├── db.ts              # Drizzle 连接
 │   │   ├── schema.ts          # 数据库 schema
 │   │   └── migrations/        # SQL migrations
+│   ├── lib/                   # identity / GA4 / QR / fingerprint helpers
 │   ├── routes/
 │   │   ├── redirect.ts        # GET /:slug
 │   │   └── api/
@@ -38,6 +39,8 @@ Browser/Extension ──▶ Railway (us-west2) ──▶ Supabase Postgres
 │       └── styles.css
 ├── scripts/
 │   ├── migrate-from-legacy.ts # MongoDB → Postgres 迁移
+│   ├── reconcile-legacy-owners.ts # synthetic owner repair
+│   ├── lib/                  # migration/identity shared helpers
 │   └── inspect-mongo.ts
 ├── docs/
 │   ├── plans/                 # 工作计划
@@ -55,7 +58,7 @@ Browser/Extension ──▶ Railway (us-west2) ──▶ Supabase Postgres
 # 安装依赖
 bun install
 
-# 配置环境变量 (DATABASE_URL = Supabase 连接串)
+# 配置环境变量 (DATABASE_URL = Supabase 连接串; 迁移/repair 还需要 Supabase Admin key)
 cp template.env .env
 
 # 应用 schema

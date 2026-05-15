@@ -15,6 +15,7 @@
 import type { Context, MiddlewareHandler } from "hono";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { db, schema } from "../db/db.ts";
+import { normalizeEmail } from "../lib/identity.ts";
 
 const JWKS_URL = process.env.SUPABASE_JWKS_URL;
 const ISSUER = process.env.SUPABASE_JWT_ISSUER;
@@ -74,10 +75,18 @@ async function ensureUserRow(user: AuthUser): Promise<void> {
     seenUserIds.add(user.id);
     return;
   }
+  const email = normalizeEmail(user.email);
+  if (!email) {
+    seenUserIds.add(user.id);
+    return;
+  }
   await db
     .insert(schema.usersTable)
-    .values({ id: user.id, email: user.email })
-    .onConflictDoNothing({ target: schema.usersTable.id });
+    .values({ id: user.id, email })
+    .onConflictDoUpdate({
+      target: schema.usersTable.id,
+      set: { email },
+    });
   seenUserIds.add(user.id);
 }
 

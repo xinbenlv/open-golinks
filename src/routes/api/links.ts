@@ -21,6 +21,11 @@ import {
 import { writeAudit } from "../../middleware/audit.ts";
 import { anonymousWriteRateLimit } from "../../middleware/ratelimit.ts";
 import { isFingerprint } from "../../lib/fingerprint.ts";
+import {
+  normalizeEmail,
+  normalizeMetadata,
+  sanitizeLinkRecord,
+} from "../../lib/identity.ts";
 
 export const linksRoute = new Hono<AuthEnv>();
 
@@ -92,11 +97,6 @@ function normalizeUrlHistory(value: unknown): UrlHistoryEntry[] {
   return Array.isArray(value) ? (value as UrlHistoryEntry[]) : [];
 }
 
-function normalizeMetadata(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return { ...(value as Record<string, unknown>) };
-}
-
 function showWarning(metadata: unknown) {
   return normalizeMetadata(metadata).show_warning === true;
 }
@@ -133,12 +133,6 @@ function mergeMetadata(
   if (patch.addLogo !== undefined) next.addLogo = patch.addLogo;
   if (patch.caption !== undefined) next.caption = patch.caption;
   return next;
-}
-
-function legacyAuthorEmail(metadata: unknown): string | null {
-  if (!metadata || typeof metadata !== "object") return null;
-  const value = (metadata as { legacy_author_email?: unknown }).legacy_author_email;
-  return typeof value === "string" ? value : null;
 }
 
 function expectReturned<T>(row: T | undefined): T {
@@ -252,7 +246,7 @@ linksRoute.get("/", requireAuth, async (c) => {
 
   const page = rows.slice(0, limit);
   const nextCursor = rows.length > limit ? encodeCursor(page[page.length - 1]!) : null;
-  return c.json({ links: page, nextCursor });
+  return c.json({ links: page.map(sanitizeLinkRecord), nextCursor });
 });
 
 // POST /api/v1/links - 创建短链. 登录用户写 owner_id; 匿名用户走 IP+UA 限流.
@@ -283,7 +277,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
     await writeAudit(c, "CREATE", row.slug, {
       after: { url: row.url, ownerId: row.ownerId },
     }, {}, user ? null : fingerprint);
-    return c.json({ link: row }, 201);
+    return c.json({ link: sanitizeLinkRecord(row) }, 201);
   } catch (err: unknown) {
     // Drizzle 把底层 postgres 错误包成 DrizzleQueryError, 真正的 code 在 .cause 上.
     if (pgCode(err) === "23505") {
@@ -307,7 +301,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
           before: { deletedAt: existing.deletedAt, url: existing.url },
           after: { url: restored.url, ownerId: restored.ownerId },
         });
-        return c.json({ link: restored }, 201);
+        return c.json({ link: sanitizeLinkRecord(restored) }, 201);
       }
       return c.json({ error: "SLUG_TAKEN" }, 409);
     }
@@ -327,9 +321,10 @@ linksRoute.get("/claimable", requireAuth, async (c) => {
   if (fingerprint) {
     matchers.push(eq(schema.linksTable.createdByFingerprint, fingerprint));
   }
-  if (user.email) {
+  const userEmail = normalizeEmail(user.email);
+  if (userEmail) {
     matchers.push(
-      sql`lower(${schema.linksTable.metadata}->>'legacy_author_email') = ${user.email.toLowerCase()}`,
+      sql`lower(${schema.linksTable.metadata}->>'legacy_author_email') = ${userEmail}`,
     );
   }
   if (!matchers.length) return c.json({ links: [] });
@@ -377,7 +372,7 @@ linksRoute.get("/:slug", async (c) => {
     )
     .limit(1);
   if (!row) return c.json({ error: "NOT_FOUND" }, 404);
-  return c.json({ link: row });
+  return c.json({ link: sanitizeLinkRecord(row) });
 });
 
 // POST /api/v1/links/:slug/claim - claim an anonymous link by fingerprint or legacy email.
@@ -390,28 +385,42 @@ linksRoute.post("/:slug/claim", requireAuth, async (c) => {
   }
 
   const user = c.get("user")!;
-  const existing = await findLink(slug);
-  if (!existing || existing.deletedAt) return c.json({ error: "NOT_FOUND" }, 404);
-  if (existing.ownerId) return c.json({ error: "ALREADY_OWNED" }, 409);
-
   const fingerprint = parsed.data.fingerprint?.toLowerCase();
-  const fingerprintMatches =
-    Boolean(fingerprint) && existing.createdByFingerprint === fingerprint;
-  const legacyEmail = legacyAuthorEmail(existing.metadata);
-  const legacyMatches =
-    Boolean(user.email && legacyEmail) &&
-    legacyEmail!.toLowerCase() === user.email!.toLowerCase();
-
-  if (!fingerprintMatches && !legacyMatches) {
+  const userEmail = normalizeEmail(user.email);
+  const matchers: SQL[] = [];
+  if (fingerprint) {
+    matchers.push(eq(schema.linksTable.createdByFingerprint, fingerprint));
+  }
+  if (userEmail) {
+    matchers.push(
+      sql`lower(${schema.linksTable.metadata}->>'legacy_author_email') = ${userEmail}`,
+    );
+  }
+  if (!matchers.length) {
     return c.json({ error: "CLAIM_FORBIDDEN" }, 403);
   }
 
   const [updated] = await db
     .update(schema.linksTable)
     .set({ ownerId: user.id, updatedAt: new Date() })
-    .where(eq(schema.linksTable.slug, slug))
+    .where(
+      and(
+        eq(schema.linksTable.slug, slug),
+        isNull(schema.linksTable.ownerId),
+        isNull(schema.linksTable.deletedAt),
+        or(...matchers)!,
+      ),
+    )
     .returning();
+  if (!updated) {
+    const existing = await findLink(slug);
+    if (!existing || existing.deletedAt) return c.json({ error: "NOT_FOUND" }, 404);
+    if (existing.ownerId) return c.json({ error: "ALREADY_OWNED" }, 409);
+    return c.json({ error: "CLAIM_FORBIDDEN" }, 403);
+  }
   const row = expectReturned(updated);
+  const fingerprintMatches =
+    Boolean(fingerprint) && row.createdByFingerprint === fingerprint;
   await writeAudit(
     c,
     "CLAIM",
@@ -420,7 +429,7 @@ linksRoute.post("/:slug/claim", requireAuth, async (c) => {
     { claim_method: fingerprintMatches ? "fingerprint" : "legacy_email" },
     fingerprint,
   );
-  return c.json({ link: row });
+  return c.json({ link: sanitizeLinkRecord(row) });
 });
 
 // POST /api/v1/links/:slug/transfer - owner-only ownership transfer by recipient email.
@@ -433,7 +442,8 @@ linksRoute.post("/:slug/transfer", requireAuth, async (c) => {
   }
 
   const user = c.get("user")!;
-  const toEmail = parsed.data.toEmail.toLowerCase();
+  const toEmail = normalizeEmail(parsed.data.toEmail);
+  if (!toEmail) return c.json({ error: "INVALID_INPUT" }, 400);
   const [recipient] = await db
     .select({
       id: schema.usersTable.id,
@@ -477,7 +487,7 @@ linksRoute.post("/:slug/transfer", requireAuth, async (c) => {
       to_email: recipient.email,
     },
   );
-  return c.json({ link: row });
+  return c.json({ link: sanitizeLinkRecord(row) });
 });
 
 // PATCH /api/v1/links/:slug - owner-only URL update.
@@ -551,7 +561,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   const row = expectReturned(updated);
 
   await writeAudit(c, "UPDATE", slug, diff);
-  return c.json({ link: row });
+  return c.json({ link: sanitizeLinkRecord(row) });
 });
 
 // DELETE /api/v1/links/:slug - owner-only soft delete.

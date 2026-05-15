@@ -11,13 +11,26 @@
  * 环境变量：
  *   LEGACY_MONGO_DB_READONLY_URL - 旧 MongoDB 只读连接字符串
  *   DATABASE_URL        - 新 PostgreSQL 连接字符串
+ *   SUPABASE_URL        - Supabase project URL
+ *   SUPABASE_SECRET_KEY - Supabase service-role/Admin key
  */
 
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { MongoClient } from 'mongodb';
 import postgres from 'postgres';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  createSupabaseAdminClientFromEnv,
+  ensurePublicUserMirror,
+  loadAuthIdentityMap,
+  loadOwnershipSummary,
+  loadPublicUserEmailSummary,
+  loadPublicUsers,
+  resolveOwnerByEmail,
+  type PublicUserRow,
+  type ResolveOwnerResult,
+} from './lib/identity-acl.ts';
+import { normalizeEmail } from '../src/lib/identity.ts';
 
 // 加载 .env 文件
 const envPath = resolve(process.cwd(), '.env');
@@ -118,7 +131,23 @@ interface MappedLink {
   metadata: any;
 }
 
-function mapLegacyLink(mongoLink: LegacyLink, emailToUserIdMap: Map<string, string>): MappedLink | null {
+function isAnonymousAuthor(author: unknown): boolean {
+  return (
+    typeof author !== 'string' ||
+    !author.trim() ||
+    author.trim().toLowerCase() === 'anonymous'
+  );
+}
+
+function legacyAuthorMetadata(author: unknown): Record<string, unknown> | null {
+  const email = normalizeEmail(author);
+  return email ? { legacy_author_email: email } : null;
+}
+
+function mapLegacyLink(
+  mongoLink: LegacyLink,
+  emailToOwnerMap: Map<string, ResolveOwnerResult>,
+): MappedLink | null {
   const slug = normalizeSlug(mongoLink.linkname);
   if (!slug) {
     vlog(`  ⚠️ 跳过无效 slug 的链接`);
@@ -134,9 +163,14 @@ function mapLegacyLink(mongoLink: LegacyLink, emailToUserIdMap: Map<string, stri
   // author 是 email 或 "anonymous"
   let ownerId: string | null = null;
   const author = mongoLink.author;
-  if (author && author !== 'anonymous') {
-    ownerId = emailToUserIdMap.get(author) || null;
+  if (!isAnonymousAuthor(author)) {
+    const email = normalizeEmail(author);
+    if (email) {
+      const resolved = emailToOwnerMap.get(email);
+      ownerId = resolved?.status === 'mapped' ? resolved.ownerId : null;
+    }
   }
+  const metadata = legacyAuthorMetadata(author);
 
   const now = new Date();
   return {
@@ -148,7 +182,7 @@ function mapLegacyLink(mongoLink: LegacyLink, emailToUserIdMap: Map<string, stri
     visits: 0,
     createdByFingerprint: null,
     isPublic: false,
-    metadata: author ? { legacy_author_email: author } : null,
+    metadata,
   };
 }
 
@@ -186,51 +220,79 @@ async function migrateData() {
     log('\n📚 提取用户...');
 
     const uniqueAuthors = new Set<string>();
+    let anonymousAuthors = 0;
+    let invalidAuthors = 0;
     for (const link of legacyLinks) {
-      if (link.author && link.author !== 'anonymous') {
-        uniqueAuthors.add(link.author);
+      if (isAnonymousAuthor(link.author)) {
+        anonymousAuthors++;
+        continue;
+      }
+      const email = normalizeEmail(link.author);
+      if (email) {
+        uniqueAuthors.add(email);
+      } else {
+        invalidAuthors++;
       }
     }
     stats.usersRead = uniqueAuthors.size;
-    log(`发现 ${stats.usersRead} 个唯一作者（排除 anonymous）`);
+    log(`发现 ${stats.usersRead} 个唯一有效作者 email（anonymous=${anonymousAuthors}, invalid=${invalidAuthors}）`);
 
-    // email -> UUID 映射
-    const emailToUserIdMap = new Map<string, string>();
+    const supabase = createSupabaseAdminClientFromEnv();
+    log('读取 Supabase Auth users...');
+    const authMap = await loadAuthIdentityMap(supabase);
+    let publicUsers: PublicUserRow[] = await loadPublicUsers(sql);
+    log(`Auth users=${authMap.total}, public.users=${publicUsers.length}`);
 
-    if (!DRY_RUN) {
-      // 为每个 author 创建或复用已有的 users 记录
-      for (const email of uniqueAuthors) {
-        try {
-          // 查询是否已经存在（Supabase Auth 可能已创建）
-          const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
-          const existingUser = existing[0] as { id: string } | undefined;
-          if (existingUser) {
-            emailToUserIdMap.set(email, existingUser.id);
-            vlog(`  ✓ 已存在: ${email} (${existingUser.id})`);
-          } else {
-            const id = uuidv4();
-            await sql`
-              INSERT INTO users (id, email, role, created_at)
-              VALUES (${id}, ${email}, 'user', NOW())
-            `;
-            emailToUserIdMap.set(email, id);
-            vlog(`  ✓ 新建: ${email} (${id})`);
+    const emailToOwnerMap = new Map<string, ResolveOwnerResult>();
+    const ownerStats = {
+      mappedExisting: 0,
+      mappedCreated: 0,
+      wouldCreate: 0,
+      conflicts: 0,
+      syntheticMirrors: 0,
+    };
+
+    for (const email of uniqueAuthors) {
+      try {
+        const resolved = await resolveOwnerByEmail(
+          email,
+          publicUsers,
+          authMap,
+          supabase,
+          { apply: !DRY_RUN },
+        );
+        emailToOwnerMap.set(email, resolved);
+        if (resolved.status === 'mapped') {
+          if (!DRY_RUN) {
+            await ensurePublicUserMirror(
+              sql,
+              resolved.ownerId,
+              resolved.email,
+              resolved.syntheticPublicUserIds,
+            );
+            publicUsers = await loadPublicUsers(sql);
           }
-          stats.usersMigrated++;
-        } catch (err) {
+          resolved.createdAuthUser ? ownerStats.mappedCreated++ : ownerStats.mappedExisting++;
+          ownerStats.syntheticMirrors += resolved.syntheticPublicUserIds.length;
+          vlog(`  ✓ ${email} -> ${resolved.ownerId}${resolved.createdAuthUser ? ' (created Auth user)' : ''}`);
+        } else if (resolved.status === 'would_create') {
+          ownerStats.wouldCreate++;
+          ownerStats.syntheticMirrors += resolved.syntheticPublicUserIds.length;
+          vlog(`  [DRY-RUN] would create Supabase Auth user for ${email}`);
+        } else {
+          ownerStats.conflicts++;
           stats.errors++;
-          log(`  错误处理用户 ${email}: ${(err as Error).message}`, 'error');
+          log(`  owner unresolved ${email}: ${resolved.reason}`, 'warn');
         }
+        stats.usersMigrated++;
+      } catch (err) {
+        stats.errors++;
+        log(`  错误处理用户 ${email}: ${(err as Error).message}`, 'error');
       }
-    } else {
-      for (const email of uniqueAuthors) {
-        emailToUserIdMap.set(email, uuidv4());
-        vlog(`  [DRY-RUN] ${email}`);
-      }
-      stats.usersMigrated = uniqueAuthors.size;
     }
 
     log(`✅ 处理了 ${stats.usersMigrated}/${stats.usersRead} 个用户`);
+    log(`   已映射 Auth user: ${ownerStats.mappedExisting}, 新建: ${ownerStats.mappedCreated}, dry-run 将新建: ${ownerStats.wouldCreate}, conflicts: ${ownerStats.conflicts}, synthetic mirror hits: ${ownerStats.syntheticMirrors}`);
 
     // ============ STEP 3: 迁移链接 ============
     log('\n🔗 迁移链接...');
@@ -250,7 +312,7 @@ async function migrateData() {
 
     for (const mongoLink of legacyLinks) {
       try {
-        const link = mapLegacyLink(mongoLink, emailToUserIdMap);
+        const link = mapLegacyLink(mongoLink, emailToOwnerMap);
         if (!link) continue;
 
         if (!DRY_RUN) {
@@ -268,7 +330,10 @@ async function migrateData() {
             )
             ON CONFLICT (slug) DO UPDATE SET
               url = EXCLUDED.url,
-              owner_id = COALESCE(EXCLUDED.owner_id, links.owner_id),
+              owner_id = CASE
+                WHEN links.owner_id IS NULL THEN EXCLUDED.owner_id
+                ELSE links.owner_id
+              END,
               updated_at = EXCLUDED.updated_at,
               metadata = CASE
                 WHEN EXCLUDED.metadata IS NULL THEN links.metadata
@@ -309,6 +374,13 @@ async function migrateData() {
     if (stats.errors > 0) {
       log(`  ⚠️  错误:  ${stats.errors}`, 'warn');
     }
+    const ownership = await loadOwnershipSummary(sql);
+    const publicUserEmails = await loadPublicUserEmailSummary(sql);
+    log('Owner coverage:');
+    log(`  total=${ownership.total}, owned=${ownership.owned}, unowned=${ownership.unowned}, unowned_with_legacy_email=${ownership.unowned_with_legacy_email}, unowned_with_fingerprint=${ownership.unowned_with_fingerprint}`);
+    log('Identity consistency:');
+    log(`  public_users_total=${publicUserEmails.public_users_total}, non_canonical_public_user_emails=${publicUserEmails.non_canonical_public_user_emails}`);
+    log(`  auth map source=${authMap.source}, auth_users_total=${authMap.total}`);
     log('='.repeat(50));
 
     if (!DRY_RUN) {

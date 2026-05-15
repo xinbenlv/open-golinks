@@ -12,7 +12,7 @@
 
 ### 🔴 P0 (切流前)
 
-- [ ] [Identity 和 ACL 迁移计划](./2026-05-14-identity-acl-migration-plan.md) — owner id / legacy email / Claim Link 决策
+- [x] [Identity 和 ACL 迁移计划](./2026-05-14-identity-acl-migration-plan.md) — owner id / legacy email / Claim Link 决策
 - [x] [F1. 用户认证 + 登录 UI](./2026-05-13-F1-auth-and-login.md) — 3 天
 - [x] [F2. 链接 CRUD + audit + ratelimit](./2026-05-13-F2-link-crud-audit-ratelimit.md) — 3 天
 - [x] [F3. 个人链接列表 Dashboard](./2026-05-13-F3-user-dashboard.md) — 3 天
