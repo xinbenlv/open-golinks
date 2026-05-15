@@ -164,6 +164,7 @@ flowchart TB
 - **`scripts/migrate-from-legacy.ts`** - MongoDB → Postgres 一次性迁移; legacy email 只映射到 Supabase Auth UUID, `"anonymous"`/无效 email 保持 `owner_id = null`, 默认不覆盖已有非空 owner, dry-run/apply 后输出 owner coverage 和 identity consistency (`scripts/migrate-from-legacy.ts:134-187`, `scripts/migrate-from-legacy.ts:222-295`, `scripts/migrate-from-legacy.ts:313-383`).
 - **`scripts/inspect-mongo.ts`** - 检查源数据形态
 - **`scripts/reconcile-legacy-owners.ts`** - Identity ACL repair: dry-run 扫描 synthetic `public.users`, apply 前备份 `users/links/audit_logs`, transaction 中 remap 到真实 Auth user 或置空 owner/conflict (`scripts/reconcile-legacy-owners.ts:93-165`, `scripts/reconcile-legacy-owners.ts:167-218`).
+- **`docs/troubleshooting/identity-acl-data-cleanup.md`** - 记录 Identity ACL 生产数据清理注意事项；`links` 表以 `slug` 为主键，一次性备份/修复脚本不能假设存在 `id` 列。
 
 ### 外部服务
 - **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.

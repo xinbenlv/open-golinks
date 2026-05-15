@@ -44,6 +44,7 @@ Browser/Extension ──▶ Railway (us-west2) ──▶ Supabase Postgres
 │   └── inspect-mongo.ts
 ├── docs/
 │   ├── plans/                 # 工作计划
+│   ├── troubleshooting/       # 排障记录与一次性修复注意事项
 │   └── v2-SPEC-zh-2.1.md      # 产品 spec
 ├── Dockerfile
 ├── railway.json
