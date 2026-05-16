@@ -1,4 +1,4 @@
-import { cloneElement, useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState } from "react";
 import { ActivityCalendar, type Activity, type Labels } from "react-activity-calendar";
 import { useApi } from "../hooks/useApi";
 
@@ -112,12 +112,7 @@ function formatActivityLabel(activity: Activity) {
 }
 
 function StatsHeatmap({ days }: { days: StatsDay[] }) {
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const data = buildActivityData(days);
-
-  function selectActivity(activity: Activity) {
-    setSelectedActivity(activity);
-  }
 
   return (
     <div className="stats-heatmap-shell">
@@ -129,23 +124,6 @@ function StatsHeatmap({ days }: { days: StatsDay[] }) {
         data={data}
         fontSize={10}
         labels={heatmapLabels(data)}
-        renderBlock={(block, activity) =>
-          cloneElement(block, {
-            onClick: () => selectActivity(activity),
-            onKeyDown: (event: KeyboardEvent<SVGRectElement>) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                selectActivity(activity);
-              }
-            },
-            role: "button",
-            style: {
-              ...block.props.style,
-              cursor: "pointer",
-            },
-            tabIndex: 0,
-          })
-        }
         showColorLegend
         showMonthLabels
         showTotalCount={false}
@@ -158,13 +136,6 @@ function StatsHeatmap({ days }: { days: StatsDay[] }) {
           },
         }}
       />
-      {selectedActivity ? (
-        <output className="stats-heatmap__selection">
-          <strong>{selectedActivity.count.toLocaleString()}</strong>
-          <span>{selectedActivity.count === 1 ? "click" : "clicks"}</span>
-          <time dateTime={selectedActivity.date}>{selectedActivity.date}</time>
-        </output>
-      ) : null}
     </div>
   );
 }

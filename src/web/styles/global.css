@@ -888,6 +888,10 @@ svg {
   color: var(--text-faint);
 }
 
+.stats-heatmap rect[data-date] {
+  cursor: pointer;
+}
+
 .stats-heatmap .react-activity-calendar__footer {
   color: var(--text-faint);
   font-size: var(--text-xs);
@@ -907,30 +911,6 @@ svg {
 
 .react-activity-calendar__tooltip .react-activity-calendar__tooltip-arrow {
   fill: var(--bg);
-}
-
-.stats-heatmap__selection {
-  display: inline-flex;
-  justify-self: flex-start;
-  align-items: baseline;
-  gap: var(--space-1);
-  min-height: 28px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text-muted);
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--text-xs);
-  box-shadow: var(--shadow-sm);
-}
-
-.stats-heatmap__selection strong {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.stats-heatmap__selection time {
-  color: var(--text-faint);
 }
 
 .links-table {
