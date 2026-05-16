@@ -31,8 +31,8 @@ src/web/
 │   ├── ClaimBanner.tsx      # Dashboard 匿名/legacy 可认领链接提示
 │   ├── LinkRow.tsx          # Dashboard 链接行
 │   ├── QrCanvas.tsx         # QR editor 客户端 canvas 预览
-│   ├── StatsChart.tsx       # Dashboard 52 周 GA4 react-activity-calendar heatmap
-│   ├── stats/               # 详细 Analytics 控件与图表
+│   ├── StatsChart.tsx       # Dashboard owner GA4 summary, 复用 stats/Heatmap
+│   ├── stats/               # 详细 Analytics 控件、heatmap 与图表
 │   ├── UrlHistory.tsx       # Edit 页 URL 历史展示
 │   └── WarnToggle.tsx       # Edit 页 warning interstitial 开关
 └── pages/
@@ -108,7 +108,7 @@ bun run build:web
 - **所有 CSS 在 `main.tsx` 集中导入**, 组件 .tsx 文件保持纯 JSX. 这样 `entry-ssr.tsx` 可以无副作用地 `import` 组件树.
 - 颜色 / 间距 / 阴影 / 字号一律用 token (CSS variable), 不写死十六进制. 色彩语义优先使用 `--brand-*`, `--action-*`, `--warning-*`, `--danger`.
 - 不引 Tailwind v3 / framer-motion / 大型 UI 库 (体积约束).
-- Dashboard heatmap 复用 `react-activity-calendar`; tooltip CSS 仍在 `main.tsx` 集中导入.
+- Dashboard、`/stats`、Edit stats card 的 heatmap 复用 `components/stats/Heatmap.tsx`; tooltip CSS 仍在 `main.tsx` 集中导入.
 
 ## Auth
 
@@ -155,7 +155,7 @@ Vite client env:
 - date query: `groupBy: "date"`, `limit` 跟随 7/30/90/180 天范围
 - `/stats` 查询所有未删除 links 并在 GA4 层强制 `pagePath` 为 slug 格式, 同时排除 reserved/system path; `/stats/<slug>` 先确认该 slug 未删除
 - `pathRegex` 是额外过滤条件; 后端仍不暴露任意 GA4 passthrough
-- 组件位于 `components/stats/`: `DateRangePicker`, `PathRegexInput`, `StatsPieChart`, `StatsLineChart`
+- 组件位于 `components/stats/`: `DateRangePicker`, `PathRegexInput`, `StatsHeatmap`, `StatsPieChart`, `StatsLineChart`
 
 校验规则:
 - `url`: 必填, http/https URL

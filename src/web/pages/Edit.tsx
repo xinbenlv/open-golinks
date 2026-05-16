@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type FormEvent, type ReactNode } from "reac
 import { Link, useParams } from "react-router-dom";
 import { AuditTimeline } from "../components/AuditTimeline";
 import { QrCanvas } from "../components/QrCanvas";
+import { StatsHeatmap } from "../components/stats/Heatmap";
 import { StatsLineChart } from "../components/stats/LineChart";
 import { TagInput } from "../components/TagInput";
 import { UrlHistory } from "../components/UrlHistory";
@@ -528,6 +529,11 @@ function LinkStatsCard({ slug }: { slug: string }) {
     }),
     { events: 0, users: 0 },
   );
+  const heatmapRows = (result?.rows ?? []).map((row) => ({
+    date: row.dimension,
+    eventCount: row.eventCount,
+    activeUsers: row.activeUsers,
+  }));
 
   return (
     <section className="edit-stats-card" aria-busy={loading}>
@@ -558,8 +564,13 @@ function LinkStatsCard({ slug }: { slug: string }) {
         <div className="dashboard-empty">Stats unavailable</div>
       ) : loading ? (
         <div className="dashboard-empty">Loading stats...</div>
+      ) : result?.rows.length ? (
+        <div className="stats-card__stack">
+          <StatsHeatmap rows={heatmapRows} totalDays={30} />
+          <StatsLineChart rows={result.rows} />
+        </div>
       ) : (
-        <StatsLineChart rows={result?.rows ?? []} />
+        <div className="dashboard-empty">No data yet</div>
       )}
     </section>
   );

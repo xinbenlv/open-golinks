@@ -1305,6 +1305,13 @@ svg {
   line-height: var(--leading-snug);
 }
 
+.stats-card__stack {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
 .stats-table {
   overflow: hidden;
   border: 1px solid var(--border);

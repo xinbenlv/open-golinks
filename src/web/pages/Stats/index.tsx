@@ -4,6 +4,7 @@ import {
   DateRangePicker,
   type StatsRange,
 } from "../../components/stats/DateRangePicker";
+import { StatsHeatmap } from "../../components/stats/Heatmap";
 import { StatsLineChart } from "../../components/stats/LineChart";
 import { PathRegexInput } from "../../components/stats/PathRegexInput";
 import { StatsPieChart } from "../../components/stats/PieChart";
@@ -106,6 +107,15 @@ export function StatsView({ slug }: { slug?: string }) {
       { events: 0, users: 0 },
     );
   }, [dateResult, pathResult]);
+  const dateRows = useMemo(
+    () =>
+      (dateResult?.rows ?? []).map((row) => ({
+        date: row.dimension,
+        eventCount: row.eventCount,
+        activeUsers: row.activeUsers,
+      })),
+    [dateResult],
+  );
 
   const title = slug ? `Stats for /${slug}` : "Public stats";
   const scopeLabel = slug
@@ -218,8 +228,13 @@ export function StatsView({ slug }: { slug?: string }) {
           </div>
           {loading ? (
             <div className="dashboard-empty">Loading stats...</div>
+          ) : dateResult?.rows.length ? (
+            <div className="stats-card__stack">
+              <StatsHeatmap rows={dateRows} totalDays={range} />
+              <StatsLineChart rows={dateResult.rows} />
+            </div>
           ) : (
-            <StatsLineChart rows={dateResult?.rows ?? []} />
+            <div className="dashboard-empty">No data yet</div>
           )}
         </section>
       </section>

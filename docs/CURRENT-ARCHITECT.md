@@ -145,12 +145,12 @@ flowchart TB
   - `src/web/styles/tokens.css` 定义 brand/action/warning/danger 语义色; 默认主题 action alias 到橙色 brand, ZGZG 主题 action 改为中性色且保留红色 brand accent (`src/web/styles/tokens.css:20-237`).
   - `src/web/lib/brand.ts` 给浏览器和 SSG 统一解析主题, ZGZG 前端 logo/favicon 使用 Vite public path `/zgzg-round-logo.png`, 避免 SSG 输出本地文件路径 (`src/web/lib/brand.ts:1-24`)。
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
-  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 `UrlHistory` 与 `AuditTimeline`.
+  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 last 30 days stats heatmap + 折线、`UrlHistory` 与 `AuditTimeline` (`src/web/pages/Edit.tsx:483-575`).
   - `/login` / `/auth/callback` 是 Supabase magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/auth/confirm` 是 Supabase TokenHash 邮件链接入口, 调 `verifyOtp` 后把 session token 交给 `/auth/callback` 的 hash-token 分支。
   - Supabase Magic Link 邮件模板维护在 `docs/email-templates/`, 分默认 Open GoLinks 和 ZGZG 两套主题, 邮件按钮使用 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`；部署/Supabase/Resend 操作见 `DEPLOYMENT.md`。
-  - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`; `StatsChart` 调 `/api/v1/stats/summary?days=364` 并用 `react-activity-calendar` 把近 52 周日点击渲染为 GitHub-style heatmap, 支持完整月份标签、1 月年份标签和浮动 tooltip (`src/web/components/StatsChart.tsx:1-194`, `src/routes/api/stats.ts:10-12`, `src/lib/ga4.ts:153-159`, `package.json:24-40`).
-  - `/stats` / `/stats/:slug` 是公开只读 GA4 统计视图, 调 `/api/v1/stats/query` 展示全站或单 slug 的 path 表、path share 饼图、date 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换.
+  - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`; `StatsChart` 调 `/api/v1/stats/summary?days=364` 并复用 `StatsHeatmap` 把近 52 周日点击渲染为 GitHub-style heatmap, 支持完整月份标签、1 月年份标签和浮动 tooltip (`src/web/components/StatsChart.tsx:1-69`, `src/web/components/stats/Heatmap.tsx:1-163`, `src/routes/api/stats.ts:10-12`, `src/lib/ga4.ts:153-159`, `package.json:24-40`).
+  - `/stats` / `/stats/:slug` 是公开只读 GA4 统计视图, 调 `/api/v1/stats/query` 展示全站或单 slug 的 path 表、path share 饼图、date heatmap + 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换 (`src/web/pages/Stats/index.tsx:1-295`).
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
   - `/edit/:slug` 和创建成功态内嵌 QR editor; `/qr/:slug` 仍是独立 QR editor. 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
   - `/create` 复用 Landing 创建体验.
@@ -234,7 +234,7 @@ flowchart TB
 2. SPA 并行 POST 两次 `/api/v1/stats/query`: 一次 `groupBy=path`, 一次 `groupBy=date`
 3. 后端查未删除 links: `/stats` 注入全站 slug scope 并用 GA4 `pagePath` slug 格式过滤, 同时排除 `/healthz`、`/dashboard`、`/stats` 等 reserved/system path; `/stats/:slug` 只保留目标 slug, 不存在/已删除返回 404
 4. `src/lib/ga4.ts#queryStatsForSlugs` 用 GA4 Data API 查询 `page_view`; 可选用户 `pathRegex` 只作为额外过滤条件, 不暴露任意 GA4 passthrough
-5. SPA 渲染 path 表、path share 饼图、day 折线; 空数据展示 "No data yet", GA4 错误降级为页面 alert
+5. SPA 渲染 path 表、path share 饼图、day heatmap 与 day 折线; 空数据展示 "No data yet", GA4 错误降级为页面 alert
 
 ### 匿名链接认领
 1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
