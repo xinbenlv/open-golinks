@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { cloneElement, useEffect, useState, type KeyboardEvent } from "react";
+import { ActivityCalendar, type Activity, type Labels } from "react-activity-calendar";
 import { useApi } from "../hooks/useApi";
 
 const HEATMAP_WEEKS = 52;
@@ -18,20 +19,23 @@ type StatsSummary = {
 };
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-const VISIBLE_WEEKDAY_LABELS = new Set(["Mon", "Wed", "Fri"]);
-const QUARTER_MONTH_LABELS = new Set([0, 3, 6, 9]);
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-type HeatmapCell = {
-  date: string;
-  eventCount: number;
-  level: 0 | 1 | 2 | 3 | 4;
-  inRange: boolean;
-};
-
-type HeatmapWeek = {
-  key: string;
-  label: string;
-  cells: HeatmapCell[];
+const HEATMAP_THEME = {
+  light: [
+    "var(--bg-subtle)",
+    "color-mix(in oklab, var(--accent) 24%, var(--bg-subtle))",
+    "color-mix(in oklab, var(--accent) 42%, var(--bg-subtle))",
+    "color-mix(in oklab, var(--accent) 64%, var(--bg-subtle))",
+    "var(--accent)",
+  ],
+  dark: [
+    "var(--bg-subtle)",
+    "color-mix(in oklab, var(--accent) 24%, var(--bg-subtle))",
+    "color-mix(in oklab, var(--accent) 42%, var(--bg-subtle))",
+    "color-mix(in oklab, var(--accent) 64%, var(--bg-subtle))",
+    "var(--accent)",
+  ],
 };
 
 function parseStatsDate(value: string) {
@@ -42,26 +46,16 @@ function toDateKey(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-function formatCellLabel(cell: HeatmapCell) {
-  if (!cell.inRange) return "No stats";
-  const count = cell.eventCount.toLocaleString();
-  const suffix = cell.eventCount === 1 ? "click" : "clicks";
-  return `${count} ${suffix} on ${cell.date}`;
+function addUtcDays(value: Date, days: number) {
+  return new Date(value.getTime() + days * MS_PER_DAY);
 }
 
-function getWeekLabel(date: Date, previousDate: Date | null) {
-  const month = date.getUTCMonth();
-  const previousMonth = previousDate?.getUTCMonth();
-  if (previousMonth === month) return "";
-  if (month === 0) return String(date.getUTCFullYear());
-  if (!QUARTER_MONTH_LABELS.has(month)) return "";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    timeZone: "UTC",
-  }).format(date);
+function levelForCount(count: number, maxCount: number): Activity["level"] {
+  if (count === 0 || maxCount === 0) return 0;
+  return Math.max(1, Math.ceil((count / maxCount) * 4));
 }
 
-function buildHeatmapWeeks(days: StatsDay[]): HeatmapWeek[] {
+function buildActivityData(days: StatsDay[]): Activity[] {
   if (!days.length) return [];
 
   const lastDay = days[days.length - 1]!;
@@ -72,102 +66,105 @@ function buildHeatmapWeeks(days: StatsDay[]): HeatmapWeek[] {
   const start = new Date(end);
   start.setUTCDate(end.getUTCDate() - (HEATMAP_DAYS - 1));
 
-  return Array.from({ length: HEATMAP_WEEKS }, (_, weekIndex) => {
-    const weekStart = new Date(start);
-    weekStart.setUTCDate(start.getUTCDate() + weekIndex * 7);
-    const previousWeekStart = weekIndex === 0
-      ? null
-      : new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-
+  return Array.from({ length: HEATMAP_DAYS }, (_, index) => {
+    const date = toDateKey(addUtcDays(start, index));
+    const count = byDate.get(date) ?? 0;
     return {
-      key: toDateKey(weekStart),
-      label: getWeekLabel(weekStart, previousWeekStart),
-      cells: Array.from({ length: 7 }, (_, dayIndex) => {
-        const cursor = new Date(weekStart);
-        cursor.setUTCDate(weekStart.getUTCDate() + dayIndex);
-        const date = toDateKey(cursor);
-        const eventCount = byDate.get(date) ?? 0;
-        const level =
-          eventCount === 0 || maxCount === 0
-            ? 0
-            : (Math.max(1, Math.ceil((eventCount / maxCount) * 4)) as 1 | 2 | 3 | 4);
-
-        return {
-          date,
-          eventCount,
-          level,
-          inRange: byDate.has(date),
-        };
-      }),
+      date,
+      count,
+      level: levelForCount(count, maxCount),
     };
   });
 }
 
-function StatsHeatmap({ days }: { days: StatsDay[] }) {
-  const [activeCell, setActiveCell] = useState<HeatmapCell | null>(null);
-  const [pinnedDate, setPinnedDate] = useState<string | null>(null);
-  const weeks = buildHeatmapWeeks(days);
+function heatmapLabels(data: Activity[]): Labels {
+  const januaryYear =
+    data.find((activity) => parseStatsDate(activity.date).getUTCMonth() === 0)?.date.slice(0, 4) ??
+    "";
 
-  function showCell(cell: HeatmapCell, pinned = false) {
-    setActiveCell(cell);
-    if (pinned) setPinnedDate((current) => (current === cell.date ? null : cell.date));
+  return {
+    months: [
+      januaryYear,
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    weekdays: [...WEEKDAY_LABELS],
+    legend: {
+      less: "Less",
+      more: "More",
+    },
+  };
+}
+
+function formatActivityLabel(activity: Activity) {
+  const count = activity.count.toLocaleString();
+  const suffix = activity.count === 1 ? "click" : "clicks";
+  return `${count} ${suffix} on ${activity.date}`;
+}
+
+function StatsHeatmap({ days }: { days: StatsDay[] }) {
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const data = buildActivityData(days);
+
+  function selectActivity(activity: Activity) {
+    setSelectedActivity(activity);
   }
 
   return (
-    <div
-      className="stats-heatmap"
-      role="group"
-      aria-label="Daily clicks over the last 52 weeks"
-    >
-      <div className="stats-heatmap__days" aria-hidden="true">
-        {WEEKDAY_LABELS.map((label) => (
-          <span key={label}>{VISIBLE_WEEKDAY_LABELS.has(label) ? label : ""}</span>
-        ))}
-      </div>
-      <div className="stats-heatmap__body">
-        <div className="stats-heatmap__months" aria-hidden="true">
-          {weeks.map((week) => (
-            <span key={week.key}>{week.label}</span>
-          ))}
-        </div>
-        <div className="stats-heatmap__grid">
-          {weeks.map((week) => (
-            <div className="stats-heatmap__week" key={week.key}>
-              {week.cells.map((cell) => (
-                <button
-                  key={cell.date}
-                  type="button"
-                  className={`stats-heatmap__cell stats-heatmap__cell--level-${cell.level}${
-                    cell.inRange ? "" : " stats-heatmap__cell--empty"
-                  }${pinnedDate === cell.date ? " stats-heatmap__cell--active" : ""}`}
-                  title={formatCellLabel(cell)}
-                  aria-label={formatCellLabel(cell)}
-                  onClick={() => showCell(cell, true)}
-                  onFocus={() => showCell(cell)}
-                  onMouseEnter={() => showCell(cell)}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-      {activeCell ? (
-        <output className="stats-heatmap__tooltip">
-          <strong>{activeCell.eventCount.toLocaleString()}</strong>
-          <span>{activeCell.eventCount === 1 ? "click" : "clicks"}</span>
-          <time dateTime={activeCell.date}>{activeCell.date}</time>
+    <div className="stats-heatmap-shell">
+      <ActivityCalendar
+        blockMargin={3}
+        blockRadius={2}
+        blockSize={10}
+        className="stats-heatmap"
+        data={data}
+        fontSize={10}
+        labels={heatmapLabels(data)}
+        renderBlock={(block, activity) =>
+          cloneElement(block, {
+            onClick: () => selectActivity(activity),
+            onKeyDown: (event: KeyboardEvent<SVGRectElement>) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                selectActivity(activity);
+              }
+            },
+            role: "button",
+            style: {
+              ...block.props.style,
+              cursor: "pointer",
+            },
+            tabIndex: 0,
+          })
+        }
+        showColorLegend
+        showMonthLabels
+        showTotalCount={false}
+        showWeekdayLabels={["mon", "wed", "fri"]}
+        theme={HEATMAP_THEME}
+        tooltips={{
+          activity: {
+            text: formatActivityLabel,
+            withArrow: true,
+          },
+        }}
+      />
+      {selectedActivity ? (
+        <output className="stats-heatmap__selection">
+          <strong>{selectedActivity.count.toLocaleString()}</strong>
+          <span>{selectedActivity.count === 1 ? "click" : "clicks"}</span>
+          <time dateTime={selectedActivity.date}>{selectedActivity.date}</time>
         </output>
       ) : null}
-      <div className="stats-heatmap__legend" aria-hidden="true">
-        <span>Less</span>
-        {[0, 1, 2, 3, 4].map((level) => (
-          <span
-            key={level}
-            className={`stats-heatmap__cell stats-heatmap__cell--level-${level}`}
-          />
-        ))}
-        <span>More</span>
-      </div>
     </div>
   );
 }

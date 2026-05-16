@@ -5,6 +5,7 @@ import { App } from "./App";
 import { applyBrandTheme } from "./lib/brand";
 
 // CSS 在客户端入口集中导入, 这样组件文件可被 SSG 脚本直接 import (无 CSS 副作用).
+import "react-activity-calendar/tooltips.css";
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./pages/Landing/landing.css";

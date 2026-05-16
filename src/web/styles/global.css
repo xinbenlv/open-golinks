@@ -868,100 +868,48 @@ svg {
   min-width: 0;
 }
 
-.stats-heatmap {
-  position: relative;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  grid-template-areas:
-    "days body"
-    ". tooltip"
-    ". legend";
-  align-items: start;
+.stats-heatmap-shell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   gap: var(--space-2);
-  min-height: 210px;
   padding-top: var(--space-2);
 }
 
-.stats-heatmap__body {
-  grid-area: body;
-  overflow-x: auto;
+.stats-heatmap {
+  color: var(--text-faint);
+}
+
+.stats-heatmap .react-activity-calendar__scroll-container {
   padding-bottom: var(--space-1);
 }
 
-.stats-heatmap__months {
-  display: grid;
-  grid-template-columns: repeat(52, 10px);
-  gap: 3px;
+.stats-heatmap .react-activity-calendar__calendar {
   color: var(--text-faint);
-  font-size: 10px;
-  line-height: 14px;
-  min-width: calc(52 * 10px + 51 * 3px);
 }
 
-.stats-heatmap__days {
-  grid-area: days;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.stats-heatmap .react-activity-calendar__footer {
   color: var(--text-faint);
-  font-size: 10px;
-  line-height: 10px;
+  font-size: var(--text-xs);
 }
 
-.stats-heatmap__grid {
-  display: flex;
-  gap: 3px;
-  min-width: calc(52 * 10px + 51 * 3px);
+.stats-heatmap .react-activity-calendar__legend-colors {
+  align-items: center;
 }
 
-.stats-heatmap__week {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  gap: 3px;
+.react-activity-calendar__tooltip {
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  font-family: var(--font-sans);
 }
 
-.stats-heatmap__cell {
-  display: block;
-  width: 10px;
-  height: 10px;
-  border: 1px solid color-mix(in oklab, var(--border) 72%, transparent);
-  border-radius: 2px;
-  background: var(--bg-subtle);
+.react-activity-calendar__tooltip .react-activity-calendar__tooltip-arrow {
+  fill: var(--bg);
 }
 
-.stats-heatmap__cell--level-1 {
-  background: color-mix(in oklab, var(--accent) 24%, var(--bg-subtle));
-  border-color: color-mix(in oklab, var(--accent) 16%, var(--border));
-}
-
-.stats-heatmap__cell--level-2 {
-  background: color-mix(in oklab, var(--accent) 42%, var(--bg-subtle));
-  border-color: color-mix(in oklab, var(--accent) 30%, var(--border));
-}
-
-.stats-heatmap__cell--level-3 {
-  background: color-mix(in oklab, var(--accent) 64%, var(--bg-subtle));
-  border-color: color-mix(in oklab, var(--accent) 48%, var(--border));
-}
-
-.stats-heatmap__cell--level-4 {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.stats-heatmap__cell--empty {
-  opacity: 0.32;
-}
-
-.stats-heatmap__cell--active,
-.stats-heatmap__cell:focus-visible {
-  outline: 2px solid var(--text);
-  outline-offset: 1px;
-}
-
-.stats-heatmap__tooltip {
-  grid-area: tooltip;
+.stats-heatmap__selection {
   display: inline-flex;
   justify-self: flex-start;
   align-items: baseline;
@@ -976,27 +924,13 @@ svg {
   box-shadow: var(--shadow-sm);
 }
 
-.stats-heatmap__tooltip strong {
+.stats-heatmap__selection strong {
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
-.stats-heatmap__tooltip time {
+.stats-heatmap__selection time {
   color: var(--text-faint);
-}
-
-.stats-heatmap__legend {
-  grid-area: legend;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  color: var(--text-faint);
-  font-size: var(--text-xs);
-}
-
-.stats-heatmap__legend .stats-heatmap__cell {
-  flex: 0 0 auto;
 }
 
 .links-table {
