@@ -77,14 +77,14 @@ export function QrCanvas({
             if (cancelled) return;
             ctx.drawImage(image, centerX - 29, centerY - 29, 58, 58);
           } catch {
-            ctx.fillStyle = webBrand.primaryColor;
+            ctx.fillStyle = webBrand.brandColor;
             ctx.fillRect(centerX - 26, centerY - 26, 52, 52);
           }
         }
         if (!webBrand.logoUrl) {
-          ctx.fillStyle = webBrand.primaryColor;
+          ctx.fillStyle = webBrand.brandColor;
           ctx.fillRect(centerX - 26, centerY - 26, 52, 52);
-          ctx.fillStyle = webBrand.primaryForegroundColor;
+          ctx.fillStyle = webBrand.brandForegroundColor;
           ctx.font = "700 22px Inter, ui-sans-serif, system-ui";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";

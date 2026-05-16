@@ -50,33 +50,80 @@ warnRoute.get("/:slug", async (c) => {
   const escapedUrl = escapeHtml(link.url);
   const brand = getRuntimeBrandConfig();
   const escapedProductName = escapeHtml(brand.productName);
-  const escapedPrimary = escapeHtml(brand.primaryColor);
-  const escapedPrimaryForeground = escapeHtml(brand.primaryForegroundColor);
+  const escapedWarningIconHref = escapeHtml(brand.warningIconHref);
+  const escapedBrand = escapeHtml(brand.brandColor);
+  const escapedBrandSoft = escapeHtml(brand.brandSoftColor);
+  const escapedBrandLight = escapeHtml(brand.lightBrandColor);
+  const escapedBrandSoftLight = escapeHtml(brand.lightBrandSoftColor);
+  const escapedAction = escapeHtml(brand.actionPrimaryColor);
+  const escapedActionHover = escapeHtml(brand.actionPrimaryHoverColor);
+  const escapedActionForeground = escapeHtml(brand.actionPrimaryForegroundColor);
+  const escapedActionLight = escapeHtml(brand.lightActionPrimaryColor);
+  const escapedActionHoverLight = escapeHtml(brand.lightActionPrimaryHoverColor);
+  const escapedActionForegroundLight = escapeHtml(brand.lightActionPrimaryForegroundColor);
+  const escapedWarning = escapeHtml(brand.warningColor);
+  const escapedWarningSoft = escapeHtml(brand.warningSoftColor);
+  const escapedWarningForeground = escapeHtml(brand.warningForegroundColor);
+  const escapedWarningLight = escapeHtml(brand.lightWarningColor);
+  const escapedWarningSoftLight = escapeHtml(brand.lightWarningSoftColor);
+  const escapedWarningForegroundLight = escapeHtml(brand.lightWarningForegroundColor);
   return c.html(`<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff7a45'/%3E%3Cpath d='M32 12 56 52H8L32 12Z' fill='%23101014'/%3E%3Ccircle cx='32' cy='45' r='3' fill='%23ff7a45'/%3E%3Cpath d='M30 25h4v15h-4z' fill='%23ff7a45'/%3E%3C/svg%3E" />
+    <link rel="icon" href="${escapedWarningIconHref}" />
     <title>${escapedProductName}: External link warning</title>
     <style>
-      :root { color-scheme: dark light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      :root {
+        color-scheme: dark light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --brand: ${escapedBrand};
+        --brand-soft: ${escapedBrandSoft};
+        --action-primary: ${escapedAction};
+        --action-primary-hover: ${escapedActionHover};
+        --action-primary-foreground: ${escapedActionForeground};
+        --warning: ${escapedWarning};
+        --warning-soft: ${escapedWarningSoft};
+        --warning-foreground: ${escapedWarningForeground};
+      }
       body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #101014; color: #f6f1ed; }
       main { width: min(92vw, 560px); border: 1px solid rgba(255,255,255,.14); border-radius: 8px; padding: 32px; background: #18181f; box-shadow: 0 24px 80px rgba(0,0,0,.36); }
+      .badge { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 999px; background: var(--warning-soft); color: var(--warning); font-size: 13px; font-weight: 700; margin-bottom: 16px; }
       h1 { margin: 0 0 12px; font-size: clamp(24px, 5vw, 34px); line-height: 1.08; }
       p { color: #c9c1bc; line-height: 1.65; }
-      code { display: block; overflow-wrap: anywhere; padding: 14px; border-radius: 8px; background: #23232d; color: #ffd7c2; }
+      code { display: block; overflow-wrap: anywhere; padding: 14px; border-radius: 8px; background: #23232d; color: #ffd7c2; border-left: 3px solid var(--warning); }
       .meta { font-size: 14px; }
+      .product { color: var(--brand); }
       .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
       a { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 8px; text-decoration: none; font-weight: 650; }
-      .btn-proceed { background: ${escapedPrimary}; color: ${escapedPrimaryForeground}; }
+      .btn-proceed { background: var(--action-primary); color: var(--action-primary-foreground); }
+      .btn-proceed:hover { background: var(--action-primary-hover); }
       .btn-cancel { border: 1px solid rgba(255,255,255,.18); color: #f6f1ed; }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --brand: ${escapedBrandLight};
+          --brand-soft: ${escapedBrandSoftLight};
+          --action-primary: ${escapedActionLight};
+          --action-primary-hover: ${escapedActionHoverLight};
+          --action-primary-foreground: ${escapedActionForegroundLight};
+          --warning: ${escapedWarningLight};
+          --warning-soft: ${escapedWarningSoftLight};
+          --warning-foreground: ${escapedWarningForegroundLight};
+        }
+        body { background: #fafaf7; color: #18181b; }
+        main { border-color: rgba(0,0,0,.10); background: #ffffff; box-shadow: 0 24px 80px rgba(24,24,27,.10); }
+        p { color: #52525b; }
+        code { background: #f4f4f5; color: #27272a; }
+        .btn-cancel { border-color: rgba(0,0,0,.16); color: #18181b; }
+      }
     </style>
   </head>
   <body>
     <main class="warn">
-      <h1>${escapedProductName} 即将跳转外部链接</h1>
+      <div class="badge">External warning</div>
+      <h1><span class="product">${escapedProductName}</span> 即将跳转外部链接</h1>
       <p>You are about to visit:</p>
       <code class="dest">${escapedUrl}</code>
       <p class="meta">Short link: /${escapedSlug}</p>

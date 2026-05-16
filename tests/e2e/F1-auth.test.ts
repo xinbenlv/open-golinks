@@ -14,10 +14,12 @@ beforeAll(async () => {
 
   const { Hono } = await import("hono");
   const { meRoute } = await import("../../src/routes/api/me.ts");
+  const { authRoute } = await import("../../src/routes/auth.ts");
   const { redirectRoute } = await import("../../src/routes/redirect.ts");
 
   app = new Hono();
   app.route("/api/v1/me", meRoute);
+  app.route("/auth", authRoute);
   app.route("/", redirectRoute);
   app.get("*", (c) => c.text(SPA_SENTINEL, 200));
 });
@@ -48,5 +50,10 @@ describe("F1 auth + login routing", () => {
     expect(res.status).toBe(200);
     expect(await res.text()).toBe(SPA_SENTINEL);
   });
-});
 
+  it("GET /auth/confirm rejects invalid token-hash links", async () => {
+    const res = await app.request("/auth/confirm");
+    expect(res.status).toBe(400);
+    expect(await res.text()).toBe("Invalid auth confirmation link");
+  });
+});

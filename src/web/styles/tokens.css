@@ -17,10 +17,24 @@
   --text-muted: #a1a1aa;
   --text-faint: #71717a;
 
-  --accent: #ff7a45;
-  --accent-strong: #ff5c1f;
-  --accent-soft: rgba(255, 122, 69, 0.14);
-  --accent-foreground: #1a0700;
+  --brand: #ff7a45;
+  --brand-strong: #ff5c1f;
+  --brand-soft: rgba(255, 122, 69, 0.14);
+  --brand-foreground: #1a0700;
+
+  --accent: var(--brand);
+  --accent-strong: var(--brand-strong);
+  --accent-soft: var(--brand-soft);
+  --accent-foreground: var(--brand-foreground);
+
+  --action-primary: var(--brand);
+  --action-primary-hover: var(--brand-strong);
+  --action-primary-foreground: var(--brand-foreground);
+  --action-glow: 0 0 0 1px var(--brand-soft), 0 8px 32px rgba(255, 122, 69, 0.18);
+
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.16);
+  --warning-foreground: #1f1300;
 
   --success: #34d399;
   --danger: #f87171;
@@ -80,7 +94,7 @@
     0 4px 12px rgba(0, 0, 0, 0.32), 0 1px 2px rgba(0, 0, 0, 0.18);
   --shadow-lg:
     0 12px 32px rgba(0, 0, 0, 0.42), 0 2px 6px rgba(0, 0, 0, 0.22);
-  --shadow-glow: 0 0 0 1px var(--accent-soft), 0 8px 32px rgba(255, 122, 69, 0.18);
+  --shadow-glow: var(--action-glow);
 
   /* —— 容器宽度 —— */
   --container-narrow: 640px;
@@ -98,11 +112,16 @@
 }
 
 :root[data-brand="zgzg"] {
-  --accent: #d71920;
-  --accent-strong: #b51218;
-  --accent-soft: rgba(215, 25, 32, 0.14);
-  --accent-foreground: #ffffff;
-  --shadow-glow: 0 0 0 1px var(--accent-soft), 0 8px 32px rgba(215, 25, 32, 0.18);
+  --brand: #d71920;
+  --brand-strong: #b51218;
+  --brand-soft: rgba(215, 25, 32, 0.14);
+  --brand-foreground: #ffffff;
+  --action-primary: #f4f4f5;
+  --action-primary-hover: #ffffff;
+  --action-primary-foreground: #111113;
+  --action-glow: 0 0 0 1px rgba(244, 244, 245, 0.22), 0 8px 32px rgba(244, 244, 245, 0.14);
+  --danger: #fb7185;
+  --shadow-glow: var(--action-glow);
 }
 
 /* —— 浅色覆写 —— */
@@ -119,27 +138,46 @@
   --text-muted: #52525b;
   --text-faint: #a1a1aa;
 
-  --accent: #ea580c;
-  --accent-strong: #c2410c;
-  --accent-soft: rgba(234, 88, 12, 0.10);
-  --accent-foreground: #ffffff;
+  --brand: #ea580c;
+  --brand-strong: #c2410c;
+  --brand-soft: rgba(234, 88, 12, 0.10);
+  --brand-foreground: #ffffff;
+
+  --accent: var(--brand);
+  --accent-strong: var(--brand-strong);
+  --accent-soft: var(--brand-soft);
+  --accent-foreground: var(--brand-foreground);
+
+  --action-primary: var(--brand);
+  --action-primary-hover: var(--brand-strong);
+  --action-primary-foreground: var(--brand-foreground);
+  --action-glow: 0 0 0 1px var(--brand-soft), 0 8px 28px rgba(234, 88, 12, 0.15);
+
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.12);
+  --warning-foreground: #ffffff;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md:
     0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-lg:
     0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 0 1px var(--accent-soft), 0 8px 28px rgba(234, 88, 12, 0.15);
+  --shadow-glow: var(--action-glow);
 
   color-scheme: light;
 }
 
 :root[data-theme="light"][data-brand="zgzg"] {
-  --accent: #d71920;
-  --accent-strong: #b51218;
-  --accent-soft: rgba(215, 25, 32, 0.10);
-  --accent-foreground: #ffffff;
-  --shadow-glow: 0 0 0 1px var(--accent-soft), 0 8px 28px rgba(215, 25, 32, 0.15);
+  --brand: #d71920;
+  --brand-strong: #b51218;
+  --brand-soft: rgba(215, 25, 32, 0.10);
+  --brand-foreground: #ffffff;
+  --action-primary: #18181b;
+  --action-primary-hover: #27272a;
+  --action-primary-foreground: #ffffff;
+  --action-glow: 0 0 0 1px rgba(24, 24, 27, 0.12), 0 8px 28px rgba(24, 24, 27, 0.14);
+  --danger: #dc2626;
+  --shadow-glow: var(--action-glow);
 }
 
 /* —— 跟随系统但用户没显式设置时 —— */
@@ -157,29 +195,46 @@
     --text-muted: #52525b;
     --text-faint: #a1a1aa;
 
-    --accent: #ea580c;
-    --accent-strong: #c2410c;
-    --accent-soft: rgba(234, 88, 12, 0.10);
-    --accent-foreground: #ffffff;
+    --brand: #ea580c;
+    --brand-strong: #c2410c;
+    --brand-soft: rgba(234, 88, 12, 0.10);
+    --brand-foreground: #ffffff;
+
+    --accent: var(--brand);
+    --accent-strong: var(--brand-strong);
+    --accent-soft: var(--brand-soft);
+    --accent-foreground: var(--brand-foreground);
+
+    --action-primary: var(--brand);
+    --action-primary-hover: var(--brand-strong);
+    --action-primary-foreground: var(--brand-foreground);
+    --action-glow: 0 0 0 1px var(--brand-soft), 0 8px 28px rgba(234, 88, 12, 0.15);
+
+    --warning: #d97706;
+    --warning-soft: rgba(217, 119, 6, 0.12);
+    --warning-foreground: #ffffff;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-md:
       0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-lg:
       0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-    --shadow-glow:
-      0 0 0 1px var(--accent-soft), 0 8px 28px rgba(234, 88, 12, 0.15);
+    --shadow-glow: var(--action-glow);
 
     color-scheme: light;
   }
 
   :root:not([data-theme])[data-brand="zgzg"] {
-    --accent: #d71920;
-    --accent-strong: #b51218;
-    --accent-soft: rgba(215, 25, 32, 0.10);
-    --accent-foreground: #ffffff;
-    --shadow-glow:
-      0 0 0 1px var(--accent-soft), 0 8px 28px rgba(215, 25, 32, 0.15);
+    --brand: #d71920;
+    --brand-strong: #b51218;
+    --brand-soft: rgba(215, 25, 32, 0.10);
+    --brand-foreground: #ffffff;
+    --action-primary: #18181b;
+    --action-primary-hover: #27272a;
+    --action-primary-foreground: #ffffff;
+    --action-glow: 0 0 0 1px rgba(24, 24, 27, 0.12), 0 8px 28px rgba(24, 24, 27, 0.14);
+    --danger: #dc2626;
+    --shadow-glow: var(--action-glow);
   }
 }
 

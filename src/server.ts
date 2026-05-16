@@ -3,6 +3,7 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import { redirectRoute } from "./routes/redirect.ts";
+import { authRoute } from "./routes/auth.ts";
 import { warnRoute } from "./routes/warn.ts";
 import { qrRoute } from "./routes/qr.ts";
 import { healthRoute } from "./routes/api/health.ts";
@@ -42,6 +43,7 @@ app.route("/api/v1/version", versionRoute);
 app.route("/api/v2", v2CompatRoute);
 
 // Warning interstitial must be served by Hono SSR, not the SPA fallback.
+app.route("/auth", authRoute);
 app.route("/warn", warnRoute);
 app.route("/qr", qrRoute);
 

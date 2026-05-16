@@ -5,6 +5,7 @@
 ## 文件
 
 - `fingerprint.ts` - 浏览器 fingerprint 生成与 64-hex 格式校验。
+- `brand.ts` - `OPEN_GOLINK_THEME` 品牌配置, 区分 favicon、brand/action/warning 语义色。
 - `ga4.ts` - GA4 Data API 查询和 Measurement Protocol 上报。
 - `gcp.ts` - 将 Railway 环境变量里的 GCP service account JSON 写入临时文件。
 - `identity.ts` - email canonicalize、metadata normalize、公开 link DTO 脱敏。

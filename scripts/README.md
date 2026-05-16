@@ -1,6 +1,15 @@
 # 迁移脚本
 
-此目录包含数据迁移和维护脚本。
+此目录包含构建、数据迁移和维护脚本。
+
+## prerender.ts
+
+构建期 SSG 脚本, 由 `bun run build:web` 在 `vite build` 之后调用。
+
+- 读取 `src/build-info.ts` 和 `src/lib/brand.ts`。
+- 调用 `src/web/entry-ssr.tsx#renderApp("/")` 生成 Landing HTML。
+- 向 `dist/web/index.html` 注入 SEO meta、品牌 favicon、`data-brand`、主题防闪烁脚本和版本 payload。
+- `OPEN_GOLINK_THEME=zgzg` 时会把 favicon 替换为 `/zgzg-round-logo.png`。
 
 ## run-migrations.ts
 

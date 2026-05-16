@@ -107,7 +107,7 @@ export default function Login() {
 
         {sentTo ? (
           <p className="auth-message auth-message--success">
-            登录链接已发送到 {sentTo}。请在同一浏览器打开邮件中的链接。
+            登录链接已发送到 {sentTo}。请打开邮件中的一次性链接完成登录。
           </p>
         ) : null}
       </section>

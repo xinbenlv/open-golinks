@@ -127,9 +127,9 @@ function drawLogo(
   if (logo) {
     ctx.drawImage(logo, x, y, size, size);
   } else {
-    ctx.fillStyle = brand.primaryColor;
+    ctx.fillStyle = brand.brandColor;
     ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = brand.primaryForegroundColor;
+    ctx.fillStyle = brand.brandForegroundColor;
     ctx.font = '700 24px "Noto Sans CJK SC", Inter, sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";

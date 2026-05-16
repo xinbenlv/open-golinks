@@ -1,0 +1,3 @@
+resend._domainkey	TXT	"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCZcZNTR8i0nOaGhdL+tKS8UsjWyLbV9xQFTKPVeLyqbLHuVzzixcZeIxakvN845Ma5VVrptP/sZjDQBfMyUB2aPMrcVKFiI/0j/NhTfnoLJV31ZJIi9megwC8ihRwnZ+PvaGxC4yHF9Vu4JVCVL71SvFPsFtcxf7lmqA+vmw3jwIDAQAB"
+send	MX	10	feedback-smtp.us-east-1.amazonses.com.
+send	TXT	"v=spf1 include:amazonses.com ~all"

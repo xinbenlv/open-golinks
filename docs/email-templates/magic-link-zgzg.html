@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>登录 zgzg.li</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f5f5f3;color:#181818;font-family:'Trebuchet MS',Segoe UI,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">打开一次性链接, 登录 zgzg.li。</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f3;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #dfdfdc;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(18,18,18,.11);">
+            <tr>
+              <td style="padding:28px 34px 0;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td style="font-size:25px;font-weight:800;letter-spacing:.02em;color:#181818;">zgzg<span style="color:#c42121;">.li</span></td>
+                    <td align="right"><span style="display:inline-block;background:#c42121;color:#ffffff;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800;letter-spacing:.08em;">SECURE LINK</span></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:30px 34px 14px;">
+                <div style="width:44px;height:4px;background:#c42121;border-radius:99px;margin-bottom:20px;"></div>
+                <h1 style="margin:0 0 12px;font-size:32px;line-height:1.12;font-weight:800;color:#181818;">登录你的短链工作台</h1>
+                <p style="margin:0;color:#555;font-size:16px;line-height:1.65;">这是一次性登录链接。点击后会回到 zgzg.li, 继续管理短链、二维码和访问统计。</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 34px 28px;">
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;background:#242424;color:#ffffff;text-decoration:none;border-radius:12px;padding:15px 22px;font-size:15px;font-weight:800;box-shadow:0 12px 24px rgba(36,36,36,.18);">登录 zgzg.li</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 34px 30px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate;border-spacing:0;background:#fafafa;border:1px solid #e4e4e1;border-left:5px solid #c42121;border-radius:14px;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      <div style="font-size:13px;color:#c42121;font-weight:800;">一次性安全链接</div>
+                      <p style="margin:6px 0 0;color:#5b5b57;font-size:14px;line-height:1.55;">此链接会直接打开 zgzg.li 并完成登录。账号: <span style="color:#181818;">{{ .Email }}</span></p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 34px 34px;color:#777;font-size:12px;line-height:1.6;">
+                如果按钮无法点击, 请复制此链接到浏览器打开:<br>
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="color:#b51d1d;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#181818;color:#cfcfca;padding:18px 34px;font-size:12px;line-height:1.5;">
+                如果这不是你发起的登录请求, 可以安全忽略。此邮件不会要求你提供密码。
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

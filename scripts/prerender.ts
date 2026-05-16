@@ -56,6 +56,11 @@ async function main() {
     `<title>${TITLE}</title>${META_TAGS}`,
   );
 
+  html = html.replace(
+    /<link\s+rel="icon"[\s\S]*?\/>/,
+    `<link rel="icon" href="${BRAND.appIconHref}" />`,
+  );
+
   // 注入 lang
   html = html.replace(/<html\b[^>]*>/, `<html lang="zh-CN" data-brand="${BRAND.theme}">`);
 

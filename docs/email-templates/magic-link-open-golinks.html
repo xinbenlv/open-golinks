@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>登录 Open GoLinks</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f2ed;color:#171717;font-family:'Trebuchet MS',Segoe UI,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">打开一次性链接, 登录 Open GoLinks。</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f2ed;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fffdf8;border:1px solid #ded8cc;border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(22,18,11,.12);">
+            <tr>
+              <td style="padding:0;">
+                <div style="height:10px;background:linear-gradient(90deg,#171717 0%,#171717 38%,#f26b21 38%,#f26b21 68%,#f0c15d 68%,#f0c15d 100%);"></div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:34px 34px 20px;">
+                <div style="font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:.2px;color:#171717;">Open GoLinks</div>
+                <div style="margin-top:22px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#8f5a21;">Passwordless sign in</div>
+                <h1 style="margin:10px 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.08;font-weight:700;color:#171717;">继续管理你的短链</h1>
+                <p style="margin:0;color:#5d554b;font-size:16px;line-height:1.65;">点击下面的按钮即可登录。为了保护你的账号, 这个链接只能使用一次。</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 34px 26px;">
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;background:#171717;color:#ffffff;text-decoration:none;border-radius:999px;padding:15px 22px;font-size:15px;font-weight:700;box-shadow:0 12px 24px rgba(23,23,23,.18);">登录 Open GoLinks</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 34px 30px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate;border-spacing:0;background:#f7f0e5;border:1px solid #e3d4bd;border-radius:14px;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      <div style="font-size:13px;color:#8f5a21;font-weight:700;">安全提示</div>
+                      <p style="margin:6px 0 0;color:#665d53;font-size:14px;line-height:1.55;">此链接只能使用一次, 会直接打开站点并完成登录。收件邮箱: <span style="color:#171717;">{{ .Email }}</span></p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 34px 34px;color:#82786c;font-size:12px;line-height:1.6;">
+                如果按钮无法点击, 请复制此链接到浏览器打开:<br>
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email" style="color:#9a5319;word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#171717;color:#c9c3b8;padding:18px 34px;font-size:12px;line-height:1.5;">
+                你收到这封邮件, 是因为有人请求登录 Open GoLinks。若不是你本人操作, 可以忽略此邮件。
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

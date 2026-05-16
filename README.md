@@ -26,7 +26,7 @@ Browser/Extension ──▶ Railway (us-west2) ──▶ Supabase Postgres
 │   │   ├── db.ts              # Drizzle 连接
 │   │   ├── schema.ts          # 数据库 schema
 │   │   └── migrations/        # SQL migrations
-│   ├── lib/                   # identity / GA4 / QR / fingerprint helpers
+│   ├── lib/                   # brand / identity / GA4 / QR / fingerprint helpers
 │   ├── assets/                # 字体与主题 logo 静态资源
 │   ├── routes/
 │   │   ├── redirect.ts        # GET /:slug
@@ -77,6 +77,8 @@ bun run dev:web
 
 ## 部署 (Railway)
 
+详见 [`DEPLOYMENT.md`](./DEPLOYMENT.md)。
+
 ```sh
 railway init
 railway up
@@ -88,8 +90,11 @@ healthcheck: `GET /api/v1/health`
 ## 文档导航
 
 - [产品 Spec (v2.1)](./docs/v2-SPEC-zh-2.1.md)
+- [部署与生产切换 DEPLOYMENT](./DEPLOYMENT.md)
 - [当前架构 CURRENT-ARCHITECT](./docs/CURRENT-ARCHITECT.md)
 - [活跃计划 docs/plans/](./docs/plans/)
+- [Supabase 邮件模板 docs/email-templates/](./docs/email-templates/)
+- [排障记录 docs/troubleshooting/](./docs/troubleshooting/)
 - [迁移脚本说明 scripts/README.md](./scripts/README.md)
 
 ## 版本展示 (Versioning)

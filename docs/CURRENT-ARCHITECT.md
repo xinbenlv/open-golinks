@@ -91,6 +91,7 @@ flowchart TB
   - Hono SSR route, 返回自包含 HTML, 不依赖 SPA bundle
   - 查询未删除链接; 不存在/已删除 → 404
   - Proceed 链接指向 `/:slug?confirm=1`, 让 redirect hot path 真正跳转并记录 analytics
+  - 样式从 `src/lib/brand.ts` 注入 favicon 与 brand/action/warning 语义色; ZGZG 下 warning 用 amber, Proceed 用中性 action 色 (`src/routes/warn.ts:51-132`)
 - **`src/routes/qr.ts`** (`GET /qr/:slug.png`, `GET /qr/d/:slug.png`)
   - master-compatible QR PNG paths; `/d/` 变体加 `Content-Disposition: attachment`
   - 接受 `caption` 和 `addLogo=true`, 返回 `image/png`
@@ -127,8 +128,8 @@ flowchart TB
 - **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
 - **`src/lib/fingerprint.ts`** - 浏览器端 64-hex fingerprint: canvas + UA + timezone + screen; canvas 不可用时用本地持久 fallback token. 服务端只校验格式和比对已有值.
 - **`src/lib/identity.ts`** - identity helper: canonical email、metadata normalize、link DTO 删除 `metadata.legacy_author_email` (`src/lib/identity.ts:1-27`).
-- **`src/lib/brand.ts`** - 品牌主题配置；`OPEN_GOLINK_THEME=zgzg` 时使用 `zgzg.li` 文案、红色 primary color 和 ZGZG logo。
-- **`src/lib/qr.ts`** - `qrcode` + `@napi-rs/canvas` 服务端 QR PNG 渲染, 支持 CJK caption、主题 logo、1h/1000-entry LRU cache, 字体来自 `src/assets/fonts/NotoSansCJKsc-Regular.otf`, ZGZG logo 来自 `src/assets/img/zgzg-round-logo.png`.
+- **`src/lib/brand.ts`** - 品牌主题配置；`OPEN_GOLINK_THEME=zgzg` 时使用 `zgzg.li` 文案和 ZGZG favicon, 并区分 brand/action/warning 语义色: ZGZG 红色是品牌 accent, primary action 使用中性色 (`src/lib/brand.ts:3-116`)。
+- **`src/lib/qr.ts`** - `qrcode` + `@napi-rs/canvas` 服务端 QR PNG 渲染, 支持 CJK caption、主题 logo、1h/1000-entry LRU cache, 字体来自 `src/assets/fonts/NotoSansCJKsc-Regular.otf`, 服务端 ZGZG QR logo 来自 `src/assets/img/zgzg-round-logo.png`, 默认 QR fallback 使用 brand 色。
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
@@ -141,9 +142,13 @@ flowchart TB
 
 ### 前端 (SPA)
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
+  - `src/web/styles/tokens.css` 定义 brand/action/warning/danger 语义色; 默认主题 action alias 到橙色 brand, ZGZG 主题 action 改为中性色且保留红色 brand accent (`src/web/styles/tokens.css:20-237`).
+  - `src/web/lib/brand.ts` 给浏览器和 SSG 统一解析主题, ZGZG 前端 logo/favicon 使用 Vite public path `/zgzg-round-logo.png`, 避免 SSG 输出本地文件路径 (`src/web/lib/brand.ts:1-24`)。
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
   - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 `UrlHistory` 与 `AuditTimeline`.
-  - `/login` / `/auth/callback` 是 Supabase PKCE magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
+  - `/login` / `/auth/callback` 是 Supabase magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
+  - `/auth/confirm` 是 Supabase TokenHash 邮件链接入口, 调 `verifyOtp` 后把 session token 交给 `/auth/callback` 的 hash-token 分支。
+  - Supabase Magic Link 邮件模板维护在 `docs/email-templates/`, 分默认 Open GoLinks 和 ZGZG 两套主题, 邮件按钮使用 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`；部署/Supabase/Resend 操作见 `DEPLOYMENT.md`。
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`.
   - `/stats` / `/stats/:slug` 是公开只读 GA4 统计视图, 调 `/api/v1/stats/query` 展示全站或单 slug 的 path 表、path share 饼图、date 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换.
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
@@ -157,7 +162,7 @@ flowchart TB
 ### 脚本 (前端构建)
 - **`scripts/prerender.ts`** - SSG 入口, 由 `bun run build:web` 在 `vite build` 之后执行.
   - import `src/web/entry-ssr.tsx#renderApp("/")` 拿到 Landing HTML 字符串
-  - 注入 `<title>` / `<meta>` (description / og:* / twitter:* / theme-color) + 防闪烁主题脚本
+  - 注入 `<title>` / `<meta>` (description / og:* / twitter:* / theme-color) + 品牌 favicon + 防闪烁主题脚本 (`scripts/prerender.ts:53-81`)
   - 写回 `dist/web/index.html`
 
 ### 脚本
@@ -191,7 +196,7 @@ flowchart TB
 ### Warning interstitial
 1. Owner 在 `/edit/:slug` 勾选 `WarnToggle`, PATCH `/api/v1/links/:slug` body `{ metadata: { show_warning: true } }`
 2. 访客访问 `/:slug`, redirect handler 发现 `metadata.show_warning` 且没有 `?confirm=1`, 返回 302 `/warn/:slug`
-3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets
+3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets; warning 视觉使用 amber, Proceed 按钮使用 action token 而不是品牌红色
 4. 用户点 Proceed 访问 `/:slug?confirm=1`, redirect handler 跳过 warning, 返回目标 URL 302 并记录 visits/GA4
 
 ### Audit history
@@ -247,8 +252,9 @@ flowchart TB
 | `SUPABASE_SECRET_KEY` | 迁移/repair | Supabase service-role/Admin key；可由 `SUPABASE_SERVICE_ROLE_KEY` fallback |
 | `VITE_SUPABASE_URL` | ✅ | 前端 Supabase client URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | ✅ | 前端 Supabase publishable key |
-| `VITE_BASE_URL` | ✅ | magic link redirect base URL |
-| `PUBLIC_BASE_URL` | ✅ | GA4 `page_location` / 完整短链 base URL |
+| `VITE_BASE_URL` | ✅ | magic link redirect base URL；生产切域名时必须和 canonical origin 保持一致 |
+| `PUBLIC_BASE_URL` | ✅ | GA4 `page_location` / 完整短链 base URL；生产 canonical origin |
+| `OPEN_GOLINK_THEME` | - | 品牌主题, 默认 `open-golinks`; 设为 `zgzg` 时启用 ZGZG 文案、logo 与品牌/accent 色 |
 | `GA4_MEASUREMENT_ID` | ✅ | Measurement Protocol |
 | `GA4_API_SECRET` | ✅ | Measurement Protocol |
 | `GA4_PROPERTY_ID` | ✅ | GA4 Data API |

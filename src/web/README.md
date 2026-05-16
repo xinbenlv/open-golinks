@@ -6,7 +6,7 @@ Open GoLinks 的前端单页应用. 由 Vite 构建到 `dist/web/`, 在生产由
 
 ```
 src/web/
-├── index.html               # Vite 入口 HTML, 含 inline favicon (data URL)
+├── index.html               # Vite 入口 HTML, 默认 inline favicon; build 期按品牌替换
 ├── main.tsx                 # 浏览器入口: hydrate / createRoot 智能切换
 ├── entry-ssr.tsx            # SSG 入口: 由 scripts/prerender.ts 调用
 ├── App.tsx                  # 根组件 = AppRoutes
@@ -14,12 +14,15 @@ src/web/
 ├── styles/
 │   ├── tokens.css           # 设计 token (颜色 / 字体 / 间距 / 阴影 / 动效)
 │   └── global.css           # 全局重置 + 容器 + .reveal 动画基础
+├── public/
+│   └── zgzg-round-logo.png  # Vite public asset, 给 SSG HTML 和浏览器 canvas 共用
 ├── hooks/
 │   ├── useReveal.ts         # IntersectionObserver 滚动 reveal
 │   ├── useTheme.ts          # light / dark / system 三态主题
 │   ├── useAuth.ts           # Supabase session store + authFetch
 │   └── useApi.ts            # JSON API wrapper, 自动带 Authorization
 ├── lib/
+│   ├── brand.ts             # 前端/SSG 品牌配置, 解析 Vite 或 Bun 环境主题
 │   └── supabase.ts          # supabase-js PKCE client singleton
 ├── components/
 │   ├── AuthGuard.tsx        # owner-only route guard
@@ -96,14 +99,14 @@ bun run build:web
 ## 主题
 
 `useTheme()` 提供 `light` / `dark` / `system` 三态, 持久化到 `localStorage('ogl-theme')`.
-预渲染脚本在 `<head>` 注入一段防闪烁脚本, 在样式表加载前同步 `data-theme`.
+预渲染脚本在 `<head>` 注入一段防闪烁脚本, 在样式表加载前同步 `data-theme`, 并按品牌替换 favicon.
 
-品牌主题由 `OPEN_GOLINK_THEME` 控制。默认显示 Open GoLinks；构建/运行环境设为 `zgzg` 时, 前端使用 `zgzg.li` 文案、红色 primary color 和 `src/assets/img/zgzg-round-logo.png`。
+品牌主题由 `OPEN_GOLINK_THEME` 控制。默认显示 Open GoLinks；构建/运行环境设为 `zgzg` 时, 前端使用 `zgzg.li` 文案、favicon 和 public asset `/zgzg-round-logo.png`。ZGZG 红色只作为品牌 accent/token 使用；`.btn--primary` 等前进操作走 `--action-*` token, 在 ZGZG 下呈现中性色按钮, warning 场景走 amber 语义色。
 
 ## CSS 约定
 
 - **所有 CSS 在 `main.tsx` 集中导入**, 组件 .tsx 文件保持纯 JSX. 这样 `entry-ssr.tsx` 可以无副作用地 `import` 组件树.
-- 颜色 / 间距 / 阴影 / 字号一律用 token (CSS variable), 不写死十六进制.
+- 颜色 / 间距 / 阴影 / 字号一律用 token (CSS variable), 不写死十六进制. 色彩语义优先使用 `--brand-*`, `--action-*`, `--warning-*`, `--danger`.
 - 不引 Tailwind v3 / framer-motion / 大型 UI 库 (体积约束).
 
 ## Auth

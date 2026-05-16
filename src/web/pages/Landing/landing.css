@@ -53,8 +53,8 @@ main.landing-main {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  color: var(--accent-foreground);
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  color: var(--brand-foreground);
   font-weight: 700;
   font-size: 14px;
   box-shadow: var(--shadow-sm);
@@ -164,14 +164,14 @@ main.landing-main {
 }
 
 .btn--primary {
-  background: var(--accent);
-  color: var(--accent-foreground);
+  background: var(--action-primary);
+  color: var(--action-primary-foreground);
   box-shadow: var(--shadow-sm);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: var(--accent-strong);
-  box-shadow: var(--shadow-glow);
+  background: var(--action-primary-hover);
+  box-shadow: var(--action-glow);
 }
 
 .btn--primary:disabled {
@@ -280,7 +280,7 @@ main.landing-main {
 }
 
 .hero h1 .accent {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -453,15 +453,15 @@ main.landing-main {
 }
 
 .checkbox input:checked {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--brand);
+  border-color: var(--brand);
 }
 
 .checkbox input:checked::after {
   content: "";
   position: absolute;
   inset: 3px;
-  background: var(--accent-foreground);
+  background: var(--brand-foreground);
   clip-path: polygon(
     14% 50%,
     0 65%,
