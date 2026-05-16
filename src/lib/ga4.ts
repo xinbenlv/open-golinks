@@ -155,7 +155,7 @@ export async function getStatsSummaryForSlugs(
   days: number,
 ): Promise<StatsSummary> {
   if (statsProviderForTests) return statsProviderForTests(slugs, days);
-  const normalizedDays = Math.max(1, Math.min(days, 90));
+  const normalizedDays = Math.max(1, Math.min(days, 370));
   const series = blankDays(normalizedDays);
   if (!slugs.length) {
     return {

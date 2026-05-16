@@ -31,7 +31,7 @@ src/web/
 │   ├── ClaimBanner.tsx      # Dashboard 匿名/legacy 可认领链接提示
 │   ├── LinkRow.tsx          # Dashboard 链接行
 │   ├── QrCanvas.tsx         # QR editor 客户端 canvas 预览
-│   ├── StatsChart.tsx       # Dashboard 30 日 GA4 GitHub-style heatmap
+│   ├── StatsChart.tsx       # Dashboard 52 周 GA4 GitHub-style heatmap
 │   ├── stats/               # 详细 Analytics 控件与图表
 │   ├── UrlHistory.tsx       # Edit 页 URL 历史展示
 │   └── WarnToggle.tsx       # Edit 页 warning interstitial 开关

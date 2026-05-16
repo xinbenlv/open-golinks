@@ -8,7 +8,7 @@ import { getStatsSummaryForSlugs, queryStatsForSlugs } from "../../lib/ga4.ts";
 export const statsRoute = new Hono<AuthEnv>();
 
 const summaryQuerySchema = z.object({
-  days: z.coerce.number().int().min(1).max(90).default(30),
+  days: z.coerce.number().int().min(1).max(370).default(30),
 });
 
 const slugSchema = z

@@ -869,44 +869,64 @@ svg {
 }
 
 .stats-heatmap {
+  position: relative;
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
   grid-template-areas:
-    "days grid"
+    "days body"
+    ". tooltip"
     ". legend";
   align-items: start;
   gap: var(--space-2);
-  min-height: 180px;
+  min-height: 210px;
   padding-top: var(--space-2);
 }
 
-.stats-heatmap__days {
-  grid-area: days;
-  display: grid;
-  grid-template-rows: repeat(7, 16px);
-  gap: 4px;
-  color: var(--text-faint);
-  font-size: 10px;
-  line-height: 16px;
-}
-
-.stats-heatmap__grid {
-  grid-area: grid;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 16px;
-  grid-template-rows: repeat(7, 16px);
-  gap: 4px;
+.stats-heatmap__body {
+  grid-area: body;
   overflow-x: auto;
   padding-bottom: var(--space-1);
 }
 
+.stats-heatmap__months {
+  display: grid;
+  grid-template-columns: repeat(52, 10px);
+  gap: 3px;
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 14px;
+  min-width: calc(52 * 10px + 51 * 3px);
+}
+
+.stats-heatmap__days {
+  grid-area: days;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 10px;
+}
+
+.stats-heatmap__grid {
+  display: flex;
+  gap: 3px;
+  min-width: calc(52 * 10px + 51 * 3px);
+}
+
+.stats-heatmap__week {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .stats-heatmap__cell {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border: 1px solid color-mix(in oklab, var(--border) 72%, transparent);
-  border-radius: 4px;
+  border-radius: 2px;
   background: var(--bg-subtle);
 }
 
@@ -934,6 +954,37 @@ svg {
   opacity: 0.32;
 }
 
+.stats-heatmap__cell--active,
+.stats-heatmap__cell:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+.stats-heatmap__tooltip {
+  grid-area: tooltip;
+  display: inline-flex;
+  justify-self: flex-start;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  box-shadow: var(--shadow-sm);
+}
+
+.stats-heatmap__tooltip strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-heatmap__tooltip time {
+  color: var(--text-faint);
+}
+
 .stats-heatmap__legend {
   grid-area: legend;
   display: flex;
@@ -946,9 +997,6 @@ svg {
 
 .stats-heatmap__legend .stats-heatmap__cell {
   flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
 }
 
 .links-table {
