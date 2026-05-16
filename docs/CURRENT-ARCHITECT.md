@@ -174,7 +174,7 @@ flowchart TB
 
 ### 测试与视觉资产
 - **`tests/e2e/*.test.ts`** - Bun e2e 回归测试, 覆盖 API / route 行为, 不依赖前端构建。
-- **`tests/browser/*.spec.ts`** - Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests; `tests/browser/readme-tour.spec.ts` 是可选截图用例, 由 `CAPTURE_README_TOUR=1` 开启, 写入 `docs/assets/readme-tour.gif` 并清理测试 slug (`tests/browser/readme-tour.spec.ts:9-29`, `tests/browser/readme-tour.spec.ts:98-183`)。
+- **`tests/browser/*.spec.ts`** - Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests; `tests/browser/readme-tour.spec.ts` 是可选截图用例, 由 `CAPTURE_README_TOUR=1` 开启, 本地构建前端并启动 Vite preview、mock API/SSR 数据, 写入 `docs/assets/readme-tour.gif` (`tests/browser/readme-tour.spec.ts:12-29`, `tests/browser/readme-tour.spec.ts:223-267`, `tests/browser/readme-tour.spec.ts:413-492`)。
 
 ### 外部服务
 - **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.

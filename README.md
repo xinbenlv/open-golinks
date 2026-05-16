@@ -4,7 +4,7 @@
 
 ![Open GoLinks 产品导览](./docs/assets/readme-tour.gif)
 
-> 上面的动图由浏览器 e2e 截图流程生成：`CAPTURE_README_TOUR=1 RUN_BROWSER_TESTS=1 bun test tests/browser/readme-tour.spec.ts`。当前截图使用生产 ZGZG 主题；默认 Open GoLinks 主题仍由 `OPEN_GOLINK_THEME` 控制。
+> 上面的动图由浏览器 e2e 截图流程生成：`CAPTURE_README_TOUR=1 bun test tests/browser/readme-tour.spec.ts`。截图用例本地构建前端并启动 Vite preview, mock 所有 API/SSR 数据，并把 demo origin 固定为 `zzgg.li`。
 
 ## 这个项目做什么
 
