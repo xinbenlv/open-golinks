@@ -10,7 +10,7 @@
 - `ClaimBanner.tsx` — Dashboard 顶部匿名/legacy 可认领链接提示, 调 `/api/v1/links/claimable` 并支持批量 claim.
 - `LinkRow.tsx` — Dashboard 单行链接展示, 含 slug/url/description/tags/visits/created/actions.
 - `QrCanvas.tsx` — QR editor 的浏览器 canvas 预览, 用 `qrcode` 矩阵本地绘制 caption/logo.
-- `StatsChart.tsx` — Dashboard 近 30 天总点击与折线图, 数据来自 `/api/v1/stats/summary`.
+- `StatsChart.tsx` — Dashboard 近 30 天总点击与 GitHub-style heatmap, 数据来自 `/api/v1/stats/summary`.
 - `TagInput.tsx` — Edit 页 metadata tags chip 输入.
 - `stats/DateRangePicker.tsx` — `/stats` 7/30/90/180 天范围 segmented control.
 - `stats/PathRegexInput.tsx` — `/stats` path regex 输入 + Apply.
