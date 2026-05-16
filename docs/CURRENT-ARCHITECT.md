@@ -172,6 +172,10 @@ flowchart TB
 - **`scripts/reconcile-legacy-owners.ts`** - Identity ACL repair: dry-run 扫描 synthetic `public.users`, apply 前备份 `users/links/audit_logs`, transaction 中 remap 到真实 Auth user 或置空 owner/conflict (`scripts/reconcile-legacy-owners.ts:93-165`, `scripts/reconcile-legacy-owners.ts:167-218`).
 - **`docs/troubleshooting/identity-acl-data-cleanup.md`** - 记录 Identity ACL 生产数据清理注意事项；`links` 表以 `slug` 为主键，一次性备份/修复脚本不能假设存在 `id` 列。
 
+### 测试与视觉资产
+- **`tests/e2e/*.test.ts`** - Bun e2e 回归测试, 覆盖 API / route 行为, 不依赖前端构建。
+- **`tests/browser/*.spec.ts`** - Puppeteer + 系统 Chrome 的生产/浏览器 smoke tests; `tests/browser/readme-tour.spec.ts` 是可选截图用例, 由 `CAPTURE_README_TOUR=1` 开启, 写入 `docs/assets/readme-tour.gif` 并清理测试 slug (`tests/browser/readme-tour.spec.ts:9-29`, `tests/browser/readme-tour.spec.ts:98-183`)。
+
 ### 外部服务
 - **`src/lib/gcp.ts`** - 启动时把 `GOOGLE_APPLICATION_CREDENTIALS_JSON` 写到 `/tmp/open-golinks-gcp-key.json`, 供 Google SDK 使用.
 - **`src/lib/ga4.ts`** - GA4 Data API summary/detail 查询 + Measurement Protocol `page_view` 上报 helper.
@@ -273,5 +277,4 @@ flowchart TB
 ## 当前未实现 (TODO)
 
 - Turnstile 校验
-- 更完整的浏览器回归测试和 CI
 - CI/CD (GitHub Actions → Railway)
