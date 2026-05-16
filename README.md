@@ -4,7 +4,7 @@
 
 ![Open GoLinks 产品导览](./docs/assets/readme-tour.gif)
 
-> 上面的动图由浏览器 e2e 截图流程生成：`CAPTURE_README_TOUR=1 bun test tests/browser/readme-tour.spec.ts`。截图用例本地构建前端并启动 Vite preview, mock 所有 API/SSR 数据，并把 demo origin 固定为 `zzgg.li`。
+> 上面的动图由浏览器 e2e 截图流程生成：`CAPTURE_README_TOUR=1 bun test tests/browser/readme-tour.spec.ts`。截图用例本地构建前端并启动 Vite preview, mock 所有 API/SSR 数据，并把 demo origin 固定为 `zgzg.li`。
 
 ## 这个项目做什么
 

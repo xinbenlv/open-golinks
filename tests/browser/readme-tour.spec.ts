@@ -10,9 +10,9 @@ import puppeteer from "puppeteer-core";
 import type { HTTPRequest, Page } from "puppeteer-core";
 
 let sourceBaseUrl = process.env.README_SOURCE_BASE_URL ?? "";
-const DEMO_ORIGIN = process.env.README_DEMO_ORIGIN || "https://zzgg.li";
+const DEMO_ORIGIN = process.env.README_DEMO_ORIGIN || "https://zgzg.li";
 const DEMO_SLUG = "team-handbook";
-const DEMO_TARGET = "https://zzgg.li/company/handbook";
+const DEMO_TARGET = "https://zgzg.li/company/handbook";
 const shouldCapture = process.env.CAPTURE_README_TOUR === "1";
 const browserIt = shouldCapture ? it : it.skip;
 
@@ -56,7 +56,7 @@ const demoLink: DemoLink = {
   deletedAt: null,
   urlHistory: [
     {
-      url: "https://zzgg.li/company/old-handbook",
+      url: "https://zgzg.li/company/old-handbook",
       changedAt: "2026-05-01T09:00:00-07:00",
       changedBy: "demo-owner",
     },
@@ -68,7 +68,7 @@ const demoLink: DemoLink = {
     description: "Demo handbook shortcut",
     tags: ["team", "docs"],
     show_warning: true,
-    caption: "zzgg.li team handbook",
+    caption: "zgzg.li team handbook",
     addLogo: true,
   },
 };
@@ -144,7 +144,7 @@ function demoWarningHtml() {
   </head>
   <body>
     <main>
-      <div class="kicker">zzgg.li warning page</div>
+      <div class="kicker">zgzg.li warning page</div>
       <h1>Review before continuing</h1>
       <p>This demo link is configured to show a warning page before redirecting.</p>
       <code>${DEMO_TARGET}</code>
@@ -362,22 +362,9 @@ async function installDemoMocks(page: Page) {
   });
 }
 
-async function normalizeBrandText(page: Page) {
-  await page.evaluate(() => {
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const nodes: Text[] = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode as Text);
-    for (const node of nodes) {
-      node.nodeValue = node.nodeValue?.replaceAll("zgzg.li", "zzgg.li") ?? "";
-    }
-    document.title = document.title.replaceAll("zgzg.li", "zzgg.li");
-  });
-}
-
 async function screenshot(page: Page, frameName: string) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await new Promise((resolve) => setTimeout(resolve, 700));
-  await normalizeBrandText(page);
   await page.screenshot({
     path: `${framesDir}/${frameName}.png`,
     type: "png",
