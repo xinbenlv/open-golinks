@@ -100,6 +100,7 @@ warnRoute.get("/:slug", async (c) => {
       a { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; border-radius: 8px; text-decoration: none; font-weight: 650; }
       .btn-proceed { background: var(--action-primary); color: var(--action-primary-foreground); }
       .btn-proceed:hover { background: var(--action-primary-hover); }
+      .btn-claim { border: 1px solid var(--warning); color: var(--warning); }
       .btn-cancel { border: 1px solid rgba(255,255,255,.18); color: #f6f1ed; }
       @media (prefers-color-scheme: light) {
         :root {
@@ -129,6 +130,7 @@ warnRoute.get("/:slug", async (c) => {
       <p class="meta">Short link: /${escapedSlug}</p>
       <div class="actions">
         <a href="/${encodeURIComponent(link.slug)}?confirm=1" class="btn-proceed">继续访问 Proceed</a>
+        <a href="/claim/${encodeURIComponent(link.slug)}" class="btn-claim">Login to Claim</a>
         <a href="/" class="btn-cancel">取消 Cancel</a>
       </div>
     </main>

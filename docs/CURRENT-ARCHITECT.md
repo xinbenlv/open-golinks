@@ -18,7 +18,7 @@
               │   ├─ /api/v1/audit   → owner audit timeline   │
               │   ├─ /api/v1/links   → CRUD + claim + audit  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
-              │   ├─ /api/v1/stats   → owner summary + public GA4 query │
+              │   ├─ /api/v1/stats   → owner summary + public GA4/trending │
               │   └─ /*              → 静态 SPA (dist/web)   │
               └──────────┬───────────────────────────────────┘
                          │ postgres-js + Drizzle
@@ -91,7 +91,7 @@ flowchart TB
   - Hono SSR route, 返回自包含 HTML, 不依赖 SPA bundle
   - 查询未删除链接; 不存在/已删除 → 404
   - Proceed 链接指向 `/:slug?confirm=1`, 让 redirect hot path 真正跳转并记录 analytics
-  - 样式从 `src/lib/brand.ts` 注入 favicon 与 brand/action/warning 语义色; ZGZG 下 warning 用 amber, Proceed 用中性 action 色 (`src/routes/warn.ts:51-132`)
+  - 样式从 `src/lib/brand.ts` 注入 favicon 与 brand/action/warning 语义色; ZGZG 下 warning 用 amber, Proceed 用中性 action 色, 并提供 `Login to Claim` 入口 (`src/routes/warn.ts:51-138`)
 - **`src/routes/qr.ts`** (`GET /qr/:slug.png`, `GET /qr/d/:slug.png`)
   - master-compatible QR PNG paths; `/d/` 变体加 `Content-Disposition: attachment`
   - 接受 `caption` 和 `addLogo=true`, 返回 `image/png`
@@ -99,19 +99,20 @@ flowchart TB
 - **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:182-249`)
-  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id`, 匿名时走 IP+UA 限流并保存 `X-Fingerprint`; 新建/恢复默认 `is_public=false`; 可写 `metadata.description/tags/show_warning`; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:252-310`)
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id` 且默认 private; 匿名时走 IP+UA 限流、保存 `X-Fingerprint`, 并强制 `is_public=true` + `metadata.show_warning=true`; 可写 `metadata.description/tags/show_warning` 但匿名 show_warning 会被覆盖为 true; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:252-317`)
   - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 canonical `metadata.legacy_author_email` 认领的未归属链接 (`src/routes/api/links.ts:312-350`)
   - `GET /:slug/available` - public availability check, 返回 `{ available: boolean }`; F13 `/api/v2/available/:slug` shim 复用同一语义
   - `GET /:slug` - 获取单链接, 公开返回中不包含 `metadata.legacy_author_email` (`src/routes/api/links.ts:361-375`)
   - `POST /:slug/claim` - requireAuth; `owner_id IS NULL` + fingerprint/legacy email proof 在同一个原子 UPDATE 中检查, 成功后写 CLAIM audit (`src/routes/api/links.ts:378-432`)
   - `POST /:slug/transfer` - owner-only; recipient email 先 canonicalize 再查找已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER` (`src/routes/api/links.ts:435-490`)
-  - `PATCH /:slug` - owner-only 更新 URL, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:493-564`)
+  - `PATCH /:slug` - owner-only 更新 URL、`isPublic` 和 metadata, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 匿名链接必须先 claim 成 owner 后才能关闭 public/warning; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:500-572`)
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 - **`src/routes/api/qr.ts`** (`GET /api/v1/qr/:slug`) - 公开 QR PNG endpoint; `format=png`, `caption<=100`, `logo=true`; 不存在/软删返回 404.
 - **`src/routes/api/stats.ts`** (`/api/v1/stats`)
-  - `GET /summary` - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }`.
-  - `POST /query` - public read-only; 受控详细查询, 只接受 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 无 `slug` 时查所有未删除链接并用 GA4 `pagePath` slug 格式 + reserved/system path 排除过滤, 有 `slug` 时只查该未删除 slug, 不存在/已删除返回 404.
+  - `GET /summary` - requireAuth; 查询当前用户 owned slugs 后调用 GA4 Data API, 返回 `{ totalClicks, days, source, scope }` (`src/routes/api/stats.ts:41-70`).
+  - `GET /trending` - public read-only; 只接受 `range=7|30` 和 `limit<=50`, 先查 `is_public=true AND deleted_at IS NULL` 的链接, 再用这些 slug 调 GA4 path query, 返回公开热门链接 DTO (`src/routes/api/stats.ts:72-141`).
+  - `POST /query` - public read-only; 受控详细查询, 只接受 `range`, `groupBy`, `limit`, `pathRegex`, `usePathPlusQueryString`, `slug?`; 无 `slug` 时查所有未删除链接并用 GA4 `pagePath` slug 格式 + reserved/system path 排除过滤, 有 `slug` 时只查该未删除 slug, 不存在/已删除返回 404 (`src/routes/api/stats.ts:143-180`).
 - **`src/routes/api/v2-compat.ts`** (`/api/v2`)
   - F13 Chrome extension / master API compatibility shim.
   - `GET /link/:slug` 返回 master array shape (`goLink`, `goDest`, `destHistory`, `addLogo`, `caption`, `editable`); 非 owner 不暴露 owner email.
@@ -144,13 +145,14 @@ flowchart TB
 - **`src/web/`** - Vite + React 19 + react-router-dom v7. 详见 [`src/web/README.md`](../src/web/README.md).
   - `src/web/styles/tokens.css` 定义 brand/action/warning/danger 语义色; 默认主题 action alias 到橙色 brand, ZGZG 主题 action 改为中性色且保留红色 brand accent (`src/web/styles/tokens.css:20-237`).
   - `src/web/lib/brand.ts` 给浏览器和 SSG 统一解析主题, ZGZG 前端 logo/favicon 使用 Vite public path `/zgzg-round-logo.png`, 避免 SSG 输出本地文件路径 (`src/web/lib/brand.ts:1-24`)。
-  - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`.
+  - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`; 匿名创建表单需要勾选 public/warning 安全确认 (`src/web/pages/Landing/CreateForm.tsx:64-80`, `src/web/pages/Landing/CreateForm.tsx:147-180`, `src/web/pages/Landing/CreateForm.tsx:353-389`).
   - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 last 30 days stats heatmap + 折线、`UrlHistory` 与 `AuditTimeline` (`src/web/pages/Edit.tsx:483-575`).
   - `/login` / `/auth/callback` 是 Supabase magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/auth/confirm` 是 Supabase TokenHash 邮件链接入口, 调 `verifyOtp` 后把 session token 交给 `/auth/callback` 的 hash-token 分支。
   - Supabase Magic Link 邮件模板维护在 `docs/email-templates/`, 分默认 Open GoLinks 和 ZGZG 两套主题, 邮件按钮使用 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`；部署/Supabase/Resend 操作见 `DEPLOYMENT.md`。
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`; `StatsChart` 调 `/api/v1/stats/summary?days=364` 并复用 `StatsHeatmap` 把近 52 周日点击渲染为 GitHub-style heatmap, 支持完整月份标签、1 月年份标签和浮动 tooltip (`src/web/components/StatsChart.tsx:1-69`, `src/web/components/stats/Heatmap.tsx:1-163`, `src/routes/api/stats.ts:10-12`, `src/lib/ga4.ts:153-159`, `package.json:24-40`).
   - `/stats` / `/stats/:slug` 是公开只读 GA4 统计视图, 调 `/api/v1/stats/query` 展示全站或单 slug 的 path 表、path share 饼图、date heatmap + 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换 (`src/web/pages/Stats/index.tsx:1-295`).
+  - `/trending` 是公开只读热门链接页, 调 `/api/v1/stats/trending` 展示近 7/30 天 `is_public=true` 链接的 events/users 排名 (`src/web/router.tsx:13-32`, `src/web/pages/Trending.tsx:1-153`).
   - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
   - `/edit/:slug` 和创建成功态内嵌 QR editor; `/qr/:slug` 仍是独立 QR editor. 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
   - `/create` 复用 Landing 创建体验.
@@ -192,15 +194,15 @@ flowchart TB
 
 ### 创建短链
 1. 用户在 Landing (或 `/edit/<slug>`, slug 自动预填) 填表; 浏览器计算 fingerprint, SPA POST `/api/v1/links` JSON `{slug, url}` + `X-Fingerprint`
-2. Hono `links.ts` zod 校验; 登录请求忽略 fingerprint 并写 `owner_id`, 匿名请求保存 `created_by_fingerprint`
+2. Hono `links.ts` zod 校验; 登录请求忽略 fingerprint 并写 `owner_id`, 匿名请求保存 `created_by_fingerprint`, 强制 `is_public=true` 和 `metadata.show_warning=true`
 3. INSERT, 唯一约束失败 (Drizzle 把 PG 的 23505 包成 `DrizzleQueryError`, 从 `err.cause.code` 解出) 返回 `SLUG_TAKEN` 409
 4. 客户端拿到 409 后, 自动生成的 slug 重试一次; 用户自定义的 slug 则在表单内提示
-5. 已登录请求写 `owner_id`; 匿名请求进入 IP+UA rate limit; CREATE 写 `audit_logs`
+5. 已登录请求写 `owner_id` 且默认 private; 匿名请求进入 IP+UA rate limit, 创建后可通过 fingerprint/legacy email claim, claim 成 owner 后才可关闭 public/warning; CREATE 写 `audit_logs`
 
 ### Warning interstitial
 1. Owner 在 `/edit/:slug` 勾选 `WarnToggle`, PATCH `/api/v1/links/:slug` body `{ metadata: { show_warning: true } }`
 2. 访客访问 `/:slug`, redirect handler 发现 `metadata.show_warning` 且没有 `?confirm=1`, 返回 302 `/warn/:slug`
-3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets; warning 视觉使用 amber, Proceed 按钮使用 action token 而不是品牌红色
+3. `/warn/:slug` SSR HTML 展示目标 URL, 不加载 SPA assets; warning 视觉使用 amber, Proceed 按钮使用 action token 而不是品牌红色, 并提供 `Login to Claim` 指向 `/claim/:slug`
 4. 用户点 Proceed 访问 `/:slug?confirm=1`, redirect handler 跳过 warning, 返回目标 URL 302 并记录 visits/GA4
 
 ### Audit history
@@ -236,8 +238,15 @@ flowchart TB
 4. `src/lib/ga4.ts#queryStatsForSlugs` 用 GA4 Data API 查询 `page_view`; 可选用户 `pathRegex` 只作为额外过滤条件, 不暴露任意 GA4 passthrough
 5. SPA 渲染 path 表、path share 饼图、day heatmap 与 day 折线; 空数据展示 "No data yet", GA4 错误降级为页面 alert
 
+### Trending discovery
+1. 任何用户访问 `/trending`
+2. SPA 调 `GET /api/v1/stats/trending?range=7|30&limit=20`
+3. 后端只查询 `links.is_public=true AND deleted_at IS NULL`, 用这些 slug 构造 GA4 `pagePath` in-list scope 后查询排名
+4. 返回 DTO 只包含 slug、url、description、eventCount、activeUsers; owner、legacy metadata、fingerprint 等内部字段不返回
+5. SPA 渲染公开热门链接列表; 空结果显示 "No public trending links yet"
+
 ### 匿名链接认领
-1. 匿名创建成功后, 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
+1. 匿名创建成功后, 链接已强制 public + warning; 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
 2. 用户登录后进 `/dashboard`, `ClaimBanner` 计算当前浏览器 fingerprint 并调 `GET /api/v1/links/claimable?fingerprint=<64hex>`
 3. 后端返回两类未归属链接: `created_by_fingerprint` 匹配, 或 canonical `metadata.legacy_author_email` 等于当前用户 email
 4. 用户点击 Claim 后, `POST /api/v1/links/:slug/claim` 用单条原子 UPDATE 写 `owner_id`, 只有 `owner_id IS NULL` 且 proof predicate 同时成立才成功, 并记录 `audit_logs.action = CLAIM`

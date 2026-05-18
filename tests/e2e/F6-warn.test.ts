@@ -115,6 +115,25 @@ afterAll(async () => {
 });
 
 describe("F6 warning interstitial", () => {
+  it("renders Login to Claim for warned anonymous links", async () => {
+    const slug = uniqueSlug("f6-anon-claim");
+    touchedSlugs.add(slug);
+    await cleanupSlug(slug);
+    await db.insert(schema.linksTable).values({
+      slug,
+      url: "https://example.com/f6/anon-claim",
+      isPublic: true,
+      metadata: { show_warning: true },
+      urlHistory: [],
+    });
+
+    const page = await app.request(`/warn/${slug}`);
+    expect(page.status).toBe(200);
+    const html = await page.text();
+    expect(html).toContain("Login to Claim");
+    expect(html).toContain(`/claim/${slug}`);
+  });
+
   it("intercepts warned links, serves self-contained HTML, and proceeds on confirm", async () => {
     const token = await generateAccessToken("warn");
     const slug = uniqueSlug("f6-warn");
@@ -138,6 +157,8 @@ describe("F6 warning interstitial", () => {
     const html = await page.text();
     expect(html).toContain("即将跳转外部链接");
     expect(html).toContain("继续访问 Proceed");
+    expect(html).toContain("Login to Claim");
+    expect(html).toContain(`/claim/${slug}`);
     expect(html).toContain("取消 Cancel");
     expect(html).toContain("https://example.com/f6/");
     expect(html).toContain("&amp;next=1");

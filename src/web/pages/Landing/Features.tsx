@@ -10,8 +10,8 @@ const ITEMS = [
   },
   {
     icon: IconShield,
-    title: "默认不公开发现",
-    desc: "新链接不会进入公开列表; 登录后仅本人可在 dashboard 管理.",
+    title: "公开边界清晰",
+    desc: "匿名链接公开并带 warning; 登录认领后可关闭公开发现与提示.",
   },
   {
     icon: IconChart,

@@ -472,6 +472,21 @@ main.landing-main {
   );
 }
 
+.create-anon-safety {
+  align-items: flex-start;
+  padding: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: 8px;
+  background: var(--warning-soft);
+  color: var(--text);
+  line-height: var(--leading-snug);
+}
+
+.create-anon-safety input {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 /* —— 成功态 —— */
 
 .create-success {

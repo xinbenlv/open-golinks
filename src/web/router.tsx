@@ -12,6 +12,7 @@ const Claim = lazy(() => import("./pages/Claim"));
 const QrEditor = lazy(() => import("./pages/QrEditor"));
 const Stats = lazy(() => import("./pages/Stats"));
 const SlugStats = lazy(() => import("./pages/Stats/SlugStats"));
+const Trending = lazy(() => import("./pages/Trending"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const Fallback = () => null;
@@ -28,6 +29,7 @@ export function AppRoutes() {
         <Route path="/qr/:slug" element={<QrEditor />} />
         <Route path="/stats" element={<Stats />} />
         <Route path="/stats/:slug" element={<SlugStats />} />
+        <Route path="/trending" element={<Trending />} />
         <Route
           path="/dashboard"
           element={

@@ -15,13 +15,13 @@ Open GoLinks 是一个可自托管的 GoLinks / 短链入口：
 - 登录后在 Dashboard 管理自己的链接：搜索、分页、修改 URL、软删、查看 audit / URL history。
 - 每个链接都可以生成带 logo 和 caption 的 QR code，支持预览、PNG 下载和旧路径兼容。
 - 高风险链接可以启用 warning interstitial，让访问者先确认再跳转。
-- 公开 `/stats` 和 `/stats/:slug` 提供只读 GA4 统计视图。
+- 公开 `/stats`、`/stats/:slug` 和 `/trending` 提供只读 GA4 统计与公开热门链接视图。
 - 保留 `/api/v2` legacy shim，兼容旧 Chrome extension 的 link lookup / edit / availability 行为。
 
 ## 功能特性
 
 - **短链核心路径**：`GET /:slug` 查询 Postgres 后立即 302，analytics 用异步写入避免拖慢跳转。
-- **链接管理**：Supabase Magic Link 登录，owner-only CRUD，匿名创建后可通过 fingerprint / legacy email claim。
+- **链接管理**：Supabase Magic Link 登录，owner-only CRUD，匿名创建强制公开与 warning，之后可通过 fingerprint / legacy email claim。
 - **二维码**：浏览器 canvas 预览 + 服务端 PNG，支持 `/qr/:slug.png` inline 和 `/qr/d/:slug.png` download。
 - **安全与合规提示**：link-level warning toggle，SSR warning page 不依赖 SPA bundle。
 - **统计与审计**：daily visits、GA4 Data API 查询、audit timeline、URL history、ownership transfer。
@@ -47,7 +47,7 @@ Bun + Hono API + Vite React SPA
 - `src/server.ts`：Hono 入口和生产 SPA 托管。
 - `src/routes/redirect.ts`：短链跳转 hot path。
 - `src/routes/api/links.ts`：链接 CRUD、claim、transfer、metadata。
-- `src/routes/api/stats.ts`：公开 stats query。
+- `src/routes/api/stats.ts`：公开 stats query 与 trending query。
 - `src/routes/qr.ts` 与 `src/lib/qr.ts`：QR PNG 兼容路径和渲染。
 - `src/web/`：React SPA 页面、组件和 hooks。
 

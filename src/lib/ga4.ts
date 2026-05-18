@@ -110,7 +110,7 @@ function slugScopeRegex(slugs: string[]) {
 
 const PUBLIC_LINK_PATH_REGEX = "^/[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$";
 const PUBLIC_EXCLUDED_PATH_REGEX =
-  "^/(api|auth|claim|create|dashboard|edit|login|logout|qr|stats|warn|assets|static|healthz|test-uptimerobot|robots\\.txt|favicon\\.ico|ical|images|wordpress|wp|callback)$";
+  "^/(api|auth|claim|create|dashboard|edit|login|logout|qr|stats|trending|warn|assets|static|healthz|test-uptimerobot|robots\\.txt|favicon\\.ico|ical|images|wordpress|wp|callback)$";
 
 export async function reportRedirectToGA4(input: ReportRedirectInput) {
   const measurementId = process.env.GA4_MEASUREMENT_ID;
@@ -240,9 +240,6 @@ export async function queryStatsForSlugs(
       : input.usePathPlusQueryString
         ? "pagePathPlusQueryString"
         : "pagePath";
-  const scopePathRegex = input.allLinks
-    ? PUBLIC_LINK_PATH_REGEX
-    : slugScopeRegex(input.slugs);
   const expressions: FilterExpression[] = [
     {
       filter: {
@@ -253,10 +250,19 @@ export async function queryStatsForSlugs(
     {
       filter: {
         fieldName: "pagePath",
-        stringFilter: {
-          matchType: "PARTIAL_REGEXP" as const,
-          value: scopePathRegex,
-        },
+        ...(input.allLinks
+          ? {
+              stringFilter: {
+                matchType: "PARTIAL_REGEXP" as const,
+                value: PUBLIC_LINK_PATH_REGEX,
+              },
+            }
+          : {
+              inListFilter: {
+                values: input.slugs.map((slug) => `/${slug}`),
+                caseSensitive: true,
+              },
+            }),
       },
     },
   ];

@@ -94,6 +94,17 @@ async function claim(slug: string, token: string, fingerprint?: string) {
   });
 }
 
+async function patchLink(slug: string, token: string, body: unknown) {
+  return app.request(`/api/v1/links/${slug}`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 async function claimable(token: string, fingerprint?: string) {
   const suffix = fingerprint ? `?fingerprint=${fingerprint}` : "";
   return app.request(`/api/v1/links/claimable${suffix}`, {
@@ -135,6 +146,17 @@ describe("F5 anonymous claim", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.link.ownerId).toBe(auth.userId);
+    expect(body.link.isPublic).toBe(true);
+    expect(body.link.metadata.show_warning).toBe(true);
+
+    const safetyPatch = await patchLink(slug, auth.token, {
+      isPublic: false,
+      metadata: { show_warning: false },
+    });
+    expect(safetyPatch.status).toBe(200);
+    const patched = await safetyPatch.json();
+    expect(patched.link.isPublic).toBe(false);
+    expect(patched.link.metadata.show_warning).toBe(false);
 
     const auditRows = await db
       .select({ action: schema.auditLogsTable.action })

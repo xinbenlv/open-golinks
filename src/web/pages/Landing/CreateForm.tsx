@@ -5,7 +5,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { authFetch } from "../../hooks/useAuth";
+import { authFetch, useAuth } from "../../hooks/useAuth";
 import { QrCanvas } from "../../components/QrCanvas";
 import {
   computeFingerprint,
@@ -25,6 +25,7 @@ const RESERVED = new Set([
   "login",
   "qr",
   "stats",
+  "trending",
   "warn",
   "assets",
   "static",
@@ -63,11 +64,14 @@ type CreateFormProps = {
 export function CreateForm({ initialSlug }: CreateFormProps) {
   const urlId = useId();
   const slugId = useId();
+  const anonymousSafetyId = useId();
+  const { user, loading: authLoading } = useAuth();
 
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState(initialSlug ?? "");
   const [errors, setErrors] = useState<{ url?: string; slug?: string; form?: string }>({});
   const [result, setResult] = useState<Result | null>(null);
+  const [confirmedAnonymousSafety, setConfirmedAnonymousSafety] = useState(false);
   const [copied, setCopied] = useState(false);
   const [successCaption, setSuccessCaption] = useState("");
   const [successAddLogo, setSuccessAddLogo] = useState(true);
@@ -149,6 +153,12 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
       setErrors(errs);
       return;
     }
+    if (!authLoading && !user && !confirmedAnonymousSafety) {
+      setErrors({
+        form: "匿名创建必须确认该短链会公开、始终显示 warning，且需要登录认领后才能关闭。",
+      });
+      return;
+    }
     setErrors({});
     setSubmitting(true);
 
@@ -196,6 +206,7 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
     setSlug(initialSlug ?? "");
     setErrors({});
     setCopied(false);
+    setConfirmedAnonymousSafety(false);
     setSuccessCaption("");
     setSuccessAddLogo(true);
   }
@@ -339,11 +350,25 @@ export function CreateForm({ initialSlug }: CreateFormProps) {
         </div>
       </div>
 
+      {!authLoading && !user ? (
+        <label className="checkbox create-anon-safety" htmlFor={anonymousSafetyId}>
+          <input
+            id={anonymousSafetyId}
+            type="checkbox"
+            checked={confirmedAnonymousSafety}
+            onChange={(event) => setConfirmedAnonymousSafety(event.target.checked)}
+          />
+          <span>
+            我知道匿名短链会公开、warning 不能跳过关闭，需登录认领后才能修改，且可能因滥用被移除。
+          </span>
+        </label>
+      ) : null}
+
       <div className="create-form__actions">
         <button
           type="submit"
           className="btn btn--primary"
-          disabled={submitting}
+          disabled={submitting || authLoading}
           aria-busy={submitting}
         >
           {submitting ? (

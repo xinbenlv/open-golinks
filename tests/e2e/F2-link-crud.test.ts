@@ -68,7 +68,13 @@ async function cleanupSlug(slug: string) {
   await db.delete(schema.linksTable).where(eq(schema.linksTable.slug, slug));
 }
 
-async function postLink(slug: string, url: string, token?: string, headers = {}) {
+async function postLink(
+  slug: string,
+  url: string,
+  token?: string,
+  headers = {},
+  body: Record<string, unknown> = {},
+) {
   touchedSlugs.add(slug);
   return app.request("/api/v1/links", {
     method: "POST",
@@ -77,7 +83,7 @@ async function postLink(slug: string, url: string, token?: string, headers = {})
       ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
-    body: JSON.stringify({ slug, url }),
+    body: JSON.stringify({ slug, url, ...body }),
   });
 }
 
@@ -292,17 +298,28 @@ describe("F2 link CRUD + audit + rate limit", () => {
     }
   }, 30_000);
 
-  it("stores null owner_id for anonymous creates", async () => {
+  it("forces anonymous creates to stay public and warned until claimed", async () => {
     resetRateLimitForTests();
     const slug = uniqueSlug("f2-anon-owner");
     await cleanupSlug(slug);
 
-    const res = await postLink(slug, "https://example.com/anonymous", undefined, {
-      "x-forwarded-for": "203.0.113.40",
-      "user-agent": "f2-anon-owner",
-    });
+    const res = await postLink(
+      slug,
+      "https://example.com/anonymous",
+      undefined,
+      {
+        "x-forwarded-for": "203.0.113.40",
+        "user-agent": "f2-anon-owner",
+      },
+      {
+        isPublic: false,
+        metadata: { show_warning: false },
+      },
+    );
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.link.ownerId).toBeNull();
+    expect(body.link.isPublic).toBe(true);
+    expect(body.link.metadata.show_warning).toBe(true);
   }, 30_000);
 });

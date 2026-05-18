@@ -56,6 +56,7 @@ src/web/
     ├── Edit.tsx             # /edit/:slug, 不存在则创建; owner 可编辑/软删已存在链接 + URL history/audit timeline
     ├── QrEditor.tsx         # /qr/:slug, QR 预览 + PNG 下载
     ├── Stats/               # /stats 和 /stats/:slug 详细 GA4 analytics
+    ├── Trending.tsx         # /trending, 近 7/30 天公开热门链接
     └── NotFound.tsx         # * (lazy stub)
 ```
 
@@ -70,6 +71,7 @@ src/web/
 | `/qr/:slug` | `pages/QrEditor` | 客户端 lazy chunk, QR 预览与 PNG 下载 |
 | `/stats` | `pages/Stats` | 客户端 lazy chunk, 公开只读; 全部未删除链接 GA4 analytics |
 | `/stats/:slug` | `pages/Stats/SlugStats` | 客户端 lazy chunk, 公开只读; 单 slug GA4 analytics |
+| `/trending` | `pages/Trending` | 客户端 lazy chunk, 公开只读; 近 7/30 天 `is_public=true` 热门链接 |
 | `/dashboard` | `AuthGuard(pages/Dashboard)` | 客户端 lazy chunk, 需登录; owner 链接列表 |
 | `/create` | `pages/Create` | 客户端 lazy chunk; Landing 创建体验 |
 | `/edit/:slug` | `pages/Edit` | 客户端 lazy chunk; 不存在 slug 进入创建流, owner 可编辑/删除 |
@@ -117,6 +119,7 @@ bun run build:web
 - `AuthCallback.tsx` 优先读取 `?code=` 并调用 `exchangeCodeForSession`; Admin generated-link / legacy hash token 回跳则调用 `setSession`
 - `AuthGuard` 保护 `/dashboard`; `/stats`、`/stats/:slug` 与 `/edit/:slug` 保持公开只读/创建入口
 - `/api/v1/stats/summary` 仍 requireAuth 并只给 `/dashboard` 的 owner summary 使用
+- `/trending` 和 `/api/v1/stats/trending` 公开只读，但只展示 `is_public=true` 且未删除的链接
 - Header 根据 session 显示登录/登出状态
 - `/claim/:slug` 允许未登录用户先查看认领入口; 登录后用浏览器 fingerprint 或 legacy author email 调 `POST /api/v1/links/:slug/claim`
 
@@ -131,7 +134,8 @@ Vite client env:
 - 客户端先做 URL/slug 格式校验 (与后端 schema 对齐, 失败原地报错不发请求)
 - 提交成功 (201) → 显示真实短链 (`window.location.host` 拼出) + 复制按钮 + "打开"按钮 (打到 `/<slug>` 走 redirect)
 - 匿名提交会先计算 `src/lib/fingerprint.ts` 的 64-hex fingerprint, 通过 `X-Fingerprint` 传给后端, 并把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
-- F12 已 drop 公开 browse 能力: 创建表单不展示公开开关, 后端新建/恢复链接均写 `is_public=false`
+- 匿名提交必须勾选安全确认; 后端会强制匿名链接 `is_public=true` 且 `metadata.show_warning=true`, 登录并认领成为 owner 后才能关闭 public/warning
+- 登录用户创建仍不展示公开开关; 后端默认写 `is_public=false`, owner 可在 Edit 页开启 public 或 warning
 - slug 留空时, 客户端用 `genSlug()` 生成; 撞库 (409) 时自动重试一次
 - 用户填的 slug 撞库 → 在 slug 字段下报"该 slug 已被占用"
 - 网络/服务端异常 → 表单底部红字, 不清空已输入的 url/slug
@@ -157,10 +161,12 @@ Vite client env:
 - `pathRegex` 是额外过滤条件; 后端仍不暴露任意 GA4 passthrough
 - 组件位于 `components/stats/`: `DateRangePicker`, `PathRegexInput`, `StatsHeatmap`, `StatsPieChart`, `StatsLineChart`
 
+`/trending` 调公开只读的 `/api/v1/stats/trending?range=7|30`, 先在后端限定 `links.is_public=true AND deleted_at IS NULL`, 再把这些 slug 传给 GA4 path query, 返回 slug、URL/description、events 和 users。
+
 校验规则:
 - `url`: 必填, http/https URL
 - `slug`: 可选, 正则 `^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$|^[a-z0-9]{3}$`, 不能是保留路径
-- `is_public`: 创建 UI 不展示公开开关; 后端 POST/restore 显式写 `false`, DB 默认值也是 `false`
+- `is_public`: 登录用户创建默认 `false`; 匿名创建强制 `true` 并强制 warning; owner PATCH 才能改 public/warning
 
 ## 开发
 
@@ -174,7 +180,7 @@ bun run start                  # NODE_ENV=production, Hono 托管 dist/web
 ## 已知限制
 
 - `/favicon.ico` / `/favicon.svg` / `/robots.txt` 等带 `.` 的根路径在生产被 redirect handler 当成无效 slug 拦截 → 404. 因此 favicon 用 inline data URL 处理. 后端逻辑由 `src/routes/redirect.ts` 决定, 本目录不修改.
-- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login`、`/claim`、`/qr`、`/stats` 等已覆盖.
+- 直接访问新的单段 SPA 路径时, 必须先把该路径加入 `src/routes/redirect.ts` 的 `RESERVED`, 并更新 `tests/e2e/reserved-slug-fallthrough.test.ts`. 当前 `/dashboard`、`/login`、`/claim`、`/qr`、`/stats`、`/trending` 等已覆盖.
 
 ## 相关
 

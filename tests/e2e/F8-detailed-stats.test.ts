@@ -30,14 +30,20 @@ async function cleanupSlug(slug: string) {
   await db.delete(schema.linksTable).where(eq(schema.linksTable.slug, slug));
 }
 
-async function insertLink(slug: string, url: string, deletedAt?: Date) {
+async function insertLink(
+  slug: string,
+  url: string,
+  options: { deletedAt?: Date; isPublic?: boolean; metadata?: Record<string, unknown> } = {},
+) {
   touchedSlugs.add(slug);
   await cleanupSlug(slug);
   await db.insert(schema.linksTable).values({
     slug,
     url,
     urlHistory: [],
-    deletedAt,
+    deletedAt: options.deletedAt,
+    isPublic: options.isPublic,
+    metadata: options.metadata,
   });
 }
 
@@ -47,6 +53,10 @@ async function postStatsQuery(body: Record<string, unknown>) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+async function getTrending(query = "") {
+  return app.request(`/api/v1/stats/trending${query}`);
 }
 
 function result(input: StatsQueryInput, rows = [
@@ -96,7 +106,9 @@ describe("F8 detailed stats", () => {
     const deletedSlug = uniqueSlug("f8-deleted");
     await insertLink(slugA, "https://example.com/a");
     await insertLink(slugB, "https://example.com/b");
-    await insertLink(deletedSlug, "https://example.com/deleted", new Date());
+    await insertLink(deletedSlug, "https://example.com/deleted", {
+      deletedAt: new Date(),
+    });
 
     let captured: StatsQueryInput | null = null;
     setStatsQueryProviderForTests(async (input) => {
@@ -134,7 +146,9 @@ describe("F8 detailed stats", () => {
     const slug = uniqueSlug("f8-date");
     const deletedSlug = uniqueSlug("f8-date-del");
     await insertLink(slug, "https://example.com/date");
-    await insertLink(deletedSlug, "https://example.com/date-deleted", new Date());
+    await insertLink(deletedSlug, "https://example.com/date-deleted", {
+      deletedAt: new Date(),
+    });
 
     let captured: StatsQueryInput | null = null;
     setStatsQueryProviderForTests(async (input) => {
@@ -182,6 +196,54 @@ describe("F8 detailed stats", () => {
     expect(
       (await postStatsQuery({ pathRegex: "x".repeat(181) })).status,
     ).toBe(400);
+  });
+
+  it("returns trending only for public non-deleted links", async () => {
+    const publicSlug = uniqueSlug("f8-trend-pub");
+    const privateSlug = uniqueSlug("f8-trend-priv");
+    const deletedSlug = uniqueSlug("f8-trend-del");
+    await insertLink(publicSlug, "https://example.com/public", {
+      isPublic: true,
+      metadata: { description: "Public launch doc" },
+    });
+    await insertLink(privateSlug, "https://example.com/private", {
+      isPublic: false,
+    });
+    await insertLink(deletedSlug, "https://example.com/deleted", {
+      isPublic: true,
+      deletedAt: new Date(),
+    });
+
+    let captured: StatsQueryInput | null = null;
+    setStatsQueryProviderForTests(async (input) => {
+      captured = input;
+      return result(input, [
+        { dimension: `/${publicSlug}`, eventCount: 15, activeUsers: 7 },
+      ]);
+    });
+
+    const res = await getTrending("?range=30&limit=5");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(captured).toMatchObject({
+      allLinks: false,
+      range: 30,
+      groupBy: "path",
+      limit: 5,
+      usePathPlusQueryString: false,
+    });
+    expect(captured?.slugs).toContain(publicSlug);
+    expect(captured?.slugs).not.toContain(privateSlug);
+    expect(captured?.slugs).not.toContain(deletedSlug);
+    expect(body.links).toEqual([
+      {
+        slug: publicSlug,
+        url: "https://example.com/public",
+        description: "Public launch doc",
+        eventCount: 15,
+        activeUsers: 7,
+      },
+    ]);
   });
 
   it("returns 500 when the stats query provider fails", async () => {

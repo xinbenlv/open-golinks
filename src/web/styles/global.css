@@ -1358,6 +1358,94 @@ svg {
   color: var(--accent);
 }
 
+.trending-range {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(72px, 1fr));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  padding: 3px;
+}
+
+.trending-range button {
+  min-height: 36px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.trending-range button.is-active {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.trending-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.trending-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 96px 96px;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 72px;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.trending-row:last-child {
+  border-bottom: 0;
+}
+
+.trending-row__rank {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trending-row__main {
+  min-width: 0;
+}
+
+.trending-row__slug {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.trending-row__main p {
+  margin: var(--space-1) 0 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trending-row__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.trending-row__metric span {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
 @media (max-width: 980px) {
   .stats-controls,
   .stats-grid,
@@ -1380,6 +1468,18 @@ svg {
   .stats-table__row {
     align-items: start;
     padding: var(--space-3) var(--space-4);
+  }
+
+  .trending-row {
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .trending-row__metric {
+    grid-column: 2;
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
   }
 }
 

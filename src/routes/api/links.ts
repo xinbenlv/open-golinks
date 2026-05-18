@@ -262,6 +262,13 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
     return c.json({ error: "INVALID_FINGERPRINT" }, 400);
   }
   try {
+    const anonymous = !user;
+    const metadata = anonymous
+      ? {
+          ...normalizeMetadata(mergeMetadata(null, parsed.data.metadata)),
+          show_warning: true,
+        }
+      : mergeMetadata(null, parsed.data.metadata);
     const [inserted] = await db
       .insert(schema.linksTable)
       .values({
@@ -269,8 +276,8 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
         url: parsed.data.url,
         ownerId: user?.id ?? null,
         createdByFingerprint: user ? null : fingerprint ?? null,
-        isPublic: false,
-        metadata: mergeMetadata(null, parsed.data.metadata),
+        isPublic: anonymous,
+        metadata,
       })
       .returning();
     const row = expectReturned(inserted);

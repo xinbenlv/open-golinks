@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, schema } from "../../db/db.ts";
 import { requireAuth, type AuthEnv } from "../../middleware/auth.ts";
 import { getStatsSummaryForSlugs, queryStatsForSlugs } from "../../lib/ga4.ts";
+import { normalizeMetadata } from "../../lib/identity.ts";
 
 export const statsRoute = new Hono<AuthEnv>();
 
@@ -23,6 +24,19 @@ const statsQuerySchema = z.object({
   usePathPlusQueryString: z.boolean().default(false),
   slug: slugSchema.optional(),
 });
+
+const trendingQuerySchema = z.object({
+  range: z.preprocess(
+    (value) => value === undefined ? undefined : Number(value),
+    z.union([z.literal(7), z.literal(30)]).default(7),
+  ),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+function extractSlugFromPath(path: string) {
+  const match = path.match(/^\/([^/?#]+)/);
+  return match?.[1] ?? null;
+}
 
 statsRoute.get("/summary", requireAuth, async (c) => {
   const parsed = summaryQuerySchema.safeParse({
@@ -51,6 +65,77 @@ statsRoute.get("/summary", requireAuth, async (c) => {
     return c.json(summary);
   } catch (err) {
     console.error("[stats] summary failed", err);
+    return c.json({ error: "STATS_UNAVAILABLE" }, 500);
+  }
+});
+
+statsRoute.get("/trending", async (c) => {
+  const parsed = trendingQuerySchema.safeParse({
+    range: c.req.query("range") ?? undefined,
+    limit: c.req.query("limit") ?? undefined,
+  });
+  if (!parsed.success) {
+    return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
+  }
+
+  const rows = await db
+    .select({
+      slug: schema.linksTable.slug,
+      url: schema.linksTable.url,
+      metadata: schema.linksTable.metadata,
+    })
+    .from(schema.linksTable)
+    .where(
+      and(
+        eq(schema.linksTable.isPublic, true),
+        isNull(schema.linksTable.deletedAt),
+      ),
+    );
+
+  const publicBySlug = new Map(
+    rows.map((row) => {
+      const metadata = normalizeMetadata(row.metadata);
+      return [
+        row.slug,
+        {
+          slug: row.slug,
+          url: row.url,
+          description: typeof metadata.description === "string"
+            ? metadata.description
+            : null,
+        },
+      ];
+    }),
+  );
+
+  try {
+    const result = await queryStatsForSlugs({
+      slugs: rows.map((row) => row.slug),
+      allLinks: false,
+      range: parsed.data.range,
+      groupBy: "path",
+      limit: parsed.data.limit,
+      usePathPlusQueryString: false,
+    });
+    const links = result.rows.flatMap((row) => {
+      const slug = extractSlugFromPath(row.dimension);
+      if (!slug) return [];
+      const link = publicBySlug.get(slug);
+      if (!link) return [];
+      return [{
+        ...link,
+        eventCount: row.eventCount,
+        activeUsers: row.activeUsers,
+      }];
+    });
+    return c.json({
+      links,
+      range: parsed.data.range,
+      source: result.source,
+      scope: result.scope,
+    });
+  } catch (err) {
+    console.error("[stats] trending failed", err);
     return c.json({ error: "STATS_UNAVAILABLE" }, 500);
   }
 });
