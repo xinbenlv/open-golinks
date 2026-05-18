@@ -2,6 +2,7 @@
 // - 任何用户/测试/oncall 都能据此辨认当前所看的是哪个构建
 // - 内容可选中, 便于复制粘贴到 bug 报告里
 // - SHA 点击跳转到对应 GitHub commit
+// - 日期点击跳转到平台上该次部署 (Railway dashboard); 没有 deployUrl 时纯文本展示
 // 配色: 半透明前景 + 深色 text-shadow, 在浅色/深色/媒体重背景下都保持可读, 又不抢主内容.
 
 import { formatBuiltAtShort, getVersion } from "../version";
@@ -32,7 +33,13 @@ export function BuildStamp() {
       {time && (
         <>
           <span aria-hidden="true"> · </span>
-          <span>{time}</span>
+          {v.deployUrl ? (
+            <a href={v.deployUrl} target="_blank" rel="noreferrer" title="查看本次 Railway 部署">
+              {time}
+            </a>
+          ) : (
+            <span>{time}</span>
+          )}
         </>
       )}
     </div>

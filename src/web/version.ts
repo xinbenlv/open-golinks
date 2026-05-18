@@ -8,6 +8,8 @@ export type Version = {
   sha: string;
   builtAt: string; // ISO-8601 带时区偏移; 显示时可降级到 YYYY-MM-DD HH:mm
   branch?: string;
+  // 跳转到具体一次部署的链接 (目前是 Railway dashboard). 缺省 (dev / 非 Railway 环境) 为 undefined.
+  deployUrl?: string;
 };
 
 declare global {
@@ -32,6 +34,7 @@ export function getVersion(): Version {
     sha: v.sha ?? DEV_FALLBACK.sha,
     builtAt: v.builtAt ?? legacy.buildTime ?? "",
     branch: v.branch,
+    deployUrl: v.deployUrl,
   };
 }
 

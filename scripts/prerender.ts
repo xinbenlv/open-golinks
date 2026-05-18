@@ -22,6 +22,7 @@ const VERSION_PAYLOAD = {
   sha: BUILD_INFO.sha,
   builtAt: BUILD_INFO.builtAt,
   branch: BUILD_INFO.branch,
+  deployUrl: BUILD_INFO.deployUrl,
 };
 const BRAND = getBrandConfig(process.env.OPEN_GOLINK_THEME);
 

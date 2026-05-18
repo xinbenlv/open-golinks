@@ -15,6 +15,10 @@ export type BuildInfo = {
   sha: string; // git short SHA (6 字符)
   builtAt: string; // ISO-8601 带时区偏移, e.g. 2026-05-13T08:30:42-07:00
   branch?: string;
+  // 部署平台对应的 deploy run 链接, 让 footer 上的日期可点击跳转到具体一次构建.
+  // 目前实现: Railway. 形如:
+  // https://railway.com/project/<pid>/service/<sid>?environmentId=<eid>&id=<deploymentId>
+  deployUrl?: string;
 };
 
 function readPkgVersion(): string {
@@ -85,11 +89,25 @@ function resolveBranch(): string | undefined {
   );
 }
 
+// 优先级: 显式 OGL_BUILD_DEPLOY_URL > Railway 自动注入 (PROJECT/SERVICE/ENVIRONMENT/DEPLOYMENT ID 拼装) > undefined.
+function resolveDeployUrl(): string | undefined {
+  if (process.env.OGL_BUILD_DEPLOY_URL) return process.env.OGL_BUILD_DEPLOY_URL;
+  const pid = process.env.RAILWAY_PROJECT_ID;
+  const sid = process.env.RAILWAY_SERVICE_ID;
+  const eid = process.env.RAILWAY_ENVIRONMENT_ID;
+  const did = process.env.RAILWAY_DEPLOYMENT_ID;
+  if (pid && sid && eid && did) {
+    return `https://railway.com/project/${pid}/service/${sid}?environmentId=${eid}&id=${did}`;
+  }
+  return undefined;
+}
+
 export const BUILD_INFO: BuildInfo = {
   version: process.env.OGL_BUILD_VERSION || readPkgVersion(),
   sha: resolveSha(),
   builtAt: process.env.OGL_BUILD_TIME || nowWithOffset(),
   branch: resolveBranch(),
+  deployUrl: resolveDeployUrl(),
 };
 
 // 单行紧凑展示, 用于 CLI/启动日志/header 等场景.

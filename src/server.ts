@@ -34,6 +34,18 @@ app.use("*", async (c, next) => {
 
 // API 路由 (兼容 v2-next /api/v1/* 命名空间, 但具体 schema 可能演进)
 app.route("/api/v1/health", healthRoute);
+
+// 兼容 legacy: 简单的 200 OK 给 uptime 监控系统 (UptimeRobot 等) 拨测.
+app.get("/healthz", (c) =>
+  c.json({
+    status: "ok",
+    service: "open-golinks-v2-hono",
+    version: BUILD_INFO.version,
+    sha: BUILD_INFO.sha,
+    builtAt: BUILD_INFO.builtAt,
+    timestamp: new Date().toISOString(),
+  }),
+);
 app.route("/api/v1/audit", auditRoute);
 app.route("/api/v1/links", linksRoute);
 app.route("/api/v1/me", meRoute);

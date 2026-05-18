@@ -23,6 +23,7 @@ const RESERVED = new Set([
   "static",
   "favicon.ico",
   "robots.txt",
+  "healthz",
 ]);
 
 // SLUG 格式验证 (与 schema CHECK 约束一致)

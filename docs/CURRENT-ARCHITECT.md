@@ -15,6 +15,7 @@
               │   ├─ /warn/:slug     → SSR warning HTML      │
               │   ├─ /qr/:slug.png    → QR PNG compat         │
               │   ├─ /api/v1/health  → JSON                  │
+              │   ├─ /healthz        → JSON (uptime monitor)  │
               │   ├─ /api/v1/audit   → owner audit timeline   │
               │   ├─ /api/v1/links   → CRUD + claim + audit  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
@@ -96,6 +97,7 @@ flowchart TB
   - master-compatible QR PNG paths; `/d/` 变体加 `Content-Disposition: attachment`
   - 接受 `caption` 和 `addLogo=true`, 返回 `image/png`
 - **`src/routes/api/health.ts`** (`GET /api/v1/health`) - 简单 JSON 健康检查
+- `GET /healthz` (`src/server.ts`) - legacy 兼容的 uptime 监控端点 (UptimeRobot 等); 返回 200 JSON 含 version/sha/builtAt, 对应 `https://zgzg.li/healthz`、`https://zgzg.link/healthz`
 - **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
   - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:182-249`)
