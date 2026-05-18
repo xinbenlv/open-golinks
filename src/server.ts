@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
@@ -65,8 +66,31 @@ app.route("/", redirectRoute);
 
 // 生产环境托管 Vite 构建的 SPA
 if (process.env.NODE_ENV === "production") {
+  // Railway build 阶段拿不到 RAILWAY_DEPLOYMENT_ID, 所以 prerender 写入的 __OGL_VERSION__ 缺 deployUrl.
+  // 启动时读一次 dist/web/index.html, 用运行时 BUILD_INFO 重写 __OGL_VERSION__ 内联脚本, 缓存内存.
+  const indexPath = "./dist/web/index.html";
+  let indexHtml = "";
+  try {
+    indexHtml = readFileSync(indexPath, "utf8");
+    const runtimePayload = JSON.stringify({
+      version: BUILD_INFO.version,
+      sha: BUILD_INFO.sha,
+      builtAt: BUILD_INFO.builtAt,
+      branch: BUILD_INFO.branch,
+      deployUrl: BUILD_INFO.deployUrl,
+    });
+    indexHtml = indexHtml.replace(
+      /window\.__OGL_VERSION__\s*=\s*\{[^}]*\};?/,
+      `window.__OGL_VERSION__ = ${runtimePayload};`,
+    );
+  } catch (err) {
+    console.warn("[server] failed to load dist/web/index.html for runtime rewrite:", err);
+  }
+
+  const HTML_HEADERS = { "Content-Type": "text/html; charset=utf-8" };
+  app.get("/", (c) => c.body(indexHtml, 200, HTML_HEADERS));
   app.use("/*", serveStatic({ root: "./dist/web" }));
-  app.get("*", serveStatic({ path: "./dist/web/index.html" }));
+  app.get("*", (c) => c.body(indexHtml, 200, HTML_HEADERS));
 }
 
 const port = Number(process.env.PORT ?? 3000);
