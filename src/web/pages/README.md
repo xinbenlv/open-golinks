@@ -34,3 +34,5 @@ pages/
 
 - [`../README.md`](../README.md)
 - [`../../../docs/CURRENT-ARCHITECT.md`](../../../docs/CURRENT-ARCHITECT.md)
+
+编辑已有短链时，`/edit/:slug` 顶部提供大号 Go 按钮，所有访问者均可在新标签页打开已保存的短链；沿用短链跳转、warning 提示与访问统计。

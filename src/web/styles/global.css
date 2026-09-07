@@ -1509,3 +1509,11 @@ svg {
 .build-stamp a:hover {
   text-decoration: underline;
 }
+
+/* 编辑页的短链跳转入口，桌面与手机均保持醒目的点击区域。 */
+.btn.edit-go-button {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}

@@ -278,6 +278,16 @@ export default function Edit() {
               </div>
             </div>
 
+            <a
+              className="btn btn--primary edit-go-button"
+              href={`/${encodeURIComponent(state.link.slug)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Go to /${state.link.slug} (opens in a new tab)`}
+            >
+              Go <span aria-hidden="true">→</span>
+            </a>
+
             <div className="edit-layout">
               <div className="edit-fields">
                 <label className="auth-label" htmlFor={slugId}>Slug</label>

@@ -186,3 +186,5 @@ bun run start                  # NODE_ENV=production, Hono 托管 dist/web
 
 - [`docs/CURRENT-ARCHITECT.md`](../../docs/CURRENT-ARCHITECT.md) - 项目整体架构
 - [`docs/plans/2026-05-08-landing-page.md`](../../docs/plans/2026-05-08-landing-page.md) - 本次实现的计划
+
+编辑已有短链时，`/edit/:slug` 顶部提供大号 Go 按钮，所有访问者均可在新标签页打开已保存的短链；沿用短链跳转、warning 提示与访问统计。

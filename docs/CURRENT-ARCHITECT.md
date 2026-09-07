@@ -148,7 +148,7 @@ flowchart TB
   - `src/web/styles/tokens.css` 定义 brand/action/warning/danger 语义色; 默认主题 action alias 到橙色 brand, ZGZG 主题 action 改为中性色且保留红色 brand accent (`src/web/styles/tokens.css:20-237`).
   - `src/web/lib/brand.ts` 给浏览器和 SSG 统一解析主题, ZGZG 前端 logo/favicon 使用 Vite public path `/zgzg-round-logo.png`, 避免 SSG 输出本地文件路径 (`src/web/lib/brand.ts:1-24`)。
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`; 匿名创建表单需要勾选 public/warning 安全确认 (`src/web/pages/Landing/CreateForm.tsx:64-80`, `src/web/pages/Landing/CreateForm.tsx:147-180`, `src/web/pages/Landing/CreateForm.tsx:353-389`).
-  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 last 30 days stats heatmap + 折线、`UrlHistory` 与 `AuditTimeline` (`src/web/pages/Edit.tsx:483-575`).
+  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 last 30 days stats heatmap + 折线、`UrlHistory` 与 `AuditTimeline` (`src/web/pages/Edit.tsx:493-585`).
   - `/login` / `/auth/callback` 是 Supabase magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/auth/confirm` 是 Supabase TokenHash 邮件链接入口, 调 `verifyOtp` 后把 session token 交给 `/auth/callback` 的 hash-token 分支。
   - Supabase Magic Link 邮件模板维护在 `docs/email-templates/`, 分默认 Open GoLinks 和 ZGZG 两套主题, 邮件按钮使用 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`；部署/Supabase/Resend 操作见 `DEPLOYMENT.md`。
@@ -289,3 +289,5 @@ flowchart TB
 
 - Turnstile 校验
 - CI/CD (GitHub Actions → Railway)
+
+编辑页 Go 入口使用原生链接在新标签页访问 `/:slug`，不提交表单，沿用服务端 redirect / warning / analytics 流程 (`src/web/pages/Edit.tsx:281-289`)。
