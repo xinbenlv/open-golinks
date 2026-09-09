@@ -97,4 +97,4 @@ bun run build
 
 迁移后必须保持 **slug URL 兼容**：既有 `/{slug}` 短链继续可访问。内部 API schema、Dashboard UI 和 auth session 不承诺向前兼容，但 `/api/v2` shim 会覆盖当前 Chrome extension 仍依赖的 legacy 行为。
 
-编辑已有短链时，`/edit/:slug` 顶部提供大号 Go 按钮，所有访问者均可在新标签页打开已保存的短链；沿用短链跳转、warning 提示与访问统计。
+`/edit/:slug` 沿用项目原有主题与字体。短链标题旁放置 Copy 和 Go；目标地址、描述、标签与访问开关直接可见，二维码、下载和自定义作为紧凑侧栏，手机上顺序排列。保存按钮在修改后出现。统计直接展示，只有历史、转移和删除收在 Manage link。

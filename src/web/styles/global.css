@@ -1510,10 +1510,406 @@ svg {
   text-decoration: underline;
 }
 
-/* 编辑页的短链跳转入口，桌面与手机均保持醒目的点击区域。 */
-.btn.edit-go-button {
-  width: 100%;
+/* 编辑页：编辑字段直接可见，二维码作为窄侧栏，低频管理按需展开。 */
+.edit-page {
+  place-items: start center;
+  padding: 80px 24px;
+}
+
+.edit-page .edit-page-stack {
+  width: min(100%, 920px);
+  gap: 0;
+}
+
+.edit-page .edit-panel {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  gap: 0;
+}
+
+.edit-page .auth-form {
+  gap: 24px;
+}
+
+.edit-page .edit-header {
+  align-items: center;
+  gap: 24px;
+  border: 0;
+  padding: 0 4px 18px;
+}
+
+.edit-page .edit-identity {
+  min-width: 0;
+}
+
+.edit-page .dashboard-kicker {
+  color: var(--text-muted);
+  text-transform: none;
+}
+
+.edit-page .edit-domain {
+  color: var(--accent);
+  margin: 0 0 7px;
+}
+
+.edit-page .edit-header h1 {
+  overflow-wrap: anywhere;
+}
+
+.edit-page .edit-header__actions {
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.edit-page .btn {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  height: 40px;
+}
+
+.edit-page .edit-header .btn--ghost {
+  color: var(--text);
+  border: 0;
+  background: transparent;
+  padding: 0 14px;
+}
+
+.edit-page .btn.edit-go-button {
+  min-width: 80px;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+.edit-page .edit-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  align-items: start;
+  gap: 48px;
+}
+
+.edit-page .edit-details {
+  min-width: 0;
+}
+
+.edit-page .edit-fields {
+  gap: 0;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: 0 24px;
+}
+
+.edit-page .edit-field-row {
+  padding: 20px 0 16px;
+}
+
+.edit-page .edit-field-row + .edit-field-row {
+  border-top: 1px solid var(--border);
+}
+
+.edit-page .edit-field-row .auth-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.edit-page .edit-field-row .auth-input {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 0;
+  height: 32px;
+  box-shadow: none;
+}
+
+.edit-page .edit-field-row textarea.auth-input {
+  min-height: 52px;
+  height: 52px;
+  resize: vertical;
+}
+
+.edit-page .auth-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+
+.edit-page :is(a, button, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.edit-page .auth-input:disabled {
+  opacity: 1;
+  color: var(--text-muted);
+}
+
+.edit-page .edit-advanced {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+  padding: 0;
+}
+
+.edit-page details > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   min-height: 56px;
-  font-size: 1.25rem;
-  font-weight: 700;
+  padding: 12px 4px;
+  color: var(--text);
+}
+
+.edit-page details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.edit-page details > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
+  transform: rotate(-45deg);
+  margin-right: 6px;
+}
+
+.edit-page details[open] > summary::after {
+  transform: rotate(45deg);
+}
+
+.edit-page .tag-input__box {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.edit-page .edit-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 24px 4px 0;
+}
+
+.edit-page .edit-switch {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+}
+
+.edit-page .edit-switch strong {
+  color: var(--text);
+}
+
+.edit-page .edit-switch input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.edit-page .edit-qr-card {
+  border: 0;
+  padding: 0;
+  gap: 12px;
+}
+
+.edit-page .edit-qr-card h2 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.edit-page .edit-qr-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-page .edit-qr-actions .edit-text-link {
+  font-size: var(--text-xs);
+}
+
+.edit-page .edit-qr-options__body .auth-textarea {
+  min-height: 60px;
+  height: 60px;
+}
+
+
+.edit-page .edit-qr-card .qr-preview-wrap {
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  width: min(180px, 100%);
+}
+
+.edit-page .edit-qr-card canvas {
+  max-width: 100%;
+  height: auto !important;
+  border-radius: 16px;
+}
+
+.edit-page .edit-qr-card .qr-preview {
+  box-shadow: none;
+}
+
+.edit-page .edit-qr-options__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.edit-page .edit-text-link {
+  color: var(--text);
+  align-self: center;
+}
+
+.edit-page .edit-readonly {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.edit-page .edit-readonly a {
+  color: var(--text);
+}
+
+.edit-page .edit-save-bar {
+  width: calc(100% - 248px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 24px;
+}
+
+.edit-page .edit-save-bar .auth-message {
+  margin: 0;
+}
+
+.edit-page .edit-save-bar button {
+  min-width: 88px;
+  flex-shrink: 0;
+}
+
+.edit-page .edit-delete-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 0;
+}
+
+.edit-page .edit-delete-row h2 {
+  margin: 0;
+}
+
+.edit-page .edit-delete-row p {
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.edit-page .edit-delete-button {
+  border: 1px solid color-mix(in oklab, var(--danger) 35%, var(--border));
+  background: color-mix(in oklab, var(--danger) 10%, transparent);
+  color: var(--danger);
+}
+
+.edit-page .edit-stats-card {
+  border: 0;
+  padding: 24px 4px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.edit-page .edit-stats-card__metrics {
+  display: flex;
+  gap: 48px;
+}
+
+.edit-page .edit-stats-card__metrics .stats-metric {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+
+@media (max-width: 760px) {
+  .edit-page .edit-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+
+  .edit-page .edit-qr-card {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    column-gap: 24px;
+    align-items: start;
+  }
+
+  .edit-page .edit-qr-card h2 {
+    grid-column: 1 / -1;
+  }
+
+  .edit-page .edit-qr-options__body {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    padding: 0;
+  }
+
+  .edit-page .edit-qr-actions {
+    grid-column: 1;
+  }
+
+  .edit-page .edit-save-bar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-page {
+    padding: 40px 20px;
+  }
+
+  .edit-page .edit-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    padding-bottom: 8px;
+  }
+
+  .edit-page .edit-header__actions {
+    justify-content: flex-start;
+    flex-direction: row-reverse;
+    align-self: flex-start;
+  }
+
+  .edit-page .edit-fields {
+    padding: 0 18px;
+  }
+
+  .edit-page .edit-header .btn {
+    min-height: 44px;
+  }
+
+}
+
+@media (max-width: 460px) {
+  .edit-page .edit-meta-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .edit-page .edit-qr-card {
+    grid-template-columns: 140px minmax(0, 1fr);
+    column-gap: 16px;
+  }
+
+  .edit-page .edit-qr-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
