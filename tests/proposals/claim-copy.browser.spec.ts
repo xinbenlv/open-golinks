@@ -20,7 +20,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       const login = "[data-testid=claim-ownership] a";
       await page.goto(`${base}/edit/unowned`);
       await page.waitForSelector(login);
-      expect(await page.$eval(login, el => el.textContent)).toBe("Login with @zg.io to claim");
+      expect(await page.$eval(login, el => el.textContent)).toBe("Login with your ZGID to claim and edit");
       expect(await page.$eval('[data-testid=copy-short-link]', el => el.textContent?.trim())).toBe("");
       for (const width of [1280, 390, 320]) {
         await page.setViewport({width,height:900});
@@ -108,7 +108,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       expect(await page.$("[data-testid=claim-ownership]")).toBeNull();
       await page.goto(`${base}/edit/this-is-a-long-short-link-slug-for-mobile-layout`);
       await page.waitForSelector(claimButton);
-      expect(await page.$eval(claimButton, el => el.textContent)).toBe("Login with @zg.io to claim");
+      expect(await page.$eval(claimButton, el => el.textContent)).toBe("Login with your ZGID to claim and edit");
       await page.locator(claimButton).click();
       await page.waitForSelector("#login-email");
       expect(new URL(page.url()).searchParams.get("claim")).toBe("1");

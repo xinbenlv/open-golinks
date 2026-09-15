@@ -346,7 +346,7 @@ Railway startCommand 显式启用 PROPOSAL_TRUST_PROXY=railway；非 Railway 启
 
 ## 无主链接与 slug 复制（2026-09-15）
 
-- Edit/Claim → ClaimOwnership → 同一个 claim API；通用登录及 owner/admin Save、其他人 Propose change 规则不变。
+- Edit/Claim → ClaimOwnership → 同一个 claim API；登录入口文案为 “Login with your ZGID to claim and edit”，后端仍校验 @zg.io；通用登录及 owner/admin Save、其他人 Propose change 规则不变。
 - 认领返回后仅同步 owner 和这次操作的一个 revision，保留草稿；其他并发内容更新仍会触发 Save 冲突。认领后焦点移到 slug。
 - ShortLinkActions 中 slug 和图标共用 canonical VITE_BASE_URL 复制；原生按钮、44px 触控、aria-label/title 与简短 live 反馈。Go 独立导航。
 - AuthCallback 优先使用经过白名单校验的 next；旧 confirm 模板在同浏览器新 tab 使用 30 分钟 localStorage 回跳记录，跨设备回 Dashboard。见 `src/web/lib/authReturn.ts:1-22` 和 `docs/troubleshooting/claim-login.md`。

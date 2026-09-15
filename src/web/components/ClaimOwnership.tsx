@@ -37,8 +37,8 @@ export function ClaimOwnership({ slug, onClaim }: {
   }
 
   return <div className="edit-claim" data-testid="claim-ownership">
-    {!user ? <Link className="text-button" to={loginUrl}>Login with @zg.io to claim</Link>
-      : !canClaimOwnership(user.email) ? <button className="text-button" type="button" disabled={busy} onClick={switchAccount}>Login with @zg.io to claim</button>
+    {!user ? <Link className="text-button" to={loginUrl}>Login with your ZGID to claim and edit</Link>
+      : !canClaimOwnership(user.email) ? <button className="text-button" type="button" disabled={busy} onClick={switchAccount}>Login with your ZGID to claim and edit</button>
       : <button className="text-button" type="button" disabled={busy} onClick={claim}>{busy ? "Claiming…" : "Claim ownership"}</button>}
     {error && <span role="alert">{error}</span>}
   </div>;
