@@ -69,7 +69,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       let redirect = "";
       await page.setRequestInterception(true);
       const authMock = (target: Page) => target.on("request", async req => {
-        if (!req.url().startsWith("http://127.0.0.1:55448/")) { await req.continue(); return; }
+        if (!req.url().startsWith(process.env.PROPOSAL_TEST_AUTH_URL ?? "http://127.0.0.1:55448/")) { await req.continue(); return; }
         const headers = {"access-control-allow-origin":base!,"access-control-allow-headers":"*","content-type":"application/json"};
         if (req.method() === "OPTIONS") { await req.respond({status:204,headers}); return; }
         if (req.url().includes("/otp")) { redirect = new URL(req.url()).searchParams.get("redirect_to") ?? ""; await req.respond({status:200,headers,body:"{}"}); return; }

@@ -1,5 +1,6 @@
+/** 首页与编辑页复用导航，并订阅同一 Supabase 会话。 */
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTheme } from "../../hooks/useTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { webBrand } from "../../lib/brand";
@@ -13,7 +14,8 @@ const THEME_LABEL: Record<string, string> = {
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -25,7 +27,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className="landing-header" data-scrolled={scrolled}>
+    <header className="landing-header" data-testid="site-header" data-scrolled={scrolled}>
       <div className="container landing-header__inner">
         <a href="/" className="brand" aria-label={webBrand.homepageLabel}>
           <span className="brand__mark" aria-hidden>
@@ -40,13 +42,13 @@ export function Header() {
 
         <nav className="nav" aria-label="主导航">
           <a
-            href="#features"
+            href="/#features"
             className="nav__link nav__link--hide-sm"
           >
             特性
           </a>
           <a
-            href="#how"
+            href="/#how"
             className="nav__link nav__link--hide-sm"
           >
             原理
@@ -86,14 +88,15 @@ export function Header() {
             <IconGitHub />
           </a>
 
-          {user ? (
+          {loading ? <span role="status" aria-label="正在加载登录状态" className="spinner" /> : user ? (
             <div className="nav-account">
-              <Link to="/dashboard" className="nav-account__email">
+              <Link to="/dashboard" data-testid="header-account" className="nav-account__email" title={user.email}>
                 {user.email ?? "Dashboard"}
               </Link>
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
+                data-testid="header-sign-out"
                 disabled={signingOut}
                 onClick={async () => {
                   setSigningOut(true);
@@ -108,7 +111,7 @@ export function Header() {
               </button>
             </div>
           ) : (
-            <Link to="/login" className="btn btn--ghost btn--sm">
+            <Link to="/login" state={{ from: { pathname: location.pathname } }} data-testid="header-sign-in" className="btn btn--ghost btn--sm">
               登录
             </Link>
           )}

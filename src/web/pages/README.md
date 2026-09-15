@@ -58,3 +58,5 @@ History 不再叠加三个历史区：owner/admin 只有一条变更时间线，
 Edit 标题下的认领入口在已有主人时替换为自动 Jazzicon；认领立即显示头像，保存响应保持同一 owner 资料。
 
 无主链接使用 UnownedAvatar 保留头像位置；登录 ZGID 认领文字只在点击空缺头像后显示。
+
+Edit 外层统一挂载 Header；新建 fallback 传入空 header，避免重复导航。

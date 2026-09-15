@@ -2,7 +2,7 @@
 
 > `/edit/:slug` 支持访客提议 URL/描述、owner/admin 审核、极简 diff、私有详情和历史。见 [发布说明](./docs/runbooks/proposed-changes.md)。
 
-团队短链、二维码和访问统计服务。把常用链接变成好记的 `/{slug}`，同时保留 owner 管理、warning page、QR 下载、审计记录、公开统计和旧 Chrome extension API 兼容能力。
+团队短链、二维码和统计服务。把常用链接变成 `/{slug}`，提供 owner 管理与审计。
 
 ![Open GoLinks 产品导览](./docs/assets/readme-tour.gif)
 
@@ -10,7 +10,7 @@
 
 ## 这个项目做什么
 
-Open GoLinks 是一个可自托管的 GoLinks / 短链入口：
+可自托管的 GoLinks / 短链入口：
 
 - 输入任意 URL，生成短 slug，例如 `/roadmap`、`/deploy`、`/docs`。
 - 访问 `/{slug}` 时快速 302 到目标地址，并异步记录 visits / GA4 analytics。
@@ -104,3 +104,5 @@ Railway 发布前自动执行数据库迁移，成功后才启动新版。
 编辑页沿用原主题；Details、History、Stats、QR Code 分 tab 展示并适配手机。所有访客可直接编辑 URL/描述后提议，owner/admin 可保存。
 
 编辑页显示邮箱生成的 Jazzicon 和脱敏邮箱提示；无主显示空缺头像，点击后登录 ZGID 认领。
+
+编辑页复用全站 Header，显示会话状态并支持登录回跳与即时退出。

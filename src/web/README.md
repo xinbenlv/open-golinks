@@ -31,3 +31,5 @@ OwnerAvatar 使用固定版本 `@metamask/jazzicon` 在本地绘制邮箱派生�
 无主入口为灰色空缺头像；点击才展开登录/认领面板，可通过 Escape 或点击外部关闭。
 
 OwnerAvatar 提示及可访问名称使用服务端 maskedEmail，格式 a**z@完整域名；长域名完整换行。
+
+Edit 的各加载状态共用 Landing/Header；登录保留编辑页回跳，退出同步撤销审核 UI。

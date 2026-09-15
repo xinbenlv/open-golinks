@@ -385,3 +385,5 @@ Edit -> OwnerAvatar -> Jazzicon DOM/SVG（不请求外部头像）
 ## 主人邮箱提示
 
 `users.email → maskEmail → owner.maskedEmail → OwnerAvatar tooltip / aria-label`。服务端保留本地部分首尾 + 两个星号和完整域名（单字符本地部分为 a**）；无合法邮箱返回 null，前端回退 Link owner。`src/lib/identity.ts:15-23`，`src/lib/link-owner.ts:7-17`。长域名完整换行，既有无主入口、认领与权限不变。
+
+编辑页在外层挂载共享 Header（src/web/pages/Edit.tsx:43-49），包括加载、错误与新建 fallback。Header 使用 useAuth 订阅会话，并以路由 state 保留登录回跳；退出立即同步编辑页权限。Landing header 插槽避免 fallback 重复导航（src/web/pages/Landing/index.tsx:10-27）。管理员授权只通过数据库 users.role，不使用邮箱硬编码。

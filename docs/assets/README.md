@@ -13,3 +13,5 @@ assets/
 `unowned-avatar/` 为无主入口从常驻文字变为空缺头像的 390px 对比与展开状态。
 
 `masked-owner/` 对比通用 Link owner 提示与脱敏邮箱提示。
+
+`edit-header/` 为编辑页共享导航的虚构用户 390px 前后对比。
