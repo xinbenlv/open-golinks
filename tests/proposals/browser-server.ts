@@ -19,6 +19,9 @@ await h.submit("handbook", {
 for (const slug of ["avatar-empty", "avatar-unowned", "claim-race", "this-is-a-long-short-link-slug-for-mobile-layout"]) {
   await h.sql`insert into links(slug,url,owner_id) values(${slug},'https://example.test/handbook',null)`;
 }
+const longOwnerId = crypto.randomUUID();
+await h.sql`insert into users(id,email) values(${longOwnerId},${"masked-name@" + "a".repeat(63) + ".subdomain.example.test"})`;
+await h.sql`insert into links(slug,url,owner_id) values('long-owner-email','https://example.test/handbook',${longOwnerId})`;
 const port = Number(process.env.PROPOSAL_BROWSER_PORT ?? 3197);
 process.env.PUBLIC_BASE_URL = `http://127.0.0.1:${port}`;
 async function handle(req: Request): Promise<Response> {

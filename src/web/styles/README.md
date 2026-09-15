@@ -17,3 +17,5 @@ slug/复制图标和认领入口均保留 44px 触控目标；长 slug 换行且
 owner-avatar 样式提供圆形头像、44px 触控区域和可关闭的焦点/悬停提示。
 
 unowned-avatar 显式覆盖编辑页通用 details 箭头和 padding，保持 32px 空头像与 44px 触控区；关闭时隐藏面板，窄屏限宽。
+
+owner-avatar__tooltip 限宽且允许任意位置换行，保留完整长域名，不撑宽手机页面。

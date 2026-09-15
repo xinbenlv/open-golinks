@@ -31,3 +31,5 @@ F5-claim 入口复用隔离提议/认领套件，不再创建真实 Supabase 测
 owner-avatar-cases 与 owner-avatar.browser.spec 验证邮箱头像隐私、归属一致性和认领/保存后的头像。
 
 unowned-avatar.browser.spec 检查空缺头像默认收起、键盘展开、关闭和登录回跳；认领和 owner 头像回归已适配展开操作。
+
+masked-email.test 与 owner-avatar-cases 验证首尾脱敏和完整域名；头像浏览器回归覆盖 aria-label、认领后邮箱和长域名窄屏。

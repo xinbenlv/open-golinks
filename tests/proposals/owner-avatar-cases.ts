@@ -5,11 +5,11 @@ export function registerOwnerAvatarTests(getHarness: () => Awaited<ReturnType<ty
   let h: Awaited<ReturnType<typeof setup>>;
   describe("email-derived owner avatar", () => {
     beforeAll(() => { h = getHarness(); });
-    test("public owner is stable across links and viewers without exposing email", async () => {
+    test("public owner is stable across links and viewers without exposing the full email", async () => {
       const slug = await h.seed();
       const other = await h.seed();
       const link = (await (await h.request(slug)).json()).link;
-      expect(link.owner).toEqual({ avatarSeed: expect.stringMatching(/^[a-f0-9]{16}$/) });
+      expect(link.owner).toEqual({ avatarSeed: expect.stringMatching(/^[a-f0-9]{16}$/), maskedEmail: "o**r@example.test" });
       expect(JSON.stringify(link)).not.toContain(h.emails.owner);
       expect((await (await h.request(other, { role: "member" })).json()).link.owner).toEqual(link.owner);
       await h.sql`update users set email='OWNER@EXAMPLE.TEST' where id=${h.ids.owner}`;
@@ -26,6 +26,7 @@ export function registerOwnerAvatarTests(getHarness: () => Awaited<ReturnType<ty
       expect(claimed.status).toBe(200);
       const link = (await claimed.json()).link;
       expect(link.owner.avatarSeed).toMatch(/^[a-f0-9]{16}$/);
+      expect(link.owner.maskedEmail).toBe("c**t@zgzg.io");
       const saved = await h.request(slug, { role: "claimant", method: "PATCH", body: { baseRevision: link.revision, url: "https://example.test/avatar-save" } });
       expect(saved.status).toBe(200);
       expect((await saved.json()).link.owner).toEqual(link.owner);
@@ -33,6 +34,7 @@ export function registerOwnerAvatarTests(getHarness: () => Awaited<ReturnType<ty
       expect(transferred.status).toBe(200);
       const next = (await transferred.json()).link;
       expect(next.ownerId).toBe(h.ids.member);
+      expect(next.owner.maskedEmail).toBe("m**r@example.test");
       expect(next.owner).not.toEqual(link.owner);
       expect((await (await h.request(slug)).json()).link.owner).toEqual(next.owner);
       await h.sql`update links set deleted_at=now() where slug=${slug}`;

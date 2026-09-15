@@ -32,7 +32,7 @@ links.owner_id -> users.email -> canonical email + HMAC -> owner.avatarSeed
 Edit -> OwnerAvatar -> @metamask/jazzicon 2.0.0（本地 DOM/SVG）
 ```
 
-服务端使用现有 IP_HASH_SALT，加独立 owner-avatar 域前缀计算 HMAC；浏览器只收到截短 seed，不收到邮箱或普通 email hash。相同邮箱产生固定头像（轮换服务端 salt 后会变化），同一 owner 跨链接保持一致。公开 tooltip 为 Link owner。
+服务端使用现有 IP_HASH_SALT，加独立 owner-avatar 域前缀计算 HMAC；浏览器收到截短 seed 和脱敏邮箱，不收到完整邮箱或普通 email hash。相同邮箱产生固定头像（轮换服务端 salt 后会变化），同一 owner 跨链接保持一致。公开 tooltip 为脱敏邮箱，缺资料时为 Link owner。
 
 详情、认领、保存和转移响应返回相同 owner 形状。无主仍显示 ZGID 认领入口；认领后保留草稿与 revision +1 规则。权限判定不变。
 
@@ -45,3 +45,9 @@ Edit -> OwnerAvatar -> @metamask/jazzicon 2.0.0（本地 DOM/SVG）
 使用原生 details/summary 提供键盘打开，面板内复用现有登录/认领/错误状态；Escape 关闭并回焦，点击外部关闭。32px 空缺图案、44px 点击区，与 owner Jazzicon 同位置同尺寸。认领完成仍由 Edit 保留草稿并更新头像。
 
 浏览器验证：初始只显示空缺头像，点击/Enter/Space 展开，登录回跳、切换账号、冲突提示、claim→Jazzicon→Save，320/390/1280px 不溢出。
+
+## 主人脱敏邮箱
+
+用户要求头像提示显示 `a**z@<完整域名>`。服务端对规范化邮箱脱敏：本地部分首尾字符 + 固定两个星号（单字符为 a**），完整保留域名；无合法邮箱返回 null。`link.owner` 增加 maskedEmail，完整邮箱不离开服务端。
+
+OwnerAvatar 的悬停/聚焦/点按提示显示脱敏邮箱，aria-label 同步；缺资料回退 Link owner。长域名可换行，不截断完整域名。既有无主头像和认领行为不变；共享 DTO 保证认领、保存、转移同步。

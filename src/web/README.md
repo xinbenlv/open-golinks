@@ -29,3 +29,5 @@ LinkStatsCard 在有数据时才加载图表。样式只在 main.tsx 导入，�
 OwnerAvatar 使用固定版本 `@metamask/jazzicon` 在本地绘制邮箱派生头像；无网络图片请求。无主显示认领，已有主人显示头像。
 
 无主入口为灰色空缺头像；点击才展开登录/认领面板，可通过 Escape 或点击外部关闭。
+
+OwnerAvatar 提示及可访问名称使用服务端 maskedEmail，格式 a**z@完整域名；长域名完整换行。

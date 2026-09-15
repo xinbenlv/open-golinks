@@ -38,3 +38,5 @@ docs/
 链接主人头像使用邮箱生成的 Jazzicon；实现摘要见 CURRENT-ARCHITECT.md。
 
 无主链接的头像认领入口见 CURRENT-ARCHITECT.md，虚构数据截图在 assets/unowned-avatar/。
+
+头像提示展示脱敏邮箱；masked-owner 素材为本地虚构用户的前后对比。

@@ -11,3 +11,5 @@ assets/
 `owner-avatar/` 为已有主人链接的 Jazzicon 前后对比，使用本地虚构数据。
 
 `unowned-avatar/` 为无主入口从常驻文字变为空缺头像的 390px 对比与展开状态。
+
+`masked-owner/` 对比通用 Link owner 提示与脱敏邮箱提示。
