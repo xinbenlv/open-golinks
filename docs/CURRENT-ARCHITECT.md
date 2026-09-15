@@ -142,7 +142,7 @@ flowchart TB
 - **`src/middleware/audit.ts`** - `writeAudit(c, action, slug, diff?)`, 对低频 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 写 `audit_logs`; `VISIT` 不写 audit.
 - **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
 - **`src/lib/fingerprint.ts`** - 浏览器端 64-hex fingerprint: canvas + UA + timezone + screen; canvas 不可用时用本地持久 fallback token. 服务端只校验格式和比对已有值.
-- **`src/lib/identity.ts`** - identity helper: canonical email、精确 zgzg.io 认领域、metadata normalize、公开 DTO 脱敏 (`src/lib/identity.ts:1-35`).
+- **`src/lib/identity.ts`** - identity helper: canonical email、精确 zgzg.io 认领域、metadata normalize、公开 DTO 脱敏 (`src/lib/identity.ts:1-41`).
 - **`src/lib/brand.ts`** - 品牌主题配置；`OPEN_GOLINK_THEME=zgzg` 时使用 `zgzg.li` 文案和 ZGZG favicon, 并区分 brand/action/warning 语义色: ZGZG 红色是品牌 accent, primary action 使用中性色 (`src/lib/brand.ts:3-116`)。
 - **`src/lib/qr.ts`** - `qrcode` + `@napi-rs/canvas` 服务端 QR PNG 渲染, 支持 CJK caption、主题 logo、1h/1000-entry LRU cache, 字体来自 `src/assets/fonts/NotoSansCJKsc-Regular.otf`, 服务端 ZGZG QR logo 来自 `src/assets/img/zgzg-round-logo.png`, 默认 QR fallback 使用 brand 色。
 
@@ -370,8 +370,8 @@ links.owner_id -> users.email -> HMAC(owner-avatar:v1) -> owner.avatarSeed
 Edit -> OwnerAvatar -> Jazzicon DOM/SVG（不请求外部头像）
 ```
 
-- `src/lib/link-owner.ts:1-17`：规范化邮箱与现有 IP_HASH_SALT 生成稳定的 HMAC seed；公开 DTO 只增加 owner.avatarSeed，无主 owner=null。更换 salt 会改变头像。
-- `src/web/components/OwnerAvatar.tsx:1-31`：按需加载固定 `@metamask/jazzicon@2.0.0`，32px 头像、44px 触控区域，通用 Link owner 提示；不要求姓名或图片。
+- `src/lib/link-owner.ts:1-17`：规范化邮箱与现有 IP_HASH_SALT 生成稳定的 HMAC seed；公开 DTO 含 owner.avatarSeed 与 owner.maskedEmail，无主 owner=null。更换 salt 会改变头像。
+- `src/web/components/OwnerAvatar.tsx:1-31`：按需加载固定 `@metamask/jazzicon@2.0.0`，32px 头像、44px 触控区域，脱敏邮箱提示（缺资料为 Link owner）；不要求姓名或图片。
 - `src/web/pages/Edit.tsx:285-303`：根据 ownerId 切换认领/头像；认领保留草稿和 revision +1。单链接写入响应共用 owner 投影，保存后不会丢失头像。
 
 不新增 schema、认证流程或第三方服务；资料仅用于展示，权限仍按 ownerId/数据库角色判断。
@@ -381,3 +381,7 @@ Edit -> OwnerAvatar -> Jazzicon DOM/SVG（不请求外部头像）
 `UnownedAvatar → details/summary → ClaimOwnership → existing claim API`：无主链接同样保留头像，点击后才显示登录/认领操作。`src/web/components/UnownedAvatar.tsx:1-31` 处理外部点击与 Escape 回焦；`src/web/pages/Edit.tsx:292-300` 在 ownerId 为空时选择该组件，认领成功保留原有草稿和 revision 行为。
 
 通用 details 的箭头/间距在此组件作用域覆盖，保证 32px 头像与 44px 控件。独立 `/claim/:slug` 不增加这层展开；无后端/schema/API 变更。
+
+## 主人邮箱提示
+
+`users.email → maskEmail → owner.maskedEmail → OwnerAvatar tooltip / aria-label`。服务端保留本地部分首尾 + 两个星号和完整域名（单字符本地部分为 a**）；无合法邮箱返回 null，前端回退 Link owner。`src/lib/identity.ts:15-23`，`src/lib/link-owner.ts:7-17`。长域名完整换行，既有无主入口、认领与权限不变。

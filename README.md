@@ -103,4 +103,4 @@ Railway 发布前自动执行数据库迁移，成功后才启动新版。
 
 编辑页沿用原主题；Details、History、Stats、QR Code 分 tab 展示并适配手机。所有访客可直接编辑 URL/描述后提议，owner/admin 可保存。
 
-编辑页显示邮箱生成的 Jazzicon；无主显示空缺头像，点击后登录 ZGID 认领。
+编辑页显示邮箱生成的 Jazzicon 和脱敏邮箱提示；无主显示空缺头像，点击后登录 ZGID 认领。

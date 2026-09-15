@@ -22,4 +22,4 @@
 
 `identity.ts#canClaimOwnership` 共用于前端提示和后端域判断；后端只传入验证后的 JWT email，忽略请求体和 user_metadata 的邮箱。
 
-`link-owner.ts`：单链接 DTO 的公开主人投影；规范化邮箱经带域分隔的 HMAC 生成 avatarSeed，只返回 seed。
+`link-owner.ts`：单链接 DTO 的公开主人投影；规范化邮箱经带域分隔的 HMAC 生成 avatarSeed，返回 seed 与 maskedEmail，不返回完整邮箱；maskEmail 保留首尾字符和完整域名。

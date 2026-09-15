@@ -57,3 +57,5 @@ harness -> proposals.test + claim-cases
 `owner-avatar-cases.ts` 共用 harness 检查规范化邮箱、不同 owner、无主及 claim/PATCH/transfer 响应；`owner-avatar.browser.spec.ts` 检查 Jazzicon、不同访客一致、键盘提示、手机和认领后保存。运行浏览器命令时追加该文件。
 
 `unowned-avatar.browser.spec.ts`：专用 avatar-empty fixture 检查默认头像、Enter/Space/点击、Escape 回焦、外部关闭、登录回跳与 1280/390/320px。旧界面缺少空头像时该用例失败；运行浏览器命令时一并追加。
+
+masked-email.test.ts 覆盖单/双字符本地部分、大小写、Unicode、别名和无效邮箱；owner-avatar-cases 检查公开脱敏字段与完整邮箱不泄漏，浏览器检查长域名和 aria-label。

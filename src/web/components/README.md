@@ -32,6 +32,6 @@ Edit History 只使用 AuditTimeline，不再重复 URL 历史和提议卡片；
 - `ClaimOwnership.tsx`：无主链接的 ZGID 登录/认领入口，文案为 “Login with your ZGID to claim and edit”；共用 claim API，成功后恢复 slug 焦点并保留编辑草稿。
 - `ShortLinkActions.tsx`：slug 和相邻 icon-only 按钮共用 canonical URL 复制，提供键盘操作与 aria-live 反馈。
 
-- `OwnerAvatar.tsx`：32px Jazzicon + 44px 触控区域，Link owner 提示支持悬停、聚焦和 Escape；seed 由后端按邮箱生成，Jazzicon 按需加载。
+- `OwnerAvatar.tsx`：32px Jazzicon + 44px 触控区域，脱敏邮箱提示支持悬停、聚焦和 Escape；seed 由后端按邮箱生成，Jazzicon 按需加载。
 
 - `UnownedAvatar.tsx`：原生 details/summary 空缺头像入口，组合 ClaimOwnership，支持键盘、Escape 回焦和外部点击关闭。独立 Claim 页继续直接展示认领操作。

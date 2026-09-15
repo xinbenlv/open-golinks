@@ -12,6 +12,15 @@ export function canClaimOwnership(email: unknown): boolean {
   return normalizeEmail(email)?.split("@")[1] === "zgzg.io";
 }
 
+/** 公开邮箱提示只保留本地部分首尾字符，域名完整保留；固定星号不暴露长度。 */
+export function maskEmail(value: unknown): string | null {
+  const email = normalizeEmail(value);
+  if (!email) return null;
+  const [local, domain] = email.split("@");
+  const characters = Array.from(local!);
+  return `${characters[0]}**${characters.length > 1 ? characters.at(-1) : ""}@${domain}`;
+}
+
 export function normalizeMetadata(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return { ...(value as Record<string, unknown>) };

@@ -29,7 +29,9 @@ describe.skipIf(!base)("owner avatar browser", () => {
         await page.focus(`${avatar} button`);
         await page.waitForSelector(`${avatar} [role=tooltip]`, { visible: true });
         expect(await page.$eval(`${avatar} button`, el => el.getBoundingClientRect().height)).toBe(44);
-        await capture(`owner-after-${width}`);
+        expect(await page.$eval(`${avatar} [role=tooltip]`, el => el.textContent)).toBe("o**r@example.test");
+        expect(await page.$eval(`${avatar} button`, el => el.getAttribute("aria-label"))).toBe("Link owner: o**r@example.test");
+        await capture(`masked-owner-${width}`);
         await page.keyboard.press("Escape");
         await page.waitForSelector(`${avatar} [role=tooltip]`, { hidden: true });
       }
@@ -50,6 +52,7 @@ describe.skipIf(!base)("owner avatar browser", () => {
       await page.waitForSelector(rendered);
       const claimedImage = await image();
       expect(claimedImage).not.toBe(ownerImage);
+      expect(await page.$eval(`${avatar} [role=tooltip]`, el => el.textContent)).toBe("c**t@zgzg.io");
       expect(await page.$eval(url, el => (el as HTMLInputElement).value)).toBe("https://example.test/avatar-draft");
       expect(await page.evaluate(() => document.activeElement?.getAttribute("data-testid"))).toBe("copy-slug");
       await page.locator(".edit-save-bar button[type=submit]").click();
@@ -58,6 +61,14 @@ describe.skipIf(!base)("owner avatar browser", () => {
       await page.reload();
       await page.waitForSelector(rendered);
       expect(await image()).toBe(claimedImage);
+      await page.goto(`${base}/edit/long-owner-email`);
+      await page.waitForSelector(rendered);
+      await page.setViewport({ width: 320, height: 844 });
+      await page.focus(`${avatar} button`);
+      await page.waitForSelector(`${avatar} [role=tooltip]`, { visible: true });
+      expect(await page.$eval(`${avatar} [role=tooltip]`, el => el.textContent)).toBe("m**e@" + "a".repeat(63) + ".subdomain.example.test");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await capture("masked-owner-long-domain-320");
       expect(errors).toEqual([]);
     } finally { await browser.close(); }
   }, 60000);
