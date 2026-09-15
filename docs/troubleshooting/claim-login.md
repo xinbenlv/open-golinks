@@ -44,3 +44,7 @@ Lighthouse 的入口是 `cli/index.js`，`cli/bin.js` 只导出 begin，不会�
 - 原因：编辑页所有 details > summary 的通用选择器覆盖了头像尺寸，折叠内容的定位也需要显式隐藏。
 - 解决：只在 unowned-avatar 内覆盖箭头、padding 与 min-height，固定 SVG 不收缩；未 open 的面板 display:none。
 - 相关：src/web/styles/global.css、tests/proposals/unowned-avatar.browser.spec.ts（锁定 44px、默认隐藏及键盘打开/关闭）。
+
+## 隔离认证端口
+
+认领浏览器回归曾硬编码 55448，使用其他测试端口时邮件 stub 未命中。现在通过 PROPOSAL_TEST_AUTH_URL 指定，匹配构建的 VITE_SUPABASE_URL；无需启动真实邮件服务。相关：tests/proposals/claim-copy.browser.spec.ts。

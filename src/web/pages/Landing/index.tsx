@@ -1,3 +1,5 @@
+/** 首页和创建体验，允许外层页面提供共享导航。 */
+import type { ReactNode } from "react";
 import { Header } from "./Header";
 import { Hero } from "./Hero";
 import { Features } from "./Features";
@@ -8,6 +10,7 @@ import { Footer } from "./Footer";
 type LandingProps = {
   /** /edit/[slug] 复用本组件时, 把 URL 里的 slug 透传给 Hero 表单做预填. */
   initialSlug?: string;
+  header?: ReactNode;
 };
 
 /** Landing 页 (`/`).
@@ -15,10 +18,10 @@ type LandingProps = {
  *  /edit/[slug] 也复用本组件 (initialSlug = 路径参数), 让"创建/编辑"和首页是同一张页面.
  *  CSS 在 src/web/main.tsx 集中导入, 本文件不直接 import .css.
  */
-export function Landing({ initialSlug }: LandingProps = {}) {
+export function Landing({ initialSlug, header = <Header /> }: LandingProps = {}) {
   return (
     <div className="landing">
-      <Header />
+      {header}
       <main className="landing-main">
         <Hero initialSlug={initialSlug} />
         <Features />

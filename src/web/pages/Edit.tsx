@@ -13,6 +13,7 @@ import { ShortLinkActions } from "../components/ShortLinkActions";
 import { OwnerAvatar } from "../components/OwnerAvatar";
 import type { LinkOwner } from "../components/OwnerAvatar";
 import { Landing } from "./Landing";
+import { Header } from "./Landing/Header";
 
 type LinkRecord = {
   slug: string;
@@ -40,6 +41,10 @@ type LoadState =
   | { status: "error"; message: string };
 
 export default function Edit() {
+  return <><Header /><EditContent /></>;
+}
+
+function EditContent() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { user, loading: authLoading } = useAuth();
   const slugButton = useRef<HTMLButtonElement>(null);
@@ -118,7 +123,7 @@ export default function Edit() {
   }, [slug]);
 
   if (state.status === "create") {
-    return <Landing initialSlug={slug} />;
+    return <Landing initialSlug={slug} header={null} />;
   }
 
   if (state.status === "loading" || authLoading) {

@@ -32,3 +32,5 @@
 claim-login.md 同时记录邮箱自动头像的产品约束和键盘/匿名 fixture 测试陷阱。
 
 claim-login.md 记录空缺头像与通用 details 样式冲突的修复。
+
+claim-login.md 记录隔离认证端口与邮件 stub 配置。

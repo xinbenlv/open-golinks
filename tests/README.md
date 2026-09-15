@@ -33,3 +33,5 @@ owner-avatar-cases 与 owner-avatar.browser.spec 验证邮箱头像隐私、归�
 unowned-avatar.browser.spec 检查空缺头像默认收起、键盘展开、关闭和登录回跳；认领和 owner 头像回归已适配展开操作。
 
 masked-email.test 与 owner-avatar-cases 验证首尾脱敏和完整域名；头像浏览器回归覆盖 aria-label、认领后邮箱和长域名窄屏。
+
+edit-header.browser.spec 验证编辑页导航、会话切换、退出后权限移除和 320/390/1280px 布局。

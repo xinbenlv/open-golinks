@@ -14,3 +14,5 @@
 链接详情通过 `lib/link-owner.ts` 返回邮箱派生的头像 seed；前端本地绘制 Jazzicon，只公开脱敏邮箱。
 
 编辑页无主状态用 UnownedAvatar 展开既有 ClaimOwnership；不改后端认领契约。
+
+Edit 与 Landing 共用 Header；管理员权限仍由 users.role 决定。
