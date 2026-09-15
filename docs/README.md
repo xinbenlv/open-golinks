@@ -34,3 +34,5 @@ docs/
 详细前端说明在 src/web/architecture.md；测试旧文档在 tests/legacy-tests.md，README 保持为入口索引。
 
 无主链接认领与登录回跳设计见 `../opc/eng-design.md`；旧邮件模板限制和测试陷阱见 `troubleshooting/claim-login.md`。
+
+链接主人头像使用邮箱生成的 Jazzicon；实现摘要见 CURRENT-ARCHITECT.md。

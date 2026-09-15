@@ -16,7 +16,7 @@ await h.submit("handbook", {
     "accept-language": "en-US",
   },
 });
-for (const slug of ["claim-race", "this-is-a-long-short-link-slug-for-mobile-layout"]) {
+for (const slug of ["avatar-unowned", "claim-race", "this-is-a-long-short-link-slug-for-mobile-layout"]) {
   await h.sql`insert into links(slug,url,owner_id) values(${slug},'https://example.test/handbook',null)`;
 }
 const port = Number(process.env.PROPOSAL_BROWSER_PORT ?? 3197);

@@ -54,3 +54,5 @@ Publish（Public listing）支持提议开启或关闭，仅审批后更新 isPu
 基本信息使用无卡片连续表单。点击 Propose change 后打开确认 dialog，diff 与身份提示只在 dialog 显示；取消保留草稿。
 
 History 不再叠加三个历史区：owner/admin 只有一条变更时间线，其他访客只看自己已审核提议；Proposals 只放待处理提议。
+
+Edit 标题下的认领入口在已有主人时替换为自动 Jazzicon；认领立即显示头像，保存响应保持同一 owner 资料。

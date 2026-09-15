@@ -53,3 +53,5 @@ harness -> proposals.test + claim-cases
 ```
 
 手动预览可打开 `/__test/login/claimant?next=/edit/unowned`，使用本地签名的虚构 @zgzg.io 账号回到无主链接；无需真实发信。
+
+`owner-avatar-cases.ts` 共用 harness 检查规范化邮箱、不同 owner、无主及 claim/PATCH/transfer 响应；`owner-avatar.browser.spec.ts` 检查 Jazzicon、不同访客一致、键盘提示、手机和认领后保存。运行浏览器命令时追加该文件。

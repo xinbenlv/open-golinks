@@ -1,6 +1,6 @@
 {
   "name": "open-golinks-v2-hono",
-  "version": "2.0.0-hono.7",
+  "version": "2.0.0-hono.8",
   "description": "短链与 analytics 服务 - Bun + Hono + Drizzle + Vite/React 实现",
   "private": true,
   "type": "module",
@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@google-analytics/data": "^6.0.0",
+    "@metamask/jazzicon": "2.0.0",
     "@napi-rs/canvas": "^1.0.0",
     "@supabase/supabase-js": "^2.105.4",
     "drizzle-orm": "^0.45.1",

@@ -7,3 +7,5 @@ assets/
 ├── readme-tour.gif
 └── claim-copy/ -> README + before/after screenshots
 ```
+
+`owner-avatar/` 为已有主人链接的 Jazzicon 前后对比，使用本地虚构数据。

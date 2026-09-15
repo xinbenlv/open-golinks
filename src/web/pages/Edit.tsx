@@ -10,12 +10,15 @@ import { TagInput } from "../components/TagInput";
 import { authFetch, useAuth } from "../hooks/useAuth";
 import { ClaimOwnership } from "../components/ClaimOwnership";
 import { ShortLinkActions } from "../components/ShortLinkActions";
+import { OwnerAvatar } from "../components/OwnerAvatar";
+import type { LinkOwner } from "../components/OwnerAvatar";
 import { Landing } from "./Landing";
 
 type LinkRecord = {
   slug: string;
   url: string;
   ownerId: string | null;
+  owner?: LinkOwner | null;
   isPublic: boolean;
   deletedAt: string | null;
   urlHistory: unknown[];
@@ -286,9 +289,9 @@ export default function Edit() {
               <div className="edit-identity">
                 <p className="edit-domain">{new URL(shortUrl, "https://localhost").host}</p>
                 <ShortLinkActions slug={state.link.slug} shortUrl={shortUrl} buttonRef={slugButton} />
-                {state.link.ownerId === null && <ClaimOwnership key={slug} slug={slug} onClaim={(ownerId) => {
+                {state.link.ownerId !== null ? <OwnerAvatar key={state.link.ownerId} owner={state.link.owner} /> : <ClaimOwnership key={slug} slug={slug} onClaim={(ownerId, owner) => {
                   // 只推进本次认领的 revision；同时发生的内容更改仍由 Save 的 CAS 检出。
-                  setState((current) => current.status === "edit" ? { ...current, link: { ...current.link, ownerId, revision: current.link.revision + 1 } } : current);
+                  setState((current) => current.status === "edit" ? { ...current, link: { ...current.link, ownerId, owner, revision: current.link.revision + 1 } } : current);
                   setProposalRefresh((n) => n + 1);
                   setMessage("Ownership claimed.");
                   slugButton.current?.focus();
