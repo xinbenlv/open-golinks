@@ -9,7 +9,7 @@ export function normalizeEmail(value: unknown): string | null {
 }
 
 export function canClaimOwnership(email: unknown): boolean {
-  return normalizeEmail(email)?.split("@")[1] === "zg.io";
+  return normalizeEmail(email)?.split("@")[1] === "zgzg.io";
 }
 
 export function normalizeMetadata(value: unknown): Record<string, unknown> {

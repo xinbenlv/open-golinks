@@ -28,7 +28,7 @@ pages/
 
 - `/stats` 与 `/stats/:slug` 展示只读 GA4 统计。
 - `/trending` 展示近 7/30 天热门公开链接，后端只会查询 `is_public=true` 且未删除的链接。
-- `/claim/:slug` 与 edit 页共用 ClaimOwnership，`@zg.io` 登录后返回当前 edit 页再认领。
+- `/claim/:slug` 与 edit 页共用 ClaimOwnership，`@zgzg.io` 登录后返回当前 edit 页再认领。
 
 ## 相关文档
 

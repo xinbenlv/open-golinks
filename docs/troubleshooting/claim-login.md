@@ -16,7 +16,7 @@
 
 ## 浏览器测试权限与计数
 
-Chrome 的 `clipboard-write` permission 映射为 clipboardReadWrite，不能代替 writeText 所需的 clipboardSanitizedWrite。Puppeteer 测试同时授权 clipboard-read 和 clipboard-sanitized-write，实际执行剪贴板读写。另一个旧断言误用 `page.$` 返回单元素再检查 length；计数应使用 `page.$$`。
+Chrome 的 `clipboard-write` permission 映射为 clipboardReadWrite，不能代替 writeText 所需的 clipboardSanitizedWrite。Puppeteer 测试同时授权 clipboard-read 和 clipboard-sanitized-write，实际执行剪贴板读写。另一个旧断言误用 `page.$` 返回单元素再检查 length；计数应使用 `page.$$`，且先等待异步历史请求渲染出 `.audit-event`；tab 已选中并不代表数据已加载。
 
 相关：`tests/proposals/claim-copy.browser.spec.ts`、`tests/proposals/browser.spec.ts`。
 
@@ -25,3 +25,7 @@ Chrome 的 `clipboard-write` permission 映射为 clipboardReadWrite，不能代
 同一进程内多次初始化 harness 会与缓存的 JWKS middleware 冲突；claim-cases 与提议共用一次生命周期。不同任务使用不同 Postgres 端口，浏览器测试前重启本任务 fixture；不要重置正在使用的预览数据库。
 
 Lighthouse 的入口是 `cli/index.js`，`cli/bin.js` 只导出 begin，不会执行审计。GuestSafe 中已有 GitHub 凭据仅用于博客或 journal，不适用于此仓库写入；本任务使用已连接 GitHub 插件，不读取旧 CLI/OAuth 凭据。
+
+## ZGID 邮箱域更正
+
+用户明确更正账号域为 `zgzg.io`。前后端统一判断精确 `@zgzg.io`，登录占位与错误提示同步；`@zg.io`、子域和后缀伪装均被测试覆盖为拒绝。已先用更正后的测试复现旧判断拒绝合法账号，再验证修复。相关：`src/lib/identity.ts`、`tests/proposals/auth-return.test.ts`、`tests/proposals/claim-cases.ts`。

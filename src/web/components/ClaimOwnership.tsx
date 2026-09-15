@@ -21,7 +21,7 @@ export function ClaimOwnership({ slug, onClaim }: {
     try {
       const res = await authFetch(`/api/v1/links/${encodeURIComponent(slug)}/claim`, { method: "POST" });
       const body = await res.json();
-      if (!res.ok) throw new Error(res.status === 409 ? "This link has already been claimed. Reload to see its owner." : res.status === 403 ? "Sign in with an @zg.io account to claim ownership." : res.status === 401 ? "Your session expired. Sign in again." : "Could not claim this link. Try again.");
+      if (!res.ok) throw new Error(res.status === 409 ? "This link has already been claimed. Reload to see its owner." : res.status === 403 ? "Sign in with an @zgzg.io account to claim ownership." : res.status === 401 ? "Your session expired. Sign in again." : "Could not claim this link. Try again.");
       onClaim(body.link.ownerId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not claim this link.");

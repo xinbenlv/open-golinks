@@ -123,6 +123,7 @@ describe.skipIf(!base)("proposal browser", () => {
           () => document.documentElement.scrollWidth > innerWidth,
         ),
       ).toBe(false);
+      await page.waitForSelector(".audit-event");
       expect(await page.$$(".audit-event")).toHaveLength(3);
       expect(errors).toEqual([]);
     } finally {

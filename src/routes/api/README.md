@@ -16,4 +16,4 @@ Audit API 对 owner/admin 开放，关联提议身份与未过期匿名详情；
 
 GET /links/:slug/proposals/identity 仅返回当前请求的身份，private/no-store；与提交共用 IP/UA 解析，不写数据库。
 
-Claim API 要求已验证 JWT 的 authenticated 非匿名用户及精确 `@zg.io` 域；单条 UPDATE 限制 owner_id/deleted_at 为空，事务包含审计。claimable 保留 fingerprint/legacy email 发现规则，但不能绕过域限制。
+Claim API 要求已验证 JWT 的 authenticated 非匿名用户及精确 `@zgzg.io` 域；单条 UPDATE 限制 owner_id/deleted_at 为空，事务包含审计。claimable 保留 fingerprint/legacy email 发现规则，但不能绕过域限制。

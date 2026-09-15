@@ -56,9 +56,9 @@ describe.skipIf(!base)("claim and copy browser", () => {
       await page.locator(login).click();
       await page.waitForSelector("#login-email");
       expect(new URL(page.url()).searchParams.get("next")).toBe("/edit/unowned");
-      await page.locator("#login-email").fill("member@zgzg.io");
+      await page.locator("#login-email").fill("member@zg.io");
       await page.locator(".auth-submit").click();
-      await page.waitForFunction(() => document.body.textContent?.includes("请使用 @zg.io"));
+      await page.waitForFunction(() => document.body.textContent?.includes("请使用 @zgzg.io"));
       // 只替换外部邮件服务；会话由本地 JWKS 签名，认领和保存均走真实 API/DB。
       const session = await fetch(`${base}/__test/session/claimant`).then(r => r.json());
       let redirect = "";
@@ -71,7 +71,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
         await req.respond({status:200,headers,body:JSON.stringify(req.url().includes("/user") ? session.user : session)});
       });
       authMock(page);
-      await page.locator("#login-email").fill("claimant@zg.io");
+      await page.locator("#login-email").fill("claimant@zgzg.io");
       await page.locator(".auth-submit").click();
       await page.waitForFunction(() => document.body.textContent?.includes("登录链接已发送"));
       expect(new URL(redirect).searchParams.get("next")).toBe("/edit/unowned");

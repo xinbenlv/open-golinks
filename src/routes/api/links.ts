@@ -392,7 +392,7 @@ linksRoute.post("/:slug/claim", requireAuth, async (c) => {
   const slug = c.req.param("slug");
   const user = c.get("user")!;
   if (!canClaimOwnership(user.email) || user.role !== "authenticated" || user.raw.is_anonymous === true) {
-    return c.json({ error: "CLAIM_DOMAIN_REQUIRED", message: "Sign in with an @zg.io account to claim ownership." }, 403);
+    return c.json({ error: "CLAIM_DOMAIN_REQUIRED", message: "Sign in with an @zgzg.io account to claim ownership." }, 403);
   }
   const parsed = claimSchema.safeParse(await c.req.json().catch(() => ({})));
   if (!parsed.success) return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);

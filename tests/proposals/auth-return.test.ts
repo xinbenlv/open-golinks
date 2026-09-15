@@ -3,9 +3,9 @@ import { describe, expect, test } from "bun:test";
 import { safeAuthReturn } from "../../src/web/lib/authReturn";
 import { canClaimOwnership } from "../../src/lib/identity";
 describe("claim identity and safe return", () => {
-  test("only exact canonical zg.io email domain qualifies", () => {
-    expect(canClaimOwnership("  Person@ZG.IO ")).toBe(true);
-    for (const email of [null, "zg.io", "@zg.io", "a@zgzg.io", "a@sub.zg.io", "a@zg.io.evil.test", "a@evil.test"]) expect(canClaimOwnership(email)).toBe(false);
+  test("only exact canonical zgzg.io email domain qualifies", () => {
+    expect(canClaimOwnership("  Person@ZGZG.IO ")).toBe(true);
+    for (const email of [null, "zgzg.io", "@zgzg.io", "a@zg.io", "a@sub.zgzg.io", "a@zgzg.io.evil.test", "a@evil.test"]) expect(canClaimOwnership(email)).toBe(false);
   });
   test("return target is a local link page", () => {
     expect(safeAuthReturn("/edit/unowned")).toBe("/edit/unowned");

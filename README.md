@@ -23,7 +23,7 @@ Open GoLinks 是一个可自托管的 GoLinks / 短链入口：
 ## 功能特性
 
 - **短链核心路径**：`GET /:slug` 查询 Postgres 后立即 302，analytics 用异步写入避免拖慢跳转。
-- **链接管理**：Supabase Magic Link 登录，owner-only CRUD，匿名创建强制公开与 warning，无主链接可由 `@zg.io` 登录账号认领。
+- **链接管理**：Supabase Magic Link 登录，owner-only CRUD，匿名创建强制公开与 warning，无主链接可由 `@zgzg.io` 登录账号认领。
 - **二维码**：浏览器 canvas 预览 + 服务端 PNG，支持 `/qr/:slug.png` inline 和 `/qr/d/:slug.png` download。
 - **安全与合规提示**：link-level warning toggle，SSR warning page 不依赖 SPA bundle。
 - **统计与审计**：daily visits、GA4 Data API 查询、audit timeline、URL history、ownership transfer。

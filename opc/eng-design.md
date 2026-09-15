@@ -4,12 +4,12 @@
 
 ## 无主链接认领与复制
 
-用户已明确范围：`@zg.io` 登录账号可认领无主链接；slug 与图标均复制，Go 保持独立。不发布生产。
+用户已明确范围：`@zgzg.io` 登录账号可认领无主链接；slug 与图标均复制，Go 保持独立。不发布生产。
 
 ```text
 Edit / Claim -> ClaimOwnership -> existing POST /links/:slug/claim
 Login -> Supabase -> AuthCallback -> safe original edit path
-Verified JWT email -> exact zg.io gate -> atomic owner-null UPDATE + audit transaction
+Verified JWT email -> exact zgzg.io gate -> atomic owner-null UPDATE + audit transaction
 ShortLinkActions -> canonical VITE_BASE_URL + slug -> Clipboard + live feedback
 ```
 

@@ -13,7 +13,7 @@ describe("unowned link claim", () => {
   function claim(slug: string, role?: string, body?: unknown) {
     return h.request(slug + "/claim", { method: "POST", role, body });
   }
-  test("signed @zg.io identity claims without fingerprint and can immediately save", async () => {
+  test("signed @zgzg.io identity claims without fingerprint and can immediately save", async () => {
     const slug = await unowned();
     const result = await claim(slug, "claimant");
     expect(result.status).toBe(200);
@@ -31,7 +31,7 @@ describe("unowned link claim", () => {
     expect((await claim(slug)).status).toBe(401);
     expect((await claim(slug, "bad-token")).status).toBe(401);
     for (const role of ["member", "lookalike", "admin", "outsider", "anonymousAuth"]) {
-      const res = await claim(slug, role, { email: "spoofed@zg.io", ownerId: h.ids.claimant });
+      const res = await claim(slug, role, { email: "spoofed@zgzg.io", ownerId: h.ids.claimant });
       expect(res.status).toBe(403);
       expect((await res.json()).error).toBe("CLAIM_DOMAIN_REQUIRED");
     }

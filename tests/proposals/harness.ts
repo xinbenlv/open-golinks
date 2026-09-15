@@ -61,12 +61,12 @@ export async function setup() {
   const emails: Record<string, string> = {};
   const tokens: Record<string, string> = {};
   for (const [name, id] of Object.entries(ids)) {
-    emails[name] = name === "claimant" ? "CLAIMANT@ZG.IO" : name === "competitor" || name === "anonymousAuth" ? name + "@zg.io" : name === "lookalike" ? "member@zgzg.io" : name + "@example.test";
+    emails[name] = name === "claimant" ? "CLAIMANT@ZGZG.IO" : name === "competitor" || name === "anonymousAuth" ? name + "@zgzg.io" : name === "lookalike" ? "member@zg.io" : name + "@example.test";
     await sql`insert into users(id,email,role) values(${id},${emails[name].toLowerCase()},${name === "admin" ? "admin" : "user"})`;
     tokens[name] = await new SignJWT({
       email: emails[name],
       is_anonymous: name === "anonymousAuth",
-      user_metadata: { email: "spoofed@zg.io", email_verified: true },
+      user_metadata: { email: "spoofed@zgzg.io", email_verified: true },
       role: name === "outsider" ? "admin" : "authenticated",
     })
       .setProtectedHeader({ alg: "ES256", kid: "test" })

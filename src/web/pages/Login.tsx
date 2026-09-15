@@ -39,7 +39,7 @@ export default function Login() {
     }
 
     if (claimLogin && !canClaimOwnership(normalized)) {
-      setError("请使用 @zg.io 邮箱认领链接。");
+      setError("请使用 @zgzg.io 邮箱认领链接。");
       return;
     }
     setSubmitting(true);
@@ -85,7 +85,7 @@ export default function Login() {
             value={email}
             disabled={submitting || Boolean(sentTo)}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder={claimLogin ? "you@zg.io" : "you@example.com"}
+            placeholder={claimLogin ? "you@zgzg.io" : "you@example.com"}
           />
 
           <button
