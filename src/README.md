@@ -12,3 +12,5 @@
 认领复用 links API：JWT 的 `@zgzg.io` 邮箱授权，owner 为空时原子更新并在同一事务写审计。
 
 链接详情通过 `lib/link-owner.ts` 返回邮箱派生的头像 seed；前端本地绘制 Jazzicon，不公开邮箱。
+
+编辑页无主状态用 UnownedAvatar 展开既有 ClaimOwnership；不改后端认领契约。

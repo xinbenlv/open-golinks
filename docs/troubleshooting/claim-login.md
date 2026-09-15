@@ -37,3 +37,10 @@ Lighthouse 的入口是 `cli/index.js`，`cli/bin.js` 只导出 begin，不会�
 - 问题：Drizzle generate 将 meta/README.md 当作 JSON。原因：本地版本扫描整个 meta 目录。解决：生成时临时移开 README 再恢复。本次最终无 schema 变更，无迁移文件。
 
 - 问题：本机负载使 Lighthouse CPU benchmark 从约 4375 降至 1261，重复测量波动。解决：关闭本任务闲置浏览器、独立测量；头像库同时改为按需加载，避免进入编辑页首屏包。相关：src/web/components/OwnerAvatar.tsx。
+
+## 空缺头像继承折叠样式
+
+- 问题：空头像出现多余箭头，被压成约 24px 宽，控件变成 56px 高；关闭 details 后测试仍可取得绝对定位面板的边界。
+- 原因：编辑页所有 details > summary 的通用选择器覆盖了头像尺寸，折叠内容的定位也需要显式隐藏。
+- 解决：只在 unowned-avatar 内覆盖箭头、padding 与 min-height，固定 SVG 不收缩；未 open 的面板 display:none。
+- 相关：src/web/styles/global.css、tests/proposals/unowned-avatar.browser.spec.ts（锁定 44px、默认隐藏及键盘打开/关闭）。

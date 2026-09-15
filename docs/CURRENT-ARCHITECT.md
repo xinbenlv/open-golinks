@@ -375,3 +375,9 @@ Edit -> OwnerAvatar -> Jazzicon DOM/SVG（不请求外部头像）
 - `src/web/pages/Edit.tsx:285-303`：根据 ownerId 切换认领/头像；认领保留草稿和 revision +1。单链接写入响应共用 owner 投影，保存后不会丢失头像。
 
 不新增 schema、认证流程或第三方服务；资料仅用于展示，权限仍按 ownerId/数据库角色判断。
+
+## 空缺头像认领入口
+
+`UnownedAvatar → details/summary → ClaimOwnership → existing claim API`：无主链接同样保留头像，点击后才显示登录/认领操作。`src/web/components/UnownedAvatar.tsx:1-31` 处理外部点击与 Escape 回焦；`src/web/pages/Edit.tsx:292-300` 在 ownerId 为空时选择该组件，认领成功保留原有草稿和 revision 行为。
+
+通用 details 的箭头/间距在此组件作用域覆盖，保证 32px 头像与 44px 控件。独立 `/claim/:slug` 不增加这层展开；无后端/schema/API 变更。
