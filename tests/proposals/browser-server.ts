@@ -2,6 +2,7 @@
 import { Hono } from "hono";
 import { staticCompression } from "../../src/middleware/static-compression";
 import { setup } from "./harness";
+import { safeAuthReturn } from "../../src/web/lib/authReturn";
 const h = await setup();
 const { qrRoute } = await import("../../src/routes/qr");
 h.app.route("/qr", qrRoute);
@@ -24,6 +25,7 @@ async function handle(req: Request): Promise<Response> {
   const path = new URL(req.url).pathname;
   if (path.startsWith("/__test/session/") || path.startsWith("/__test/login/")) {
     const role = path.split("/").at(-1)!;
+    const returnTo = safeAuthReturn(new URL(req.url).searchParams.get("next") ?? "/edit/handbook");
     if (role === "anonymous") return new Response("<script>localStorage.removeItem('sb-127-auth-token'); location.replace('/edit/handbook');</script>", { headers: { "Content-Type": "text/html" } });
     if (!(role in h.ids)) return new Response("Unknown role", { status: 404 });
     const session = {
@@ -33,7 +35,7 @@ async function handle(req: Request): Promise<Response> {
     };
     if (path.startsWith("/__test/session/")) return Response.json(session, { headers: { "Cache-Control": "no-store" } });
     return new Response(
-      `<script>localStorage.setItem('sb-127-auth-token', ${JSON.stringify(JSON.stringify(session))}); location.replace('/edit/handbook');</script>`,
+      `<script>localStorage.setItem('sb-127-auth-token', ${JSON.stringify(JSON.stringify(session))}); location.replace(${JSON.stringify(returnTo)});</script>`,
       { headers: { "Content-Type": "text/html", "Cache-Control": "no-store" } },
     );
   }

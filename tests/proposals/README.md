@@ -51,3 +51,5 @@ Publish（Public listing）支持提议开启或关闭，仅审批后更新 isPu
 harness -> proposals.test + claim-cases
         -> browser-server -> browser.spec + claim-copy.browser.spec
 ```
+
+手动预览可打开 `/__test/login/claimant?next=/edit/unowned`，使用本地签名的虚构 @zg.io 账号回到无主链接；无需真实发信。
