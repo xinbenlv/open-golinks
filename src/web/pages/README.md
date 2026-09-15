@@ -39,4 +39,6 @@ pages/
 
 Edit 页包含真实 Proposed changes，保存请求携带 baseRevision，避免旧表单覆盖刚审核的更新。
 
+编辑页移除重复的操作解释；提议区直接展示标题、操作和内容。
+
 Landing footer 使用既有 text-muted token，满足 Lighthouse 对比度检查。

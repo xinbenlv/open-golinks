@@ -1,3 +1,4 @@
+/** QR 预览；透明品牌 logo 直接叠在二维码上，不绘制白色缓冲区。 */
 import { useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { webBrand } from "../lib/brand";
@@ -49,18 +50,19 @@ export function QrCanvas({
       const qr = QRCode.create(value, { errorCorrectionLevel: "H" });
       const quiet = 4;
       const modules = qr.modules.size;
-      const cell = Math.floor(size / (modules + quiet * 2));
-      const actualSize = cell * (modules + quiet * 2);
-      const offset = Math.floor((size - actualSize) / 2);
+      const oldCell = Math.floor(size / (modules + quiet * 2));
+      const oldMargin = padding + Math.floor((size - oldCell * modules) / 2);
+      const margin = Math.round(oldMargin / 3);
+      const cell = (size + padding * 2 - margin * 2) / modules;
       ctx.fillStyle = "#101014";
       for (let row = 0; row < modules; row += 1) {
         for (let col = 0; col < modules; col += 1) {
           if (qr.modules.get(row, col)) {
             ctx.fillRect(
-              padding + offset + (col + quiet) * cell,
-              padding + offset + (row + quiet) * cell,
-              cell,
-              cell,
+              margin + Math.round(col * cell),
+              margin + Math.round(row * cell),
+              Math.round((col + 1) * cell) - Math.round(col * cell),
+              Math.round((row + 1) * cell) - Math.round(row * cell),
             );
           }
         }
@@ -70,7 +72,9 @@ export function QrCanvas({
         const centerX = width / 2;
         const centerY = padding + size / 2;
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(centerX - 34, centerY - 34, 68, 68);
+        if (!webBrand.logoUrl) {
+          ctx.fillRect(centerX - 34, centerY - 34, 68, 68);
+        }
         if (webBrand.logoUrl) {
           try {
             const image = await loadImageElement(webBrand.logoUrl);

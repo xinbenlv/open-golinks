@@ -9,7 +9,7 @@
 - `BuildStamp.tsx` — 全局右下角的构建版本水印 (version · sha · 时间). 在 `App.tsx` 顶层挂载, 所有路由可见. 样式见 `../styles/global.css` 的 `.build-stamp` class. 数据来源: `../version.ts` (由 `scripts/prerender.ts` 构建期注入 `globalThis.__OGL_VERSION__`).
 - `ClaimBanner.tsx` — Dashboard 顶部匿名/legacy 可认领链接提示, 调 `/api/v1/links/claimable` 并支持批量 claim.
 - `LinkRow.tsx` — Dashboard 单行链接展示, 含 slug/url/description/tags/visits/created/actions.
-- `QrCanvas.tsx` — QR editor 的浏览器 canvas 预览, 用 `qrcode` 矩阵本地绘制 caption/logo.
+- `QrCanvas.tsx` — QR editor 的浏览器 canvas 预览, 用 `qrcode` 矩阵本地绘制 caption/logo；ZGZG logo 保留透明角，不添加白色缓冲区。
 - `StatsChart.tsx` — Dashboard 近 52 周总点击入口, 复用 `stats/Heatmap.tsx`, 数据来自 `/api/v1/stats/summary`.
 - `TagInput.tsx` — Edit 页 metadata tags chip 输入.
 - `stats/DateRangePicker.tsx` — `/stats` 7/30/90/180 天范围 segmented control.
@@ -22,3 +22,5 @@
 
 - proposals/：真实提议 UI、Namefi 极简 diff、reviewer-only 提交详情。
 - LinkStatsCard.tsx：Edit 统计卡片，按需加载图表。
+
+二维码外围总留白缩为原来的约 1/3，保持画布尺寸并扩大码体；预览与导出一致。

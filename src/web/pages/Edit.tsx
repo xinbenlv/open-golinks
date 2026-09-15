@@ -266,10 +266,9 @@ export default function Edit() {
                 </a>
               </div>
             </header>
-            {!canEdit ? (
+            {!canEdit && !user ? (
               <div className="edit-readonly">
-                <span>Suggest a change below. An owner or admin can approve it.</span>
-                {!user ? <Link to="/login">Log in to edit →</Link> : null}
+                <Link to="/login">Log in to edit →</Link>
               </div>
             ) : null}
 

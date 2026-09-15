@@ -4,6 +4,10 @@
 
 ## System Overview
 
+ZGZG QR 预览和 PNG 导出直接叠加透明 logo，不绘制白色缓冲区。
+
+Edit 提议区使用标题和操作直接引导，省去重复说明；审批、隐私及冲突恢复提示保留在相关状态。
+
 Railway 在新版启动前运行 `bun run db:migrate`（`railway.json`），复用服务环境中的数据库连接；迁移失败阻止发布。
 
 ### ASCII 简图
@@ -321,3 +325,5 @@ flowchart TB
 - 独立测试：tests/proposals/ 使用本地 PostgreSQL、签名 JWT 和真实浏览器操作，不连生产服务。
 
 静态压缩使用异步 node:zlib gzip/deflate，不依赖生产 Bun 未提供的 CompressionStream；见 middleware/static-compression.ts 与压缩回归测试。
+
+二维码外围总留白缩为原来的约 1/3，保持画布尺寸并扩大码体；预览与导出一致。

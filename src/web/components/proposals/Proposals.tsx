@@ -79,14 +79,7 @@ export function Proposals({
   return (
     <section className="proposals-section proposals-ui" data-testid="proposals">
       <div className="section-heading">
-        <div>
-          <h2>{history ? "Proposal history" : "Proposed changes"}</h2>
-          <p className="small muted">
-            {data?.canReview
-              ? "Approve a change to apply it to this link."
-              : "Suggest a destination or description. Track your proposals here."}
-          </p>
-        </div>
+        <h2>{history ? "Proposal history" : "Proposed changes"}</h2>
         {!composing ? (
           <button className="btn btn--ghost" onClick={() => setComposing(true)}>
             Propose a change
@@ -133,11 +126,6 @@ export function Proposals({
                 ? "All caught up."
                 : "No pending proposals."}
           </strong>
-          <p>
-            {data.canReview
-              ? "New proposals will appear here."
-              : "Anonymous proposals are tracked in this browser."}
-          </p>
         </div>
       ) : null}
       {reviewBlocked && data?.canReview ? (

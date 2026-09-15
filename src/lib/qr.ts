@@ -1,3 +1,4 @@
+/** QR PNG 渲染与缓存；ZGZG 透明 logo 直接叠在二维码上。 */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -47,11 +48,12 @@ function cacheKey(value: string, options: RenderOptions) {
     .digest("hex");
 }
 
-function loadZgzgLogo() {
+async function loadZgzgLogo() {
   if (zgzgLogo !== undefined) return zgzgLogo;
   try {
     const image = new Image();
     image.src = readFileSync(resolve(import.meta.dir, "../assets/img/zgzg-round-logo.png"));
+    await image.decode();
     zgzgLogo = image;
   } catch (err) {
     console.error("[qr] failed to load ZGZG logo", err);
@@ -59,6 +61,9 @@ function loadZgzgLogo() {
   }
   return zgzgLogo;
 }
+
+// 图片解码完成后再接受渲染，避免首次 PNG 只有留白而没有 logo。
+const decodedZgzgLogo = await loadZgzgLogo();
 
 function getCached(key: string) {
   const hit = cache.get(key);
@@ -91,9 +96,10 @@ function drawQrModules(
   const qr = QRCode.create(value, { errorCorrectionLevel: "H" });
   const quiet = 4;
   const modules = qr.modules.size;
-  const cell = Math.floor(size / (modules + quiet * 2));
-  const actualSize = cell * (modules + quiet * 2);
-  const offset = Math.floor((size - actualSize) / 2);
+  const oldCell = Math.floor(size / (modules + quiet * 2));
+  const oldMargin = x + Math.floor((size - oldCell * modules) / 2);
+  const margin = Math.round(oldMargin / 3);
+  const cell = (size + x * 2 - margin * 2) / modules;
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(x, y, size, size);
@@ -102,10 +108,10 @@ function drawQrModules(
     for (let col = 0; col < modules; col += 1) {
       if (qr.modules.get(row, col)) {
         ctx.fillRect(
-          x + offset + (col + quiet) * cell,
-          y + offset + (row + quiet) * cell,
-          cell,
-          cell,
+          margin + Math.round(col * cell),
+          margin + Math.round(row * cell),
+          Math.round((col + 1) * cell) - Math.round(col * cell),
+          Math.round((row + 1) * cell) - Math.round(row * cell),
         );
       }
     }
@@ -121,9 +127,11 @@ function drawLogo(
   const size = 58;
   const x = centerX - size / 2;
   const y = centerY - size / 2;
+  const logo = brand.theme === "zgzg" ? decodedZgzgLogo : null;
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(x - 7, y - 7, size + 14, size + 14);
-  const logo = brand.theme === "zgzg" ? loadZgzgLogo() : null;
+  if (!logo) {
+    ctx.fillRect(x - 7, y - 7, size + 14, size + 14);
+  }
   if (logo) {
     ctx.drawImage(logo, x, y, size, size);
   } else {

@@ -1,5 +1,9 @@
 # 提议隔离测试
 
+预览服务器显式设置静态文件 Content-Type，避免经过响应中间件后丢失 Bun 文件的隐式 MIME。
+
+预览同时接入 /qr 的真实 PNG 路由，启动时设置 OPEN_GOLINK_THEME=zgzg 可检查品牌 logo 下载。
+
 只在显式设置 `PROPOSAL_TEST_DATABASE_URL` 且指向 localhost 的 `ogl_proposals_test` 数据库时执行；使用本地生成的 JWT/JWKS，不读取 Supabase 凭据。请单独运行此目录，避免旧测试的 mock.module 污染。
 
 ```sh

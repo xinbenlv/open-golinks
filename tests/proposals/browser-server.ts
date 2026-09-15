@@ -4,7 +4,9 @@ import { staticCompression } from "../../src/middleware/static-compression";
 import { setup } from "./harness";
 const h = await setup();
 const { auditRoute } = await import("../../src/routes/api/audit");
+const { qrRoute } = await import("../../src/routes/qr");
 h.app.route("/api/v1/audit", auditRoute);
+h.app.route("/qr", qrRoute);
 await h.sql`insert into links(slug,url,owner_id,metadata) values('handbook','https://example.test/handbook',${h.ids.owner},${h.sql.json({ description: "Team handbook", tags: ["team"], show_warning: true })})`;
 await h.submit("handbook", {
   ip: "192.0.2.100",
@@ -45,10 +47,10 @@ async function handle(req: Request): Promise<Response> {
   if (path === "/api/v1/stats/query")
     return Response.json({ rows: [], totalEvents: 0, source: "ga4" });
   if (path === "/robots.txt") return new Response("", { status: 404 });
-  if (path.startsWith("/api/")) return h.app.fetch(req);
+  if (path.startsWith("/api/") || path.startsWith("/qr/")) return h.app.fetch(req);
   const file = Bun.file(`dist/web${path}`);
   if (!path.includes("..") && (await file.exists()) && path !== "/")
-    return new Response(file);
+    return new Response(file, { headers: { "Content-Type": file.type } });
   return new Response(Bun.file("dist/web/index.html"), {
     headers: { "Content-Type": "text/html" },
   });
