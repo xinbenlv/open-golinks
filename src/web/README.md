@@ -23,3 +23,5 @@ LinkStatsCard 在有数据时才加载图表。样式只在 main.tsx 导入，�
 运行 bun run dev:web；构建 bun run build:web。品牌由 OPEN_GOLINK_THEME 控制；前端认证需要 VITE_SUPABASE_URL 与 VITE_SUPABASE_PUBLISHABLE_KEY。新增根级路径需同步 redirect 的 RESERVED。
 
 生产权限和发布步骤见 [提议 runbook](../../docs/runbooks/proposed-changes.md)。
+
+无主链接在 edit 和 claim 页复用 ClaimOwnership；ShortLinkActions 提供 slug/图标复制、44px 触控区域与状态反馈。authReturn 保留安全的登录回跳路径，兼容旧邮件模板同浏览器新 tab 回跳。

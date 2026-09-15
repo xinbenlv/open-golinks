@@ -1,3 +1,4 @@
+/** 可信身份的邮箱规范化、认领域判断与公开 DTO 脱敏。 */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeEmail(value: unknown): string | null {
@@ -5,6 +6,10 @@ export function normalizeEmail(value: unknown): string | null {
   const email = value.trim().toLowerCase();
   if (!email || !EMAIL_RE.test(email)) return null;
   return email;
+}
+
+export function canClaimOwnership(email: unknown): boolean {
+  return normalizeEmail(email)?.split("@")[1] === "zg.io";
 }
 
 export function normalizeMetadata(value: unknown): Record<string, unknown> {

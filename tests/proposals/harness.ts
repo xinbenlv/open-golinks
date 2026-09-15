@@ -39,6 +39,7 @@ export async function setup() {
   await migrationClient.end();
   const sql = postgres(url.href, { max: 5 });
   await sql`alter table audit_logs drop constraint if exists test_reject_approval`;
+  await sql`alter table audit_logs drop constraint if exists test_reject_claim`;
   await sql`truncate link_proposals, audit_logs, daily_visits, links, users cascade`;
   const { proposalsRoute } = await import("../../src/routes/api/proposals");
   const { linksRoute } = await import("../../src/routes/api/links");
@@ -52,12 +53,20 @@ export async function setup() {
     admin: crypto.randomUUID(),
     member: crypto.randomUUID(),
     outsider: crypto.randomUUID(),
+    claimant: crypto.randomUUID(),
+    competitor: crypto.randomUUID(),
+    lookalike: crypto.randomUUID(),
+    anonymousAuth: crypto.randomUUID(),
   };
+  const emails: Record<string, string> = {};
   const tokens: Record<string, string> = {};
   for (const [name, id] of Object.entries(ids)) {
-    await sql`insert into users(id,email,role) values(${id},${name + "@example.test"},${name === "admin" ? "admin" : "user"})`;
+    emails[name] = name === "claimant" ? "CLAIMANT@ZG.IO" : name === "competitor" || name === "anonymousAuth" ? name + "@zg.io" : name === "lookalike" ? "member@zgzg.io" : name + "@example.test";
+    await sql`insert into users(id,email,role) values(${id},${emails[name].toLowerCase()},${name === "admin" ? "admin" : "user"})`;
     tokens[name] = await new SignJWT({
-      email: name + "@example.test",
+      email: emails[name],
+      is_anonymous: name === "anonymousAuth",
+      user_metadata: { email: "spoofed@zg.io", email_verified: true },
       role: name === "outsider" ? "admin" : "authenticated",
     })
       .setProtectedHeader({ alg: "ES256", kid: "test" })
@@ -127,6 +136,7 @@ export async function setup() {
     sql,
     ids,
     tokens,
+    emails,
     seed,
     request,
     submit,

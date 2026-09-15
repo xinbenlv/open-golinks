@@ -1936,3 +1936,19 @@ svg {
 /* 基本信息是一份连续表单，不单独给部分字段套卡片。 */
 .edit-page .edit-fields { background: transparent; border-radius: 0; padding: 0; }
 .edit-page .edit-save-bar { width: 100%; padding-block-end: 0; }
+
+/* 认领入口与 slug 复制：沿用主题，44px 触控区，长 slug 可换行。 */
+.edit-slug-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.edit-slug-row h1 { min-width: 0; margin: 0; }
+.edit-slug-copy, .edit-copy-icon {
+  appearance: none; color: inherit; background: none; border: 0; cursor: pointer;
+  min-height: 44px; border-radius: var(--radius-sm);
+}
+.edit-slug-copy { font: inherit; letter-spacing: inherit; text-align: start; overflow-wrap: anywhere; padding: 0; }
+.edit-copy-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; flex: 0 0 44px; padding: 0; }
+.edit-slug-copy:hover, .edit-copy-icon:hover { color: var(--accent); }
+.edit-slug-copy:focus-visible, .edit-copy-icon:focus-visible, .edit-claim .text-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.edit-copy-feedback { display: block; min-height: 1.2em; font-size: 12px; color: var(--text-muted); }
+.edit-claim { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 14px; }
+.edit-claim .text-button { display: inline-flex; align-items: center; min-height: 44px; text-align: start; }
+.edit-claim [role=alert] { color: var(--danger); }

@@ -28,14 +28,14 @@ pages/
 
 - `/stats` 与 `/stats/:slug` 展示只读 GA4 统计。
 - `/trending` 展示近 7/30 天热门公开链接，后端只会查询 `is_public=true` 且未删除的链接。
-- `/claim/:slug` 支持匿名链接登录后认领；未登录时先显示登录入口。
+- `/claim/:slug` 与 edit 页共用 ClaimOwnership，`@zg.io` 登录后返回当前 edit 页再认领。
 
 ## 相关文档
 
 - [`../README.md`](../README.md)
 - [`../../../docs/CURRENT-ARCHITECT.md`](../../../docs/CURRENT-ARCHITECT.md)
 
-`/edit/:slug` 沿用项目原有主题与字体。短链标题旁放置 Copy 和 Go；基本信息直接可编辑，History、Stats、QR Code 分 tab 按需展示。操作按钮在修改后出现；转移和删除收在 Manage link。
+`/edit/:slug` 沿用项目原有主题与字体。短链标题与相邻图标共用复制逻辑，Go 独立导航；基本信息直接可编辑，History、Stats、QR Code 分 tab 按需展示。操作按钮在修改后出现；转移和删除收在 Manage link。
 
 Edit 页包含真实 Proposed changes，保存请求携带 baseRevision，避免旧表单覆盖刚审核的更新。
 

@@ -20,8 +20,10 @@
 - bun test tests/proposals/inline-diff.test.tsx
 - bun test tests/e2e/identity-acl.test.ts
 
-真实提议 DB / 浏览器命令见上方 README。截图只保存到指定本地目录，不自动公开上传。
+真实提议、认领 DB / 浏览器命令见上方 README。截图只保存到指定本地目录，不自动公开上传。
 
 `static-compression.test.ts` 验证缺少 CompressionStream 时 gzip/deflate 页面仍可解压，以及 q=0 的编码协商。
 
 `qr-logo.test.ts` 验证首次导出包含已解码的 ZGZG logo，且logo 边界之外保留原 QR 模块。
+
+F5-claim 入口复用隔离提议/认领套件，不再创建真实 Supabase 测试账号。claim-cases 覆盖域资格、抢占、并发和审计回滚；auth-return 覆盖安全回跳。

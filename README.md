@@ -2,7 +2,7 @@
 
 > `/edit/:slug` 支持访客提议 URL/描述、owner/admin 审核、极简 diff、私有详情和历史。见 [发布说明](./docs/runbooks/proposed-changes.md)。
 
-团队内部短链、二维码和访问统计服务。它让团队把常用链接变成好记的 `/{slug}`，同时保留 owner 管理、warning page、QR 下载、审计记录、公开统计和旧 Chrome extension API 兼容能力。
+团队短链、二维码和访问统计服务。把常用链接变成好记的 `/{slug}`，同时保留 owner 管理、warning page、QR 下载、审计记录、公开统计和旧 Chrome extension API 兼容能力。
 
 ![Open GoLinks 产品导览](./docs/assets/readme-tour.gif)
 
@@ -23,7 +23,7 @@ Open GoLinks 是一个可自托管的 GoLinks / 短链入口：
 ## 功能特性
 
 - **短链核心路径**：`GET /:slug` 查询 Postgres 后立即 302，analytics 用异步写入避免拖慢跳转。
-- **链接管理**：Supabase Magic Link 登录，owner-only CRUD，匿名创建强制公开与 warning，之后可通过 fingerprint / legacy email claim。
+- **链接管理**：Supabase Magic Link 登录，owner-only CRUD，匿名创建强制公开与 warning，无主链接可由 `@zg.io` 登录账号认领。
 - **二维码**：浏览器 canvas 预览 + 服务端 PNG，支持 `/qr/:slug.png` inline 和 `/qr/d/:slug.png` download。
 - **安全与合规提示**：link-level warning toggle，SSR warning page 不依赖 SPA bundle。
 - **统计与审计**：daily visits、GA4 Data API 查询、audit timeline、URL history、ownership transfer。
@@ -85,7 +85,7 @@ bun run build
 
 Railway 发布前自动执行数据库迁移，成功后才启动新版。
 
-生产部署在 Railway，详见 [`DEPLOYMENT.md`](./DEPLOYMENT.md)。最小必需环境变量包括 `DATABASE_URL`、`PUBLIC_BASE_URL`、`VITE_BASE_URL`、Supabase Auth/JWT 配置，以及 GA4 配置。自定义域名切换时，`PUBLIC_BASE_URL` 和 `VITE_BASE_URL` 必须一起更新并重新部署。
+部署在 Railway，见 [`DEPLOYMENT.md`](./DEPLOYMENT.md)。最小必需环境变量包括 `DATABASE_URL`、`PUBLIC_BASE_URL`、`VITE_BASE_URL`、Supabase Auth/JWT 配置，以及 GA4 配置。自定义域名切换时，`PUBLIC_BASE_URL` 和 `VITE_BASE_URL` 必须一起更新并重新部署。
 
 ## 开发者文档
 

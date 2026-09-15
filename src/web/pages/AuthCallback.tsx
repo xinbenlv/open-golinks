@@ -1,6 +1,9 @@
+/** 完成 PKCE 或兼容 hash 登录并返回原链接，禁止外站跳转。 */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+
+import { consumeAuthReturn } from "../lib/authReturn";
 
 function readImplicitSessionFromHash() {
   const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -43,7 +46,7 @@ export default function AuthCallback() {
         return;
       }
 
-      navigate("/dashboard", { replace: true });
+      navigate(consumeAuthReturn(new URLSearchParams(window.location.search).get("next")), { replace: true });
     }
 
     void exchange();

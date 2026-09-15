@@ -24,6 +24,7 @@ import { writeAudit } from "../../middleware/audit.ts";
 import { anonymousWriteRateLimit } from "../../middleware/ratelimit.ts";
 import { isFingerprint } from "../../lib/fingerprint.ts";
 import {
+  canClaimOwnership,
   normalizeEmail,
   normalizeMetadata,
   sanitizeLinkRecord,
@@ -327,6 +328,7 @@ linksRoute.get("/claimable", requireAuth, async (c) => {
   }
 
   const user = c.get("user")!;
+  if (!canClaimOwnership(user.email) || user.role !== "authenticated" || user.raw.is_anonymous === true) return c.json({ links: [] });
   const matchers: SQL[] = [];
   if (fingerprint) {
     matchers.push(eq(schema.linksTable.createdByFingerprint, fingerprint));
@@ -385,61 +387,31 @@ linksRoute.get("/:slug", async (c) => {
   return c.json({ link: sanitizeLinkRecord(row) });
 });
 
-// POST /api/v1/links/:slug/claim - claim an anonymous link by fingerprint or legacy email.
+// 无主链接认领：只信任认证 middleware 验证后的邮箱，原子更新并在同一事务写审计。
 linksRoute.post("/:slug/claim", requireAuth, async (c) => {
   const slug = c.req.param("slug");
-  const body = await c.req.json().catch(() => ({}));
-  const parsed = claimSchema.safeParse(body);
-  if (!parsed.success) {
-    return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
-  }
-
   const user = c.get("user")!;
-  const fingerprint = parsed.data.fingerprint?.toLowerCase();
-  const userEmail = normalizeEmail(user.email);
-  const matchers: SQL[] = [];
-  if (fingerprint) {
-    matchers.push(eq(schema.linksTable.createdByFingerprint, fingerprint));
+  if (!canClaimOwnership(user.email) || user.role !== "authenticated" || user.raw.is_anonymous === true) {
+    return c.json({ error: "CLAIM_DOMAIN_REQUIRED", message: "Sign in with an @zg.io account to claim ownership." }, 403);
   }
-  if (userEmail) {
-    matchers.push(
-      sql`lower(${schema.linksTable.metadata}->>'legacy_author_email') = ${userEmail}`,
-    );
-  }
-  if (!matchers.length) {
-    return c.json({ error: "CLAIM_FORBIDDEN" }, 403);
-  }
+  const parsed = claimSchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!parsed.success) return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
 
-  const [updated] = await db
-    .update(schema.linksTable)
-    .set({ ownerId: user.id, updatedAt: new Date() })
-    .where(
-      and(
-        eq(schema.linksTable.slug, slug),
-        isNull(schema.linksTable.ownerId),
-        isNull(schema.linksTable.deletedAt),
-        or(...matchers)!,
-      ),
-    )
-    .returning();
-  if (!updated) {
-    const existing = await findLink(slug);
-    if (!existing || existing.deletedAt) return c.json({ error: "NOT_FOUND" }, 404);
-    if (existing.ownerId) return c.json({ error: "ALREADY_OWNED" }, 409);
-    return c.json({ error: "CLAIM_FORBIDDEN" }, 403);
-  }
-  const row = expectReturned(updated);
-  const fingerprintMatches =
-    Boolean(fingerprint) && row.createdByFingerprint === fingerprint;
-  await writeAudit(
-    c,
-    "CLAIM",
-    slug,
-    { before: { ownerId: null }, after: { ownerId: user.id } },
-    { claim_method: fingerprintMatches ? "fingerprint" : "legacy_email" },
-    fingerprint,
-  );
-  return c.json({ link: sanitizeLinkRecord(row) });
+  return db.transaction(async (tx) => {
+    const [row] = await tx.update(schema.linksTable)
+      .set({ ownerId: user.id, updatedAt: new Date() })
+      .where(and(eq(schema.linksTable.slug, slug), isNull(schema.linksTable.ownerId), isNull(schema.linksTable.deletedAt)))
+      .returning();
+    if (!row) {
+      const [existing] = await tx.select().from(schema.linksTable).where(eq(schema.linksTable.slug, slug)).limit(1);
+      if (!existing || existing.deletedAt) return c.json({ error: "NOT_FOUND" }, 404);
+      return c.json({ error: "ALREADY_OWNED", message: "This link has already been claimed." }, 409);
+    }
+    await writeAudit(c, "CLAIM", slug,
+      { before: { ownerId: null }, after: { ownerId: user.id } },
+      { claim_method: "domain" }, undefined, tx);
+    return c.json({ link: sanitizeLinkRecord(row) });
+  });
 });
 
 // POST /api/v1/links/:slug/transfer - owner-only ownership transfer by recipient email.

@@ -1,7 +1,11 @@
+/** Magic Link 登录，认领入口限制邮箱域并保留安全回跳路径。 */
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { webBrand } from "../lib/brand";
+
+import { safeAuthReturn } from "../lib/authReturn";
+import { canClaimOwnership } from "../../lib/identity";
 
 type LocationState = {
   from?: { pathname?: string };
@@ -16,8 +20,9 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from =
-    (location.state as LocationState | null)?.from?.pathname || "/dashboard";
+  const params = new URLSearchParams(location.search);
+  const claimLogin = params.get("claim") === "1";
+  const from = safeAuthReturn(params.get("next") ?? (location.state as LocationState | null)?.from?.pathname);
 
   useEffect(() => {
     if (!loading && user) navigate(from, { replace: true });
@@ -33,9 +38,13 @@ export default function Login() {
       return;
     }
 
+    if (claimLogin && !canClaimOwnership(normalized)) {
+      setError("请使用 @zg.io 邮箱认领链接。");
+      return;
+    }
     setSubmitting(true);
     try {
-      await signInWithMagicLink(normalized);
+      await signInWithMagicLink(normalized, from);
       setSentTo(normalized);
     } catch (err) {
       setError(err instanceof Error ? err.message : "发送登录链接失败。");
@@ -76,7 +85,7 @@ export default function Login() {
             value={email}
             disabled={submitting || Boolean(sentTo)}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
+            placeholder={claimLogin ? "you@zg.io" : "you@example.com"}
           />
 
           <button

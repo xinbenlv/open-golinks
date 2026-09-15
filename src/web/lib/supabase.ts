@@ -1,3 +1,5 @@
+/** Supabase browser client 与本站回调 URL。 */
+import { safeAuthReturn } from "./authReturn";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -18,11 +20,11 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
-export function getAuthRedirectUrl() {
+export function getAuthRedirectUrl(returnTo = "/dashboard") {
   const configuredBase = import.meta.env.VITE_BASE_URL;
   const base =
     configuredBase ||
     (typeof window !== "undefined" ? window.location.origin : "");
-  return `${base.replace(/\/$/, "")}/auth/callback`;
+  return `${base.replace(/\/$/, "")}/auth/callback?next=${encodeURIComponent(safeAuthReturn(returnTo))}`;
 }
 
