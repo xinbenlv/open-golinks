@@ -64,6 +64,7 @@ export const linksTable = pgTable(
       .notNull()
       .defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    revision: integer('revision').notNull().default(0),
     visits: integer('visits').notNull().default(0),
     createdByFingerprint: varchar('created_by_fingerprint', { length: 64 }),
     isPublic: boolean('is_public').notNull().default(false),
@@ -117,7 +118,7 @@ export const auditLogsTable = pgTable(
     actorIpHash: varchar('actor_ip_hash', { length: 64 }).notNull(),
     action: varchar('action', {
       length: 50,
-      enum: ['CREATE', 'UPDATE', 'DELETE', 'CLAIM', 'VISIT', 'TRANSFER'],
+      enum: ['CREATE', 'UPDATE', 'DELETE', 'CLAIM', 'VISIT', 'TRANSFER', 'PROPOSE', 'APPROVE_PROPOSAL', 'REJECT_PROPOSAL'],
     }).notNull(),
     diff: jsonb('diff'),
     metadata: jsonb('metadata'),
@@ -172,3 +173,28 @@ export type NewAuditLog = typeof auditLogsTable.$inferInsert;
 
 export type DailyVisit = typeof dailyVisitsTable.$inferSelect;
 export type NewDailyVisit = typeof dailyVisitsTable.$inferInsert;
+
+/** 待审提议；requestMetadata 是 reviewer-only 的短期数据。 */
+export const linkProposalsTable = pgTable('link_proposals', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  linkSlug: varchar('link_slug', { length: 50 }).notNull().references(() => linksTable.slug, { onDelete: 'cascade' }),
+  baseRevision: integer('base_revision').notNull(),
+  proposerId: uuid('proposer_id').references(() => usersTable.id, { onDelete: 'set null' }),
+  anonymousHash: varchar('anonymous_hash', { length: 64 }),
+  proposer: text('proposer').notNull(),
+  before: jsonb('before').$type<import('../lib/proposals/types').ProposalValues>().notNull(),
+  after: jsonb('after').$type<import('../lib/proposals/types').ProposalValues>().notNull(),
+  note: text('note').notNull().default(''),
+  status: varchar('status', { length: 20, enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
+  submittedAt: timestamp('submitted_at', { withTimezone: true, precision: 3 }).notNull().defaultNow(),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true, precision: 3 }),
+  reviewerId: uuid('reviewer_id').references(() => usersTable.id, { onDelete: 'set null' }),
+  reviewer: text('reviewer'),
+  reason: text('reason'),
+  ipHash: varchar('ip_hash', { length: 64 }).notNull(),
+  requestMetadata: jsonb('request_metadata').$type<import('../lib/proposals/types').SubmissionMetadata>(),
+}, (t) => [
+  index('idx_proposals_link_time').on(t.linkSlug, t.submittedAt, t.id),
+  index('idx_proposals_ip_time').on(t.ipHash, t.submittedAt),
+  check('proposal_status', sql`${t.status} in ('pending', 'approved', 'rejected')`),
+]).enableRLS();

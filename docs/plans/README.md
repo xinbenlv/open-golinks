@@ -40,3 +40,5 @@
 
 - ✅ [`archived/2026-05-08-landing-page-phase-1.md`](./archived/2026-05-08-landing-page-phase-1.md) — Landing 页 SSG 实装 (phase 1)
 - ✅ [`archived/2026-05-07-v2-hono-rewrite-phase-1.md`](./archived/2026-05-07-v2-hono-rewrite-phase-1.md) — v2-hono 重写主计划 (阶段 1 骨架完成, 阶段 2/3/4 被 feature-parity 总计划取代)
+
+- [Proposed changes 实现](./archived/2026-09-15-proposed-changes-phase-2.md)：持久化、审核事务与真实 UI。

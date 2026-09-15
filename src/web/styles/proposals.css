@@ -1,0 +1,292 @@
+/* 已批准原型的提议样式；限定作用域避免影响其余页面。 */
+.proposals-ui .text-button {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 10px 0;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.proposals-ui .proposal-demo {
+  padding-block-start: 48px;
+}
+.proposals-ui .small {
+  font-size: var(--text-sm);
+}
+.proposals-ui .section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.proposals-ui .section-heading h2 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0;
+}
+.proposals-ui .section-heading p {
+  margin: 6px 0 0;
+}
+.proposals-ui .count {
+  color: var(--text-muted);
+  margin-inline-start: 8px;
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+.proposals-ui .proposals-section {
+  border-top: 1px solid var(--border);
+  padding: 26px 0;
+}
+.proposals-ui .proposal-compose {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+.proposals-ui .proposal-compose .auth-label:not(:first-child) {
+  margin-top: 8px;
+}
+.proposals-ui .proposal-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+.proposals-ui .proposal-card {
+  padding: 22px 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+.proposals-ui .proposer-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.proposals-ui .status-pill {
+  font-size: var(--text-xs);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+.proposals-ui .proposal-card > .small {
+  margin-top: 6px;
+}
+.proposals-ui .proposal-note {
+  margin: 16px 0;
+}
+.proposals-ui .proposal-diff {
+  margin: 18px 0;
+}
+.proposals-ui .diff-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 0;
+  font-size: var(--text-sm);
+}
+.proposals-ui .diff-row + .diff-row {
+  border-top: 1px solid var(--border);
+}
+.proposals-ui .diff-row dt {
+  color: var(--text-muted);
+}
+.proposals-ui .diff-row dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.proposals-ui .diff-row del {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.proposals-ui .diff-row del + .diff-added {
+  margin-inline-start: 3px;
+}
+.proposals-ui .diff-arrow {
+  color: var(--text-muted);
+}
+.proposals-ui .proposal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+.proposals-ui .conflict-note {
+  border-inline-start: 2px solid var(--warning);
+  padding: 8px 14px;
+  margin: 20px 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.proposals-ui .conflict-note strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.proposals-ui .conflict-note p {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+.proposals-ui .reject-form {
+  display: grid;
+  gap: 12px;
+  padding-block-start: 12px;
+  font-size: var(--text-sm);
+}
+.proposals-ui .demo-message {
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.proposals-ui .demo-message:not(:empty) {
+  padding: 16px 0;
+}
+.proposals-ui .empty-copy {
+  margin: 22px 0 0;
+}
+.proposals-ui .proposal-empty {
+  padding: 30px 0 6px;
+}
+.proposals-ui .proposal-empty p {
+  color: var(--text-muted);
+  margin: 4px 0;
+  font-size: var(--text-sm);
+}
+.proposals-ui .history-section summary {
+  justify-content: flex-start;
+  gap: 12px;
+}
+.proposals-ui .history-item {
+  border-top: 1px solid var(--border);
+  padding: 20px 0;
+}
+.proposals-ui .history-item > p {
+  margin: 8px 0;
+}
+.proposals-ui .demo-chart {
+  width: 100%;
+  height: 70px;
+  margin: 24px 0 0;
+}
+.metadata-dialog.proposals-ui {
+  color: var(--text);
+  background: var(--bg-elevated);
+  padding: 28px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  width: min(540px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+}
+.metadata-dialog.proposals-ui::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+.metadata-dialog.proposals-ui .btn {
+  flex-shrink: 0;
+}
+.proposals-ui .eyebrow {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  margin: 0 0 6px !important;
+}
+.proposals-ui .approx-map {
+  margin-top: 22px;
+}
+.proposals-ui .approx-map svg {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+.proposals-ui .approx-map strong {
+  font-weight: 500;
+}
+.proposals-ui .approx-map p {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  margin-top: 4px;
+}
+.proposals-ui .metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 24px 0;
+  font-size: var(--text-sm);
+}
+.proposals-ui .metadata-grid dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.proposals-ui .metadata-grid dd {
+  margin: 4px 0 0;
+}
+.proposals-ui .raw-agent {
+  border-top: 1px solid var(--border);
+  padding-block-start: 16px;
+  font-size: var(--text-sm);
+}
+.proposals-ui .raw-agent summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.proposals-ui .raw-agent code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+  font-size: var(--text-xs);
+}
+.proposals-ui :where(button, select, summary, input, textarea):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+@media (max-width: 700px) {
+.proposals-ui .demo-toolbar,
+.proposals-ui .demo-toolbar > div:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+.proposals-ui .demo-toolbar {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+.proposals-ui .demo-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+.proposals-ui .proposal-demo {
+    padding-block-start: 28px;
+  }
+.proposals-ui .section-heading {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+.proposals-ui .proposal-card,
+.proposals-ui .proposal-compose {
+    padding: 18px 16px;
+  }
+.proposals-ui .diff-row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+.metadata-dialog.proposals-ui {
+    padding: 20px;
+  }
+.proposals-ui .proposal-actions .btn {
+    min-height: 44px;
+  }
+}
+
+.proposals-ui .metadata-grid dd, .proposals-ui .proposal-note, .proposals-ui .proposer-line { overflow-wrap: anywhere; min-width: 0; }

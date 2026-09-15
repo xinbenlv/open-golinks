@@ -15,3 +15,5 @@
 
 - `identity.ts#sanitizeLinkRecord` 会删除 `metadata.legacy_author_email`，该字段只能用于迁移和后端 claim 判断，不能出现在公开 API 响应里。
 - `normalizeEmail` 是 `public.users.email` 写入、transfer recipient lookup、legacy claim 和迁移脚本共用的 canonical email 规则。
+
+- proposals/：共享类型、验证、事务、分页、私有元数据和过期清理。

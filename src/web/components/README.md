@@ -19,3 +19,6 @@
 - `stats/LineChart.tsx` — `/stats` date event/user 折线图.
 - `UrlHistory.tsx` — Edit 页 URL 历史展示, 兼容 malformed legacy `url_history` 并回退到空状态.
 - `WarnToggle.tsx` — Edit 页 warning interstitial 开关, 写 `metadata.show_warning`.
+
+- proposals/：真实提议 UI、Namefi 极简 diff、reviewer-only 提交详情。
+- LinkStatsCard.tsx：Edit 统计卡片，按需加载图表。

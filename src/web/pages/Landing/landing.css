@@ -801,13 +801,13 @@ main.landing-main {
 
 .landing-footer__copy {
   font-size: var(--text-sm);
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .landing-footer__version {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--text-faint);
+  color: var(--text-muted);
   margin-left: 2px;
 }
 

@@ -36,3 +36,7 @@ pages/
 - [`../../../docs/CURRENT-ARCHITECT.md`](../../../docs/CURRENT-ARCHITECT.md)
 
 `/edit/:slug` 沿用项目原有主题与字体。短链标题旁放置 Copy 和 Go；目标地址、描述、标签与访问开关直接可见，二维码、下载和自定义作为紧凑侧栏，手机上顺序排列。保存按钮在修改后出现。统计直接展示，只有历史、转移和删除收在 Manage link。
+
+Edit 页包含真实 Proposed changes，保存请求携带 baseRevision，避免旧表单覆盖刚审核的更新。
+
+Landing footer 使用既有 text-muted token，满足 Lighthouse 对比度检查。

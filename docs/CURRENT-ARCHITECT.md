@@ -17,7 +17,7 @@
               │   ├─ /api/v1/health  → JSON                  │
               │   ├─ /healthz        → JSON (uptime monitor)  │
               │   ├─ /api/v1/audit   → owner audit timeline   │
-              │   ├─ /api/v1/links   → CRUD + claim + audit  │
+              │   ├─ /api/v1/links   → CRUD + claim + proposals  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
               │   ├─ /api/v1/stats   → owner summary + public GA4/trending │
               │   └─ /*              → 静态 SPA (dist/web)   │
@@ -25,7 +25,7 @@
                          │ postgres-js + Drizzle
                          ▼
                  Supabase Postgres
-                 (links / audit_logs / daily_visits / users)
+                 (links / link_proposals / audit_logs / daily_visits / users)
                          ▲
                          │
                  Supabase Auth (JWT + Admin API for migration/repair)
@@ -33,8 +33,11 @@
 
 ### Mermaid 详细图
 
+独立体验原型：`Browser → Vite :5174 → React fixtures（仅内存）`，无后端连线。
+
 ```mermaid
 flowchart TB
+  DEMO[独立 Vite :5174 原型] --> FIXTURES[React 内存 fixtures]
   subgraph Client[客户端]
     BR[Browser]
     EX[Chrome Extension]
@@ -70,6 +73,9 @@ flowchart TB
   SRV --> SPA
   SPA -->|fetch /api/v1/*| API
   API --> PG
+  API --> PROPOSALS[提议事务 / reviewer 权限]
+  PROPOSALS --> PG
+  PROPOSALS --> GEOIP[可选本地 GeoIP 数据库]
   BR -->|登录| AUTH
   AUTH -->|JWT| BR
   SCRIPTS --> PG
@@ -136,8 +142,8 @@ flowchart TB
 
 ### 数据
 - **`src/db/db.ts`** - postgres-js client + Drizzle 实例. `prepare: false` 兼容 Supabase pooler.
-- **`src/db/schema.ts`** - Drizzle schema, 4 张表:
-  - `users` (sync 自 Supabase auth.users; `id = auth.users.id`; email 有普通 unique 和 `lower(email)` unique index) (`src/db/schema.ts:23-37`)
+- **`src/db/schema.ts`** - Drizzle schema, 5 张表:
+  - `users` (sync 自 Supabase auth.users; `id = auth.users.id`; email 有普通 unique 和 `lower(email)` unique index) (`src/db/schema.ts:29-50`)
   - `links` (slug 主键, soft delete, url_history JSONB)
   - `audit_logs` (CREATE/UPDATE/DELETE/CLAIM/VISIT/TRANSFER)
   - `daily_visits` (UNIQUE(slug, date), 用于 analytics)
@@ -148,7 +154,7 @@ flowchart TB
   - `src/web/styles/tokens.css` 定义 brand/action/warning/danger 语义色; 默认主题 action alias 到橙色 brand, ZGZG 主题 action 改为中性色且保留红色 brand accent (`src/web/styles/tokens.css:20-237`).
   - `src/web/lib/brand.ts` 给浏览器和 SSG 统一解析主题, ZGZG 前端 logo/favicon 使用 Vite public path `/zgzg-round-logo.png`, 避免 SSG 输出本地文件路径 (`src/web/lib/brand.ts:1-24`)。
   - `/` Landing (`src/web/pages/Landing/`) 由 `scripts/prerender.ts` 在构建期 SSG 预渲染到 `dist/web/index.html`; 匿名创建表单需要勾选 public/warning 安全确认 (`src/web/pages/Landing/CreateForm.tsx:64-80`, `src/web/pages/Landing/CreateForm.tsx:147-180`, `src/web/pages/Landing/CreateForm.tsx:353-389`).
-  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 last 30 days stats heatmap + 折线、`UrlHistory` 与 `AuditTimeline` (`src/web/pages/Edit.tsx:479-566`).
+  - `/edit/:slug` 对不存在 slug 复用 Landing 创建流; 对已存在链接, 登录 owner 可编辑 URL / 软删, 底部展示 last 30 days stats heatmap + 折线、`UrlHistory` 与 `AuditTimeline` (`src/web/components/LinkStatsCard.tsx:22-135`).
   - `/login` / `/auth/callback` 是 Supabase magic link 登录流, 走客户端 lazy chunk; callback 优先处理 `?code=...`, 并兼容 Admin generated-link / legacy `#access_token=...` session hash.
   - `/auth/confirm` 是 Supabase TokenHash 邮件链接入口, 调 `verifyOtp` 后把 session token 交给 `/auth/callback` 的 hash-token 分支。
   - Supabase Magic Link 邮件模板维护在 `docs/email-templates/`, 分默认 Open GoLinks 和 ZGZG 两套主题, 邮件按钮使用 `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`；部署/Supabase/Resend 操作见 `DEPLOYMENT.md`。
@@ -291,3 +297,23 @@ flowchart TB
 - CI/CD (GitHub Actions → Railway)
 
 编辑页直接展示目标、描述、标签及访问开关，二维码与自定义放置于窄侧栏；统计直接展示，仅历史和管理使用 details。手机上改为顺序布局。主题 token 和字体保持原样，Go 保留 redirect / warning / analytics 流程 (`src/web/pages/Edit.tsx:254-453`)。
+
+## 已批准体验原型（独立运行）
+
+- 独立入口与共享主题：`demos/proposed-changes/main.tsx:1-14`；独立 Vite 配置，不进入生产构建。
+- 提交、直接编辑与审核编排：`demos/proposed-changes/ProposalDemo.tsx:17-134`。仅 URL/description 可由访客提议，当前链接在通过前不变。
+- 虚构元数据和场景：`demos/proposed-changes/model.ts:54-138`。权限模拟、冲突检查和仅应用差异字段：`demos/proposed-changes/model.ts:139-174`。
+- diff、原生元数据对话框及审核卡：`demos/proposed-changes/Review.tsx:12-252`。近似位置与未知位置均为静态示意，无真实采集。
+- 拒绝保留独立结果，历史包含提议人、审核人、提交/审核时间与前后值。
+- 运行、边界与验证见 [`demos/proposed-changes/README.md`](../demos/proposed-changes/README.md)。用户于 2026-09-15 批准，正式实现见下。
+
+- 极简字段 diff：`src/web/components/proposals/InlineDiff.tsx:1-46`，复用 Namefi 的共同前后缀、灰色删除线与普通文字新值规则；字段布局及完整前后值的读屏名称位于 `demos/proposed-changes/Review.tsx:12-52`。
+
+## 真实变更提议
+
+- HTTP 边界：`src/routes/api/proposals.ts:1-39`；列表/详情：`src/lib/proposals/read.ts:1-101`；提交：`src/lib/proposals/submit.ts:1-74`；审核事务：`src/lib/proposals/review.ts:1-93`。
+- Migration 0003 新增提议、版本 trigger 和 RLS。链接、提议、URL history、审计在审核事务内原子变更；任何内容/权限/删除变化使旧提议过期，visits 不影响 revision。普通 PATCH 用 revision CAS 避免覆盖并发审核。
+- Admin 来自数据库 users.role；匿名 cookie 仅用于本人列表，不授予审核权限。元数据单独鉴权，30 天到期后每小时清理。运行参数与代理信任见 [发布说明](./runbooks/proposed-changes.md)。
+- UI：src/web/components/proposals/。Proposals 编排提交、分页与审核，Diff/InlineDiff 使用 Namefi 规则，MetadataDialog 保持键盘焦点。owner 草稿未保存时阻止审核。
+- 生产静态内容使用 src/middleware/static-compression.ts 协商压缩；Edit 统计图有数据时才下载，避免阻塞提议首屏。
+- 独立测试：tests/proposals/ 使用本地 PostgreSQL、签名 JWT 和真实浏览器操作，不连生产服务。

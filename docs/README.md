@@ -1,5 +1,7 @@
 # `docs/` - 项目文档
 
+变更提议原型的架构与范围记录在 CURRENT-ARCHITECT.md，运行说明见 [`../demos/proposed-changes/README.md`](../demos/proposed-changes/README.md)。
+
 本目录存放架构、计划、排障、部署/运行和产品规格相关文档。修改代码后优先同步 `CURRENT-ARCHITECT.md`；遇到排障经验时同步 `troubleshooting/`。
 
 ## 结构
@@ -26,3 +28,7 @@ docs/
 - [`../README.md`](../README.md)
 - [`../.claude/rules/current-architect.md`](../.claude/rules/current-architect.md)
 - [`../.claude/rules/write-readme.md`](../.claude/rules/write-readme.md)
+
+提议真实实现与发布步骤见 [proposed-changes runbook](./runbooks/proposed-changes.md)。
+
+详细前端说明在 src/web/architecture.md；测试旧文档在 tests/legacy-tests.md，README 保持为入口索引。

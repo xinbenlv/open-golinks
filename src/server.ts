@@ -18,9 +18,16 @@ import { versionRoute } from "./routes/api/version.ts";
 import { BUILD_INFO, formatBuildLine } from "./build-info.ts";
 import { loadGcpCredentials } from "./lib/gcp.ts";
 
+import { proposalsRoute } from "./routes/api/proposals.ts";
+
+import { startProposalRetention } from "./lib/proposals/retention";
+
+import { staticCompression } from "./middleware/static-compression";
+
 const app = new Hono();
 
 loadGcpCredentials();
+startProposalRetention();
 
 app.use("*", logger());
 app.use("/api/*", cors());
@@ -48,6 +55,7 @@ app.get("/healthz", (c) =>
   }),
 );
 app.route("/api/v1/audit", auditRoute);
+app.route("/api/v1/links", proposalsRoute);
 app.route("/api/v1/links", linksRoute);
 app.route("/api/v1/me", meRoute);
 app.route("/api/v1/qr", qrApiRoute);
@@ -66,6 +74,7 @@ app.route("/", redirectRoute);
 
 // 生产环境托管 Vite 构建的 SPA
 if (process.env.NODE_ENV === "production") {
+  app.use("*", staticCompression);
   // Railway build 阶段拿不到 RAILWAY_DEPLOYMENT_ID, 所以 prerender 写入的 __OGL_VERSION__ 缺 deployUrl.
   // 启动时读一次 dist/web/index.html, 用运行时 BUILD_INFO 重写 __OGL_VERSION__ 内联脚本, 缓存内存.
   const indexPath = "./dist/web/index.html";

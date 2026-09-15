@@ -1,9 +1,11 @@
+import { Diff } from "./proposals/Diff";
+import type { ProposalValues } from "../../lib/proposals/types";
 import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
 
 type AuditLog = {
   id: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "CLAIM" | "TRANSFER";
+  action: "CREATE" | "UPDATE" | "DELETE" | "CLAIM" | "TRANSFER" | "PROPOSE" | "APPROVE_PROPOSAL" | "REJECT_PROPOSAL";
   actorId: string | null;
   actorEmail: string | null;
   actorFingerprint: string | null;
@@ -29,7 +31,7 @@ function actorLabel(log: AuditLog) {
   if (log.actorEmail) return log.actorEmail;
   if (log.actorFingerprint) return `anonymous ${log.actorFingerprint.slice(0, 8)}`;
   if (log.actorId) return `deleted user ${log.actorId.slice(0, 8)}`;
-  return "system";
+  return log.action === "PROPOSE" ? "anonymous visitor" : "system";
 }
 
 function prettyJson(value: unknown) {
@@ -88,7 +90,7 @@ export function AuditTimeline({ slug }: { slug: string }) {
   }
 
   return (
-    <section className="audit-timeline" aria-busy={loading}>
+    <section className="audit-timeline proposals-ui" aria-busy={loading}>
       <div className="audit-timeline__header">
         <div>
           <p className="dashboard-kicker">History</p>
@@ -112,7 +114,7 @@ export function AuditTimeline({ slug }: { slug: string }) {
               <article className="audit-event" key={log.id}>
                 <div className="audit-event__main">
                   <time dateTime={log.timestamp}>{formatDate(log.timestamp)}</time>
-                  <strong>{log.action}</strong>
+                  <strong>{({ PROPOSE: "Proposed change", APPROVE_PROPOSAL: "Approved proposal", REJECT_PROPOSAL: "Rejected proposal" } as Record<string,string>)[log.action] ?? log.action}</strong>
                   <span>by {actorLabel(log)}</span>
                   {canExpand ? (
                     <button
@@ -130,7 +132,9 @@ export function AuditTimeline({ slug }: { slug: string }) {
                   ) : null}
                 </div>
                 {isExpanded && diff ? (
-                  <pre className="audit-event__diff">{diff}</pre>
+                  ['PROPOSE', 'APPROVE_PROPOSAL', 'REJECT_PROPOSAL'].includes(log.action)
+                    ? <Diff before={(log.diff as { before: ProposalValues }).before} after={(log.diff as { after: ProposalValues }).after} />
+                    : <pre className="audit-event__diff">{diff}</pre>
                 ) : null}
               </article>
             );

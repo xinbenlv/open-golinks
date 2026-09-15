@@ -1,9 +1,9 @@
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Proposals } from "../components/proposals/Proposals";
+import { LinkStatsCard } from "../components/LinkStatsCard";
 import { AuditTimeline } from "../components/AuditTimeline";
 import { QrCanvas } from "../components/QrCanvas";
-import { StatsHeatmap } from "../components/stats/Heatmap";
-import { StatsLineChart } from "../components/stats/LineChart";
 import { TagInput } from "../components/TagInput";
 import { UrlHistory } from "../components/UrlHistory";
 import { authFetch, useAuth } from "../hooks/useAuth";
@@ -17,6 +17,7 @@ type LinkRecord = {
   deletedAt: string | null;
   urlHistory: unknown[];
   updatedAt: string;
+  revision: number;
   metadata: {
     description?: string;
     tags?: string[];
@@ -31,18 +32,6 @@ type LoadState =
   | { status: "create" }
   | { status: "edit"; link: LinkRecord }
   | { status: "error"; message: string };
-
-type StatsRow = {
-  dimension: string;
-  eventCount: number;
-  activeUsers: number;
-};
-
-type StatsQueryResult = {
-  rows: StatsRow[];
-  totalEvents: number;
-  source: "ga4";
-};
 
 export default function Edit() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -101,7 +90,7 @@ export default function Edit() {
       setQrAddLogo(body.link.metadata?.addLogo !== false);
     }
 
-    if (slug) void load();
+    if (slug) void load().catch(() => { if (!cancelled) setState({ status: "error", message: "Could not load link. Please reload." }); });
     return () => {
       cancelled = true;
     };
@@ -171,6 +160,7 @@ export default function Edit() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           url,
+          baseRevision: state.status === "edit" ? state.link.revision : undefined,
           isPublic,
           metadata: {
             description,
@@ -182,7 +172,7 @@ export default function Edit() {
         }),
       });
       if (!res.ok) {
-        setError(`保存失败: HTTP ${res.status}`);
+        setError(res.status === 409 ? "The link changed. Refresh the page before saving." : `保存失败: HTTP ${res.status}`);
         return;
       }
       const body = (await res.json()) as { link: LinkRecord };
@@ -278,7 +268,7 @@ export default function Edit() {
             </header>
             {!canEdit ? (
               <div className="edit-readonly">
-                <span>Only the owner can edit this link.</span>
+                <span>Suggest a change below. An owner or admin can approve it.</span>
                 {!user ? <Link to="/login">Log in to edit →</Link> : null}
               </div>
             ) : null}
@@ -396,6 +386,19 @@ export default function Edit() {
               </footer>
             ) : null}
           </form>
+          <Proposals key={`${slug}:${user?.id ?? 'anonymous'}`} slug={slug}
+            active={{ url: state.link.url, description: state.link.metadata?.description ?? '' }}
+            revision={state.link.revision} reviewBlocked={canEdit && hasChanges}
+            changed={async () => {
+              const res = await fetch(`/api/v1/links/${slug}`);
+              if (!res.ok) throw new Error('Could not refresh the link. Please reload.');
+              const body = await res.json() as { link: LinkRecord };
+              setState({ status: 'edit', link: body.link });
+              setUrl(body.link.url); setDescription(body.link.metadata?.description ?? '');
+              setIsPublic(body.link.isPublic); setTags(body.link.metadata?.tags ?? []);
+              setShowWarning(body.link.metadata?.show_warning === true);
+              setQrCaption(body.link.metadata?.caption ?? ''); setQrAddLogo(body.link.metadata?.addLogo !== false);
+            }} />
           {canEdit ? (
             <details className="edit-advanced">
               <summary>Manage link</summary>
@@ -436,7 +439,7 @@ export default function Edit() {
                   </p>
                 ) : null}
               </form>
-              <AuditTimeline slug={slug} />
+              <AuditTimeline key={state.link.revision} slug={slug} />
               <div className="edit-delete-row">
                 <div><h2>Delete link</h2><p>This short link will stop working.</p></div>
                 <button className="btn edit-delete-button" type="button" onClick={onDelete} disabled={submitting}>
@@ -473,94 +476,5 @@ function EditNotice({
         )}
       </section>
     </main>
-  );
-}
-
-function LinkStatsCard({ slug }: { slug: string }) {
-  const [result, setResult] = useState<StatsQueryResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    void fetch("/api/v1/stats/query", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        slug,
-        range: 30,
-        groupBy: "date",
-        limit: 30,
-      }),
-    })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()) as StatsQueryResult;
-      })
-      .then((body) => {
-        if (!cancelled) setResult(body);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Stats unavailable");
-          setResult(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
-
-  const totals = (result?.rows ?? []).reduce(
-    (acc, row) => ({
-      events: acc.events + row.eventCount,
-      users: acc.users + row.activeUsers,
-    }),
-    { events: 0, users: 0 },
-  );
-  const heatmapRows = (result?.rows ?? []).map((row) => ({
-    date: row.dimension,
-    eventCount: row.eventCount,
-    activeUsers: row.activeUsers,
-  }));
-
-  return (
-    <section className="edit-stats-card" aria-busy={loading}>
-      <div className="edit-stats-card__header">
-        <div>
-          <h2>Last 30 days</h2>
-        </div>
-        <Link className="btn btn--ghost btn--sm" to={`/stats/${slug}`}>
-          Full stats
-        </Link>
-      </div>
-      <div className="edit-stats-card__metrics">
-        <div className="stats-metric">
-          <span>Events</span>
-          <strong>{loading || error ? "--" : totals.events.toLocaleString()}</strong>
-        </div>
-        <div className="stats-metric">
-          <span>Users</span>
-          <strong>{loading || error ? "--" : totals.users.toLocaleString()}</strong>
-        </div>
-      </div>
-      {error ? (
-        <div className="dashboard-empty">Stats unavailable</div>
-      ) : loading ? (
-        <div className="dashboard-empty">Loading stats...</div>
-      ) : result?.rows.length ? (
-        <div className="stats-card__stack">
-          <StatsHeatmap rows={heatmapRows} totalDays={30} />
-          <StatsLineChart rows={result.rows} />
-        </div>
-      ) : null}
-    </section>
   );
 }

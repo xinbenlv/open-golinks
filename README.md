@@ -1,5 +1,7 @@
 # Open GoLinks
 
+> `/edit/:slug` 支持访客提议 URL/描述、owner/admin 审核、极简 diff、私有详情和历史。见 [发布说明](./docs/runbooks/proposed-changes.md)。
+
 团队内部短链、二维码和访问统计服务。它让团队把常用链接变成好记的 `/{slug}`，同时保留 owner 管理、warning page、QR 下载、审计记录、公开统计和旧 Chrome extension API 兼容能力。
 
 ![Open GoLinks 产品导览](./docs/assets/readme-tour.gif)
@@ -37,7 +39,7 @@ Browser / Extension
 Railway single container
 Bun + Hono API + Vite React SPA
         │
-        ├── Supabase Postgres: links / users / audit_logs / daily_visits
+        ├── Supabase Postgres: links / users / proposals / audit / visits
         ├── Supabase Auth: Magic Link + JWT
         └── GA4: Measurement Protocol + Data API
 ```
@@ -97,4 +99,4 @@ bun run build
 
 迁移后必须保持 **slug URL 兼容**：既有 `/{slug}` 短链继续可访问。内部 API schema、Dashboard UI 和 auth session 不承诺向前兼容，但 `/api/v2` shim 会覆盖当前 Chrome extension 仍依赖的 legacy 行为。
 
-`/edit/:slug` 沿用项目原有主题与字体。短链标题旁放置 Copy 和 Go；目标地址、描述、标签与访问开关直接可见，二维码、下载和自定义作为紧凑侧栏，手机上顺序排列。保存按钮在修改后出现。统计直接展示，只有历史、转移和删除收在 Manage link。
+编辑页沿用原主题；字段与紧凑 QR 并列，窄屏顺序排列。提议审核在字段下方，历史和管理按需展开。
