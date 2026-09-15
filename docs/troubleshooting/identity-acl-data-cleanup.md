@@ -51,3 +51,7 @@ active unowned_with_legacy_email=0
 ## 锁定链接后写审计
 
 PATCH 锁定链接后，通过另一连接写 audit 会因 link_slug 外键校验等待本事务，导致请求超时。writeAudit 必须使用同一个 tx；权限、更新和审计一起提交或回滚。相关代码：src/routes/api/links.ts、src/middleware/audit.ts。
+
+## 生产确认弹窗 IP 不可用
+
+生产未设置 PROPOSAL_TRUST_PROXY 时，身份接口返回 Unknown；本地 fixture 已显式启用，容易漏查。Railway 启动命令必须明确启用 railway 代理模式，部署后同时验证有效 IP 和伪造 X-Real-IP 不被采信。相关配置：railway.json。

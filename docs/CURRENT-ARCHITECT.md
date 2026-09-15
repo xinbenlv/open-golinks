@@ -341,3 +341,5 @@ Publish（Public listing）支持提议开启或关闭，仅审批后更新 isPu
 History 合并为一份变更记录，避免提议历史/URL 历史/审计重复展示同一次修改。
 
 提议确认弹窗读取当前请求的身份预览 API，展示实际 IP、浏览器/OS 及可展开 User-Agent；登录时改为账号身份。
+
+Railway startCommand 显式启用 PROPOSAL_TRUST_PROXY=railway；非 Railway 启动保持默认不信任代理头。

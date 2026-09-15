@@ -5,7 +5,7 @@
   },
   "deploy": {
     "preDeployCommand": "bun run db:migrate",
-    "startCommand": "bun src/server.ts",
+    "startCommand": "env PROPOSAL_TRUST_PROXY=railway bun src/server.ts",
     "healthcheckPath": "/api/v1/health",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",

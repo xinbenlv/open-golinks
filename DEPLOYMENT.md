@@ -104,3 +104,5 @@ smtp_sender_name=zgzg.li
 Supabase Auth config 当前没有 `Reply-To` 字段。若必须设置
 `Reply-To: zgzg-dot-li@zgzg.io`, 需要改用 Supabase Send Email Hook 自己调用
 Resend API, 或在 Resend 侧配置全局/default reply-to。
+
+Railway 启动命令显式设置 `PROPOSAL_TRUST_PROXY=railway`，用平台提供的 X-Real-IP 显示及记录客户端 IP；普通本地启动仍默认不信任代理头。
