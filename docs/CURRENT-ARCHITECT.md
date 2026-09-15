@@ -112,14 +112,14 @@ flowchart TB
 - `GET /healthz` (`src/server.ts`) - legacy 兼容的 uptime 监控端点 (UptimeRobot 等); 返回 200 JSON 含 version/sha/builtAt, 对应 `https://zgzg.li/healthz`、`https://zgzg.link/healthz`
 - **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
-  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:182-249`)
-  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id` 且默认 private; 匿名时走 IP+UA 限流、保存 `X-Fingerprint`, 并强制 `is_public=true` + `metadata.show_warning=true`; 可写 `metadata.description/tags/show_warning` 但匿名 show_warning 会被覆盖为 true; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:252-317`)
-  - `GET /claimable` - requireAuth; 返回当前用户可通过 fingerprint 或 canonical `metadata.legacy_author_email` 认领的未归属链接 (`src/routes/api/links.ts:312-350`)
+  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:187-254`)
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id` 且默认 private; 匿名时走 IP+UA 限流、保存 `X-Fingerprint`, 并强制 `is_public=true` + `metadata.show_warning=true`; 可写 `metadata.description/tags/show_warning` 但匿名 show_warning 会被覆盖为 true; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:257-321`)
+  - `GET /claimable` - requireAuth + 精确 `@zgzg.io` 域；fingerprint 或 canonical legacy email 只用于发现未归属链接 (`src/routes/api/links.ts:323-362`)
   - `GET /:slug/available` - public availability check, 返回 `{ available: boolean }`; F13 `/api/v2/available/:slug` shim 复用同一语义
-  - `GET /:slug` - 获取单链接, 公开返回中不包含 `metadata.legacy_author_email` (`src/routes/api/links.ts:361-375`)
-  - `POST /:slug/claim` - requireAuth; `owner_id IS NULL` + fingerprint/legacy email proof 在同一个原子 UPDATE 中检查, 成功后写 CLAIM audit (`src/routes/api/links.ts:378-432`)
-  - `POST /:slug/transfer` - owner-only; recipient email 先 canonicalize 再查找已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER` (`src/routes/api/links.ts:435-490`)
-  - `PATCH /:slug` - owner-only 更新 URL、`isPublic` 和 metadata, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 匿名链接必须先 claim 成 owner 后才能关闭 public/warning; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:500-572`)
+  - `GET /:slug` - 获取单链接, 公开返回中不包含 `metadata.legacy_author_email` (`src/routes/api/links.ts:374-388`)
+  - `POST /:slug/claim` - 可信 JWT authenticated 非匿名身份、精确 `@zgzg.io` 邮箱；原子 UPDATE 限定 owner/deleted 为 NULL，事务内写 CLAIM audit；已有 owner 返回 409 (`src/routes/api/links.ts:390-417`)
+  - `POST /:slug/transfer` - owner-only; recipient email 先 canonicalize 再查找已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER` (`src/routes/api/links.ts:418-473`)
+  - `PATCH /:slug` - 数据库 owner/admin 更新 URL、`isPublic` 和 metadata, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 匿名链接必须先 claim 成 owner 后才能关闭 public/warning; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:476-550`)
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 - **`src/routes/api/qr.ts`** (`GET /api/v1/qr/:slug`) - 公开 QR PNG endpoint; `format=png`, `caption<=100`, `logo=true`; 不存在/软删返回 404.
@@ -142,7 +142,7 @@ flowchart TB
 - **`src/middleware/audit.ts`** - `writeAudit(c, action, slug, diff?)`, 对低频 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 写 `audit_logs`; `VISIT` 不写 audit.
 - **`src/middleware/ratelimit.ts`** - 匿名写操作 IP+UA 内存 token bucket: 5/min + 30/hour; 已登录用户 bypass.
 - **`src/lib/fingerprint.ts`** - 浏览器端 64-hex fingerprint: canvas + UA + timezone + screen; canvas 不可用时用本地持久 fallback token. 服务端只校验格式和比对已有值.
-- **`src/lib/identity.ts`** - identity helper: canonical email、metadata normalize、link DTO 删除 `metadata.legacy_author_email` (`src/lib/identity.ts:1-27`).
+- **`src/lib/identity.ts`** - identity helper: canonical email、精确 zgzg.io 认领域、metadata normalize、公开 DTO 脱敏 (`src/lib/identity.ts:1-35`).
 - **`src/lib/brand.ts`** - 品牌主题配置；`OPEN_GOLINK_THEME=zgzg` 时使用 `zgzg.li` 文案和 ZGZG favicon, 并区分 brand/action/warning 语义色: ZGZG 红色是品牌 accent, primary action 使用中性色 (`src/lib/brand.ts:3-116`)。
 - **`src/lib/qr.ts`** - `qrcode` + `@napi-rs/canvas` 服务端 QR PNG 渲染, 支持 CJK caption、主题 logo、1h/1000-entry LRU cache, 字体来自 `src/assets/fonts/NotoSansCJKsc-Regular.otf`, 服务端 ZGZG QR logo 来自 `src/assets/img/zgzg-round-logo.png`, 默认 QR fallback 使用 brand 色。
 
@@ -167,7 +167,7 @@ flowchart TB
   - `/dashboard` 由 `AuthGuard` 保护, 展示 owner 链接列表, 支持搜索、分页加载、Edit/Delete actions, 顶部嵌入 `ClaimBanner` 和 `StatsChart`; `StatsChart` 调 `/api/v1/stats/summary?days=364` 并复用 `StatsHeatmap` 把近 52 周日点击渲染为 GitHub-style heatmap, 支持完整月份标签、1 月年份标签和浮动 tooltip (`src/web/components/StatsChart.tsx:1-69`, `src/web/components/stats/Heatmap.tsx:1-163`, `src/routes/api/stats.ts:10-12`, `src/lib/ga4.ts:153-159`, `package.json:24-40`).
   - `/stats` / `/stats/:slug` 是公开只读 GA4 统计视图, 调 `/api/v1/stats/query` 展示全站或单 slug 的 path 表、path share 饼图、date heatmap + 折线, 支持 7/30/90/180 天、路径正则、pagePathPlusQueryString 切换 (`src/web/pages/Stats/index.tsx:1-295`).
   - `/trending` 是公开只读热门链接页, 调 `/api/v1/stats/trending` 展示近 7/30 天 `is_public=true` 链接的 events/users 排名 (`src/web/router.tsx:13-32`, `src/web/pages/Trending.tsx:1-153`).
-  - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 登录后用 fingerprint 或 legacy author email 调 claim API.
+  - `/claim/:slug` 是单链接认领页; 未登录时提示登录, 与 edit 页共用 ClaimOwnership，登录后返回原链接，精确 zgzg.io 账号可认领无主链接。
   - `/edit/:slug` 和创建成功态内嵌 QR editor; `/qr/:slug` 仍是独立 QR editor. 浏览器 canvas 实时预览 caption/logo, 下载走 `/qr/d/:slug.png`.
   - `/create` 复用 Landing 创建体验.
   - `/warn/:slug` 不再走 SPA; 由 Hono `src/routes/warn.ts` 直接返回 SSR HTML.
@@ -211,7 +211,7 @@ flowchart TB
 2. Hono `links.ts` zod 校验; 登录请求忽略 fingerprint 并写 `owner_id`, 匿名请求保存 `created_by_fingerprint`, 强制 `is_public=true` 和 `metadata.show_warning=true`
 3. INSERT, 唯一约束失败 (Drizzle 把 PG 的 23505 包成 `DrizzleQueryError`, 从 `err.cause.code` 解出) 返回 `SLUG_TAKEN` 409
 4. 客户端拿到 409 后, 自动生成的 slug 重试一次; 用户自定义的 slug 则在表单内提示
-5. 已登录请求写 `owner_id` 且默认 private; 匿名请求进入 IP+UA rate limit, 创建后可通过 fingerprint/legacy email claim, claim 成 owner 后才可关闭 public/warning; CREATE 写 `audit_logs`
+5. 已登录请求写 `owner_id` 且默认 private; 匿名请求进入 IP+UA rate limit, 创建后可由 @zgzg.io 登录账号 claim, claim 成 owner 后才可关闭 public/warning; CREATE 写 `audit_logs`
 
 ### Warning interstitial
 1. Owner 在 `/edit/:slug` 勾选 `WarnToggle`, PATCH `/api/v1/links/:slug` body `{ metadata: { show_warning: true } }`
@@ -262,8 +262,8 @@ flowchart TB
 ### 匿名链接认领
 1. 匿名创建成功后, 链接已强制 public + warning; 客户端把 `{ slug, fingerprint }` 记入 `localStorage('golinks:created')`
 2. 用户登录后进 `/dashboard`, `ClaimBanner` 计算当前浏览器 fingerprint 并调 `GET /api/v1/links/claimable?fingerprint=<64hex>`
-3. 后端返回两类未归属链接: `created_by_fingerprint` 匹配, 或 canonical `metadata.legacy_author_email` 等于当前用户 email
-4. 用户点击 Claim 后, `POST /api/v1/links/:slug/claim` 用单条原子 UPDATE 写 `owner_id`, 只有 `owner_id IS NULL` 且 proof predicate 同时成立才成功, 并记录 `audit_logs.action = CLAIM`
+3. 后端先检查 @zgzg.io 域，再返回两类未归属链接: `created_by_fingerprint` 匹配, 或 canonical `metadata.legacy_author_email` 等于当前用户 email
+4. 用户点击 Claim 后, `POST /api/v1/links/:slug/claim` 用单条原子 UPDATE 写 `owner_id`, 仅可信 @zgzg.io 身份且 `owner_id IS NULL`、未删除才成功，并在同一事务记录 CLAIM audit
 5. Dashboard reload 后, 被认领链接通过 `GET /api/v1/links?owner=me` 出现在 owner 列表
 
 ## 环境变量
@@ -343,3 +343,22 @@ History 合并为一份变更记录，避免提议历史/URL 历史/审计重复
 提议确认弹窗读取当前请求的身份预览 API，展示实际 IP、浏览器/OS 及可展开 User-Agent；登录时改为账号身份。
 
 Railway startCommand 显式启用 PROPOSAL_TRUST_PROXY=railway；非 Railway 启动保持默认不信任代理头。
+
+## 无主链接与 slug 复制（2026-09-15）
+
+- Edit/Claim → ClaimOwnership → 同一个 claim API；登录入口文案为 “Login with your ZGID to claim and edit”，后端仍校验 @zgzg.io；通用登录及 owner/admin Save、其他人 Propose change 规则不变。
+- 认领返回后仅同步 owner 和这次操作的一个 revision，保留草稿；其他并发内容更新仍会触发 Save 冲突。认领后焦点移到 slug。
+- ShortLinkActions 中 slug 和图标共用 canonical VITE_BASE_URL 复制；原生按钮、44px 触控、aria-label/title 与简短 live 反馈。Go 独立导航。
+- AuthCallback 优先使用经过白名单校验的 next；旧 confirm 模板在同浏览器新 tab 使用 30 分钟 localStorage 回跳记录，跨设备回 Dashboard。见 `src/web/lib/authReturn.ts:1-22` 和 `docs/troubleshooting/claim-login.md`。
+
+```mermaid
+flowchart LR
+  EditClaim[Edit / Claim] --> ClaimUI[ClaimOwnership]
+  ClaimUI --> Login[Login + safe next]
+  Login --> Supabase[Supabase Auth]
+  Supabase --> Callback[AuthCallback]
+  Callback --> EditClaim
+  ClaimUI --> JWT[Verified JWT zgzg.io gate]
+  JWT --> CAS[Owner NULL update + audit transaction]
+  SlugIcon[Slug / Copy icon] --> Clipboard[Canonical URL + live feedback]
+```

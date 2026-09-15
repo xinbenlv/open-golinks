@@ -1,5 +1,6 @@
 /** 真实 PostgreSQL + JWT 的权限、并发、原子性及提议生命周期回归。 */
 import { beforeAll, afterAll, describe, expect, test } from "bun:test";
+import { registerClaimTests } from "./claim-cases";
 import { setup } from "./harness";
 let h: Awaited<ReturnType<typeof setup>>;
 describe.skipIf(!process.env.PROPOSAL_TEST_DATABASE_URL)(
@@ -11,6 +12,7 @@ describe.skipIf(!process.env.PROPOSAL_TEST_DATABASE_URL)(
     afterAll(async () => {
       await h?.close();
     });
+    registerClaimTests(() => h);
     test("confirmation identity matches saved anonymous IP and browser", async () => {
       const slug = await h.seed();
       const options = { ip: "198.51.100.8", headers: { "user-agent": "Mozilla/5.0 (Macintosh) Chrome/140.0.0.0 Safari/537.36" } };

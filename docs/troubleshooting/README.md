@@ -26,3 +26,5 @@
 - [`proposal-preview.md`](./proposal-preview.md)：独立原型共享样式、sandbox 启动、HMR 和 dialog 焦点恢复。
 
 - [`railway-static-compression.md`](./railway-static-compression.md)：Railway Bun 缺少 CompressionStream 导致页面 500。
+
+- [`claim-login.md`](./claim-login.md)：认领 revision、旧邮件回跳、隔离测试和剪贴板权限。

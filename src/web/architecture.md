@@ -115,7 +115,7 @@ bun run build:web
 ## Auth
 
 `useAuth()` 通过 `@supabase/supabase-js` 维护浏览器 session:
-- `Login.tsx` 调 `signInWithMagicLink(email)`, redirect 到 `/auth/callback`
+- `Login.tsx` 调 `signInWithMagicLink(email)`, redirect 到带安全 `next` 的 `/auth/callback`
 - `AuthCallback.tsx` 优先读取 `?code=` 并调用 `exchangeCodeForSession`; Admin generated-link / legacy hash token 回跳则调用 `setSession`
 - `AuthGuard` 保护 `/dashboard`; `/stats`、`/stats/:slug` 与 `/edit/:slug` 保持公开只读/创建入口
 - `/api/v1/stats/summary` 仍 requireAuth 并只给 `/dashboard` 的 owner summary 使用

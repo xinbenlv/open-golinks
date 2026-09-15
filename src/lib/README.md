@@ -19,3 +19,5 @@
 - proposals/：共享类型、验证、事务、分页、私有元数据和过期清理。
 
 二维码外围总留白缩为原来的约 1/3，保持画布尺寸并扩大码体；预览与导出一致。
+
+`identity.ts#canClaimOwnership` 共用于前端提示和后端域判断；后端只传入验证后的 JWT email，忽略请求体和 user_metadata 的邮箱。

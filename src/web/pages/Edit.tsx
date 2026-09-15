@@ -1,5 +1,5 @@
 /** 统一编辑表单：owner/admin 保存，其他访客提议；辅助内容按 tab 展示。 */
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ProposalConfirmation } from "../components/proposals/ProposalConfirmation";
 import { Proposals } from "../components/proposals/Proposals";
@@ -8,6 +8,8 @@ import { AuditTimeline } from "../components/AuditTimeline";
 import { QrCanvas } from "../components/QrCanvas";
 import { TagInput } from "../components/TagInput";
 import { authFetch, useAuth } from "../hooks/useAuth";
+import { ClaimOwnership } from "../components/ClaimOwnership";
+import { ShortLinkActions } from "../components/ShortLinkActions";
 import { Landing } from "./Landing";
 
 type LinkRecord = {
@@ -37,6 +39,7 @@ type LoadState =
 export default function Edit() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { user, loading: authLoading } = useAuth();
+  const slugButton = useRef<HTMLButtonElement>(null);
   const urlId = useId();
   const descriptionId = useId();
   const tagsId = useId();
@@ -57,7 +60,6 @@ export default function Edit() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [transferError, setTransferError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [transferring, setTransferring] = useState(false);
@@ -151,7 +153,7 @@ export default function Edit() {
     || qrCaption !== (state.link.metadata?.caption ?? "")
     || qrAddLogo !== (state.link.metadata?.addLogo !== false)
     || JSON.stringify(tags) !== JSON.stringify(Array.isArray(state.link.metadata?.tags) ? state.link.metadata.tags : []);
-  const shortUrl = typeof window === "undefined" ? `/${slug}` : `${window.location.origin}/${slug}`;
+  const shortUrl = `${(import.meta.env.VITE_BASE_URL || (typeof window === "undefined" ? "" : window.location.origin)).replace(/\/$/, "")}/${encodeURIComponent(state.link.slug)}`;
   const qrParams = new URLSearchParams({ addLogo: qrAddLogo ? "true" : "false" });
   if (qrCaption.trim()) qrParams.set("caption", qrCaption.trim());
   const qrPngPath = `/qr/${slug}.png?${qrParams.toString()}`;
@@ -159,12 +161,6 @@ export default function Edit() {
   const publicTooltip =
     "只决定这个短链是否参与推荐、趋势榜等公开发现入口；不影响通过 slug 查看或跳转。";
   const warningTooltip = "访问者会先看到 warning page，再继续跳转到目标链接。";
-
-  async function copyShortUrl() {
-    await navigator.clipboard.writeText(shortUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
-  }
 
   async function onSubmit(e: FormEvent, confirmed = false) {
     e.preventDefault();
@@ -289,12 +285,16 @@ export default function Edit() {
             <header className="edit-header">
               <div className="edit-identity">
                 <p className="edit-domain">{new URL(shortUrl, "https://localhost").host}</p>
-                <h1>/{state.link.slug}</h1>
+                <ShortLinkActions slug={state.link.slug} shortUrl={shortUrl} buttonRef={slugButton} />
+                {state.link.ownerId === null && <ClaimOwnership key={slug} slug={slug} onClaim={(ownerId) => {
+                  // 只推进本次认领的 revision；同时发生的内容更改仍由 Save 的 CAS 检出。
+                  setState((current) => current.status === "edit" ? { ...current, link: { ...current.link, ownerId, revision: current.link.revision + 1 } } : current);
+                  setProposalRefresh((n) => n + 1);
+                  setMessage("Ownership claimed.");
+                  slugButton.current?.focus();
+                }} />}
               </div>
               <div className="edit-header__actions">
-                <button className="btn btn--ghost" type="button" onClick={copyShortUrl}>
-                  {copied ? "Copied" : "Copy"}
-                </button>
                 <a
                   className="btn btn--primary edit-go-button"
                   href={`/${encodeURIComponent(state.link.slug)}`}

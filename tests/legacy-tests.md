@@ -12,7 +12,7 @@ bun test tests/e2e/F1-auth.test.ts                     # F1 auth/API routing smo
 bun test tests/e2e/F2-link-crud.test.ts                # F2 real DB CRUD/audit/rate-limit smoke
 bun test tests/e2e/F3-dashboard.test.ts                # F3 owner dashboard API pagination/search
 bun test tests/e2e/F4-stats.test.ts                    # F4 GA4/reporting scoped stats smoke
-bun test tests/e2e/F5-claim.test.ts                    # F5 anonymous/legacy claim smoke
+bun test tests/e2e/F5-claim.test.ts                    # F5 isolated claim/proposal regression
 bun test tests/e2e/F6-warn.test.ts                     # F6 warning interstitial smoke
 bun test tests/e2e/F7-qr.test.ts                       # F7 QR PNG and compat route smoke
 bun test tests/e2e/F8-detailed-stats.test.ts           # F8 detailed analytics scoped query smoke

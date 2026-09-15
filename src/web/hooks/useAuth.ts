@@ -1,3 +1,4 @@
+/** 共享 Supabase 会话与带安全回跳路径的 Magic Link 登录。 */
 import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import {
@@ -5,6 +6,8 @@ import {
   isSupabaseConfigured,
   supabase,
 } from "../lib/supabase";
+
+import { rememberAuthReturn } from "../lib/authReturn";
 
 type AuthState = {
   user: User | null;
@@ -79,15 +82,16 @@ export function useAuth() {
     return subscribe(setCurrent);
   }, []);
 
-  async function signInWithMagicLink(email: string) {
+  async function signInWithMagicLink(email: string, returnTo = "/dashboard") {
     if (!supabase) {
       throw new Error("Supabase client env is not configured.");
     }
 
+    rememberAuthReturn(returnTo);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: getAuthRedirectUrl(),
+        emailRedirectTo: getAuthRedirectUrl(returnTo),
       },
     });
     if (error) throw error;
