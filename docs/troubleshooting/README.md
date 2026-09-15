@@ -24,3 +24,5 @@
 - [编辑页操作层级](./edit-page-actions.md)：Go 紧邻短链，保存与管理操作按使用场景分区。
 
 - [`proposal-preview.md`](./proposal-preview.md)：独立原型共享样式、sandbox 启动、HMR 和 dialog 焦点恢复。
+
+- [`railway-static-compression.md`](./railway-static-compression.md)：Railway Bun 缺少 CompressionStream 导致页面 500。

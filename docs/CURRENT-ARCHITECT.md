@@ -319,3 +319,5 @@ flowchart TB
 - UI：src/web/components/proposals/。Proposals 编排提交、分页与审核，Diff/InlineDiff 使用 Namefi 规则，MetadataDialog 保持键盘焦点。owner 草稿未保存时阻止审核。
 - 生产静态内容使用 src/middleware/static-compression.ts 协商压缩；Edit 统计图有数据时才下载，避免阻塞提议首屏。
 - 独立测试：tests/proposals/ 使用本地 PostgreSQL、签名 JWT 和真实浏览器操作，不连生产服务。
+
+静态压缩使用异步 node:zlib gzip/deflate，不依赖生产 Bun 未提供的 CompressionStream；见 middleware/static-compression.ts 与压缩回归测试。
