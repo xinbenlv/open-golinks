@@ -25,6 +25,15 @@ export function Diff({
             </dd>
           </div>
         ))}
+      {after.tags !== undefined && JSON.stringify(before.tags ?? []) !== JSON.stringify(after.tags) ? (
+        <div className="diff-row"><dt>Tags</dt><dd aria-label={"Before: " + (before.tags?.join(", ") || "None") + ". Proposed: " + (after.tags.join(", ") || "None") }>
+          {(before.tags ?? []).filter((tag) => !after.tags!.includes(tag)).map((tag) => <del key={tag} className="tag-chip">{tag}</del>)}
+          {after.tags.filter((tag) => !(before.tags ?? []).includes(tag)).map((tag) => <span key={tag} className="tag-chip">+ {tag}</span>)}
+        </dd></div>
+      ) : null}
+      {after.isPublic !== undefined && before.isPublic !== after.isPublic ? (
+        <div className="diff-row"><dt>Publish</dt><dd aria-label={"Before: " + (before.isPublic ? "On" : "Off") + ". Proposed: " + (after.isPublic ? "On" : "Off") }><InlineDiff before={before.isPublic ? "On" : "Off"} after={after.isPublic ? "On" : "Off"} /></dd></div>
+      ) : null}
     </dl>
   );
 }

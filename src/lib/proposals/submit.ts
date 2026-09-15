@@ -15,14 +15,14 @@ export async function submitProposal(c: Context<AuthEnv>) {
   if (JSON.stringify(input.before) === JSON.stringify(input.after))
     return c.json({ error: "NO_CHANGES" }, 400);
   const metadata = submissionMetadata(c);
-  metadata.location = await locate(metadata.ip);
+  const user = c.get("user");
+  if (!user) metadata.location = await locate(metadata.ip);
   const ipHash = privateHash(metadata.ip);
   const existingToken = getCookie(c, cookieName);
   const token =
     existingToken && /^[a-f0-9]{64}$/.test(existingToken)
       ? existingToken
       : randomBytes(32).toString("hex");
-  const user = c.get("user");
   const result = await db.transaction(async (tx) => {
     await rateLimit(tx, ipHash);
     const link = await lockedLink(tx, c.req.param("slug")!);
@@ -30,7 +30,9 @@ export async function submitProposal(c: Context<AuthEnv>) {
     if (
       link.revision !== input.baseRevision ||
       before.url !== input.before.url ||
-      before.description !== input.before.description
+      before.description !== input.before.description ||
+      (input.before.isPublic !== undefined && before.isPublic !== input.before.isPublic) ||
+      (input.before.tags !== undefined && JSON.stringify(before.tags) !== JSON.stringify(input.before.tags))
     )
       fail(409, "STALE_LINK");
     const [row] = await tx
@@ -43,10 +45,10 @@ export async function submitProposal(c: Context<AuthEnv>) {
         proposer:
           user?.email ?? (user ? "Signed-in member" : "Anonymous visitor"),
         before,
-        after: input.after,
+        after: { ...input.after, ...(input.after.tags !== undefined ? { tags: [...new Set(input.after.tags)] } : {}) },
         note: input.note,
         ipHash,
-        requestMetadata: metadata,
+        requestMetadata: user ? { accountId: user.id, email: user.email ?? null } : metadata,
         submittedAt: new Date(),
       })
       .returning();

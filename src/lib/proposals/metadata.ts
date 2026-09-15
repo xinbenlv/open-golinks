@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import type { Context } from "hono";
-import type { SubmissionMetadata } from "./types";
+import type { BrowserSubmissionMetadata } from "./types";
 
 export function privateHash(value: string): string {
   const salt = process.env.IP_HASH_SALT;
@@ -10,7 +10,7 @@ export function privateHash(value: string): string {
   return createHash("sha256").update(`${salt}:${value}`).digest("hex");
 }
 
-export function submissionMetadata(c: Context): SubmissionMetadata {
+export function submissionMetadata(c: Context): BrowserSubmissionMetadata {
   // Railway 必须是唯一公网入口并覆盖 X-Real-IP；默认不信任任何代理头。
   const candidate =
     process.env.PROPOSAL_TRUST_PROXY === "railway"

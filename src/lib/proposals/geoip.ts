@@ -1,6 +1,6 @@
 /** 可选本地 GeoLite2/GeoIP2 City 数据库，不把访客 IP 发给第三方。 */
 import { open, type CityResponse } from "maxmind";
-import type { SubmissionMetadata } from "./types";
+import type { BrowserSubmissionMetadata } from "./types";
 const path = process.env.PROPOSAL_GEOIP_DB;
 const reader = path
   ? open<CityResponse>(path).catch(() => {
@@ -12,7 +12,7 @@ const reader = path
   : Promise.resolve(null);
 export async function locate(
   ip: string,
-): Promise<SubmissionMetadata["location"]> {
+): Promise<BrowserSubmissionMetadata["location"]> {
   if (ip === "Unknown") return null;
   const record = (await reader)?.get(ip);
   if (!record) return null;

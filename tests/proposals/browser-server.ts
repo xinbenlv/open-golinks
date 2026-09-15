@@ -3,9 +3,7 @@ import { Hono } from "hono";
 import { staticCompression } from "../../src/middleware/static-compression";
 import { setup } from "./harness";
 const h = await setup();
-const { auditRoute } = await import("../../src/routes/api/audit");
 const { qrRoute } = await import("../../src/routes/qr");
-h.app.route("/api/v1/audit", auditRoute);
 h.app.route("/qr", qrRoute);
 await h.sql`insert into links(slug,url,owner_id,metadata) values('handbook','https://example.test/handbook',${h.ids.owner},${h.sql.json({ description: "Team handbook", tags: ["team"], show_warning: true })})`;
 await h.submit("handbook", {
@@ -22,6 +20,7 @@ async function handle(req: Request): Promise<Response> {
   const path = new URL(req.url).pathname;
   if (path.startsWith("/__test/login/")) {
     const role = path.split("/").at(-1)!;
+    if (role === "anonymous") return new Response("<script>localStorage.removeItem('sb-127-auth-token'); location.replace('/edit/handbook');</script>", { headers: { "Content-Type": "text/html" } });
     if (!(role in h.ids)) return new Response("Unknown role", { status: 404 });
     const session = {
       access_token: h.tokens[role],
@@ -61,10 +60,13 @@ const web = new Hono()
 const server = Bun.serve({
   hostname: "127.0.0.1",
   port,
-  fetch: (req) =>
-    new URL(req.url).pathname.startsWith("/api/")
-      ? handle(req)
-      : web.fetch(req),
+  fetch: (req, server) => {
+    // 模拟受信任反向代理，使用真实 loopback socket 地址而不是客户端自报头。
+    const headers = new Headers(req.headers);
+    headers.set("x-real-ip", server.requestIP(req)?.address ?? "Unknown");
+    const forwarded = new Request(req, { headers });
+    return new URL(req.url).pathname.startsWith("/api/") ? handle(forwarded) : web.fetch(forwarded);
+  },
 });
 console.log(
   `Local proposal test app: http://127.0.0.1:${server.port}/edit/handbook`,

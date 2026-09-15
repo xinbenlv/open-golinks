@@ -1,11 +1,12 @@
+/** 统一编辑表单：owner/admin 保存，其他访客提议；辅助内容按 tab 展示。 */
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ProposalConfirmation } from "../components/proposals/ProposalConfirmation";
 import { Proposals } from "../components/proposals/Proposals";
 import { LinkStatsCard } from "../components/LinkStatsCard";
 import { AuditTimeline } from "../components/AuditTimeline";
 import { QrCanvas } from "../components/QrCanvas";
 import { TagInput } from "../components/TagInput";
-import { UrlHistory } from "../components/UrlHistory";
 import { authFetch, useAuth } from "../hooks/useAuth";
 import { Landing } from "./Landing";
 
@@ -58,7 +59,22 @@ export default function Edit() {
   const [transferError, setTransferError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  const [tab, setTab] = useState("details");
+  const [permission, setPermission] = useState<{ identity: string; slug: string; allowed: boolean }>();
+  const [proposalRefresh, setProposalRefresh] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setPermission(undefined);
+    if (user) void authFetch(`/api/v1/links/${encodeURIComponent(slug)}/proposals`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Permission check failed");
+        const body = await res.json();
+        if (!cancelled) setPermission({ identity: user.id, slug, allowed: body.canReview === true });
+      }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [slug, user?.id, proposalRefresh]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +141,9 @@ export default function Edit() {
     );
   }
 
-  const canEdit = Boolean(user && state.link.ownerId === user.id);
+  const isOwner = Boolean(user && state.link.ownerId === user.id);
+  const canEdit = isOwner || Boolean(user && permission?.identity === user.id && permission.slug === slug && permission.allowed);
+  const proposalChanged = isPublic !== state.link.isPublic || url.trim() !== state.link.url || description.trim() !== (state.link.metadata?.description ?? "") || JSON.stringify(tags) !== JSON.stringify(state.link.metadata?.tags ?? []);
   const hasChanges = url !== state.link.url
     || description !== (state.link.metadata?.description ?? "")
     || isPublic !== state.link.isPublic
@@ -148,13 +166,33 @@ export default function Edit() {
     window.setTimeout(() => setCopied(false), 1400);
   }
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent, confirmed = false) {
     e.preventDefault();
-    if (!canEdit) return;
+    if (state.status !== "edit") return;
+    if (submitting || (!canEdit && !proposalChanged)) return;
+    if (!canEdit && !confirmed) { setError(null); setConfirming(true); return; }
     setSubmitting(true);
     setMessage(null);
     setError(null);
     try {
+      if (!canEdit) {
+        const res = await authFetch(`/api/v1/links/${encodeURIComponent(slug)}/proposals`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ baseRevision: state.link.revision,
+            before: { url: state.link.url, description: state.link.metadata?.description ?? "", tags: state.link.metadata?.tags ?? [], isPublic: state.link.isPublic },
+            after: { url: url.trim(), description: description.trim(), tags, isPublic }, note: "" }),
+        });
+        if (!res.ok) throw new Error(res.status === 409 ? "The link changed. Reload before proposing again." : res.status === 429 ? "Too many proposals. Try again later." : `Could not submit proposal (HTTP ${res.status}).`);
+        setUrl(state.link.url); setDescription(state.link.metadata?.description ?? "");
+        setProposalRefresh((n) => n + 1);
+        setTags(state.link.metadata?.tags ?? []);
+        setIsPublic(state.link.isPublic);
+        setConfirming(false);
+        setMessage("Proposal submitted.");
+        setTab("proposals");
+        return;
+      }
       const res = await authFetch(`/api/v1/links/${slug}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
@@ -184,7 +222,9 @@ export default function Edit() {
       setShowWarning(body.link.metadata?.show_warning === true);
       setQrCaption(body.link.metadata?.caption ?? "");
       setQrAddLogo(body.link.metadata?.addLogo !== false);
-      setMessage("已保存。");
+      setMessage("Saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save changes.");
     } finally {
       setSubmitting(false);
     }
@@ -266,14 +306,18 @@ export default function Edit() {
                 </a>
               </div>
             </header>
-            {!canEdit && !user ? (
-              <div className="edit-readonly">
-                <Link to="/login">Log in to edit →</Link>
-              </div>
-            ) : null}
-
-            <div className="edit-layout">
-              <div className="edit-details">
+            <div className="edit-tabs" role="tablist" aria-label="Link sections">
+              {[["details", "Details"], ...(!canEdit ? [["proposals", "Proposals"]] : []), ["history", "History"], ["stats", "Stats"], ["qr", "QR Code"]].map(([id, label], index, items) => (
+                <button key={id} id={`edit-tab-${id}`} type="button" role="tab"
+                  aria-selected={tab === id} aria-controls={`edit-panel-${id}`} tabIndex={tab === id ? 0 : -1}
+                  onClick={() => setTab(id!)} onKeyDown={(e) => {
+                    const next = e.key === "ArrowRight" ? (index + 1) % items.length : e.key === "ArrowLeft" ? (index + items.length - 1) % items.length : e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : -1;
+                    if (next >= 0) { e.preventDefault(); const target = items[next]![0]!; setTab(target); document.getElementById(`edit-tab-${target}`)?.focus(); }
+                  }}>{label}</button>
+              ))}
+            </div>
+            <div className="edit-tab-content">
+              <div className="edit-details" role="tabpanel" id="edit-panel-details" aria-labelledby="edit-tab-details" hidden={tab !== "details"}>
                 <div className="edit-fields">
                   <div className="edit-field-row">
                     <label className="auth-label" htmlFor={urlId}>Destination</label>
@@ -283,7 +327,7 @@ export default function Edit() {
                       type="url"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      disabled={submitting || !canEdit}
+                      disabled={submitting}
                       required
                     />
                   </div>
@@ -297,7 +341,7 @@ export default function Edit() {
                       maxLength={280}
                       placeholder="Add a description"
                       rows={2}
-                      disabled={submitting || !canEdit}
+                      disabled={submitting}
                     />
                   </div>
                   <div className="edit-field-row">
@@ -305,7 +349,7 @@ export default function Edit() {
                       id={tagsId}
                       value={tags}
                       onChange={setTags}
-                      disabled={submitting || !canEdit}
+                      disabled={submitting}
                     />
                   </div>
                 </div>
@@ -316,7 +360,7 @@ export default function Edit() {
                       type="checkbox"
                       checked={isPublic}
                       onChange={(event) => setIsPublic(event.target.checked)}
-                      disabled={submitting || !canEdit}
+                      disabled={submitting}
                     />
                     <span aria-hidden="true" />
                     <strong>Public listing</strong>
@@ -334,7 +378,7 @@ export default function Edit() {
                   </label>
                 </div>
               </div>
-              <aside className="edit-qr-card" aria-labelledby="edit-qr-title">
+              <aside className="edit-qr-card" role="tabpanel" id="edit-panel-qr" aria-labelledby="edit-tab-qr" hidden={tab !== "qr"}>
                 <h2 id="edit-qr-title" className="auth-label">QR code</h2>
                 <div className="qr-preview-wrap">
                   <QrCanvas value={shortUrl} caption={qrCaption} addLogo={qrAddLogo} />
@@ -371,22 +415,28 @@ export default function Edit() {
                 </div>
               </aside>
             </div>
-            {canEdit && (hasChanges || submitting || message || error) ? (
-              <footer className="edit-save-bar">
+            {(tab === "details" || tab === "qr") && ((canEdit ? hasChanges : proposalChanged) || submitting || message || error) ? (
+              <footer className="edit-save-bar proposals-ui">
                 <div role="status">
-                  {!hasChanges && message ? <p className="auth-message">{message}</p> : null}
+                  {message ? <p className="auth-message">{message}</p> : null}
                   {error ? <p className="auth-message auth-message--error" role="alert">{error}</p> : null}
                 </div>
-                {hasChanges || submitting ? (
+                {(canEdit ? hasChanges : proposalChanged) || submitting ? (
                   <button className="btn btn--primary" type="submit" disabled={submitting}>
-                    {submitting ? "Saving..." : "Save"}
+                    {submitting ? (canEdit ? "Saving…" : "Submitting…") : canEdit ? "Save" : "Propose change"}
                   </button>
                 ) : null}
               </footer>
             ) : null}
           </form>
-          <Proposals key={`${slug}:${user?.id ?? 'anonymous'}`} slug={slug}
-            active={{ url: state.link.url, description: state.link.metadata?.description ?? '' }}
+          {confirming ? <ProposalConfirmation endpoint={`/api/v1/links/${encodeURIComponent(slug)}/proposals`}
+            before={{ url: state.link.url, description: state.link.metadata?.description ?? "", tags: state.link.metadata?.tags ?? [], isPublic: state.link.isPublic }}
+            after={{ url: url.trim(), description: description.trim(), tags, isPublic }}
+            account={user} busy={submitting} error={error}
+            cancel={() => setConfirming(false)} submit={(event) => void onSubmit(event, true)} /> : null}
+          {((canEdit && tab === "details") || tab === "proposals" || tab === "history") ? <div role={tab !== "details" ? "tabpanel" : undefined} id={tab !== "details" ? "edit-panel-" + tab : undefined} aria-labelledby={tab !== "details" ? "edit-tab-" + tab : undefined}>
+          {tab === "proposals" && message ? <p role="status">{message}</p> : null}
+          {tab === "history" && canEdit ? <AuditTimeline key={state.link.revision} slug={slug} /> : <Proposals showHeading={tab === "details"} key={`${slug}:${user?.id ?? 'anonymous'}:${proposalRefresh}`} slug={slug} history={tab === "history"}
             revision={state.link.revision} reviewBlocked={canEdit && hasChanges}
             changed={async () => {
               const res = await fetch(`/api/v1/links/${slug}`);
@@ -397,15 +447,12 @@ export default function Edit() {
               setIsPublic(body.link.isPublic); setTags(body.link.metadata?.tags ?? []);
               setShowWarning(body.link.metadata?.show_warning === true);
               setQrCaption(body.link.metadata?.caption ?? ''); setQrAddLogo(body.link.metadata?.addLogo !== false);
-            }} />
-          {canEdit ? (
+            }} />}
+          </div> : null}
+          {tab === "stats" ? <div role="tabpanel" id="edit-panel-stats" aria-labelledby="edit-tab-stats"><LinkStatsCard slug={slug} /></div> : null}
+          {isOwner && tab === "details" ? (
             <details className="edit-advanced">
               <summary>Manage link</summary>
-              <UrlHistory
-                currentUrl={state.link.url}
-                updatedAt={state.link.updatedAt}
-                history={state.link.urlHistory}
-              />
               <form className="transfer-panel" onSubmit={onTransfer}>
                 <div className="auth-copy">
                   <h2>Transfer ownership</h2>
@@ -438,7 +485,6 @@ export default function Edit() {
                   </p>
                 ) : null}
               </form>
-              <AuditTimeline key={state.link.revision} slug={slug} />
               <div className="edit-delete-row">
                 <div><h2>Delete link</h2><p>This short link will stop working.</p></div>
                 <button className="btn edit-delete-button" type="button" onClick={onDelete} disabled={submitting}>
@@ -448,7 +494,6 @@ export default function Edit() {
             </details>
           ) : null}
         </section>
-        <LinkStatsCard slug={slug} />
       </div>
     </main>
   );

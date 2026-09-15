@@ -38,10 +38,13 @@ export async function setup() {
   });
   await migrationClient.end();
   const sql = postgres(url.href, { max: 5 });
+  await sql`alter table audit_logs drop constraint if exists test_reject_approval`;
   await sql`truncate link_proposals, audit_logs, daily_visits, links, users cascade`;
   const { proposalsRoute } = await import("../../src/routes/api/proposals");
   const { linksRoute } = await import("../../src/routes/api/links");
+  const { auditRoute } = await import("../../src/routes/api/audit");
   const app = new Hono()
+    .route("/api/v1/audit", auditRoute)
     .route("/api/v1/links", proposalsRoute)
     .route("/api/v1/links", linksRoute);
   const ids = {

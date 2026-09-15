@@ -101,4 +101,4 @@ Railway 发布前自动执行数据库迁移，成功后才启动新版。
 
 迁移后必须保持 **slug URL 兼容**：既有 `/{slug}` 短链继续可访问。内部 API schema、Dashboard UI 和 auth session 不承诺向前兼容，但 `/api/v2` shim 会覆盖当前 Chrome extension 仍依赖的 legacy 行为。
 
-编辑页沿用原主题；字段与紧凑 QR 并列，窄屏顺序排列。提议审核在字段下方，历史和管理按需展开。
+编辑页沿用原主题；Details、History、Stats、QR Code 分 tab 展示并适配手机。所有访客可直接编辑 URL/描述后提议，owner/admin 可保存。

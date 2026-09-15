@@ -9,3 +9,9 @@
 - `v2-compat.ts`：旧 Chrome extension API。
 
 浏览器不能直接读提议表；详情仅对当前 owner/admin 开放。
+
+PATCH 在事务内锁定链接并校验数据库 owner/admin 权限；JWT role 不能授予管理权限。转移和删除仍为 owner-only。
+
+Audit API 对 owner/admin 开放，关联提议身份与未过期匿名详情；响应 private/no-store，普通成员无权访问。
+
+GET /links/:slug/proposals/identity 仅返回当前请求的身份，private/no-store；与提交共用 IP/UA 解析，不写数据库。

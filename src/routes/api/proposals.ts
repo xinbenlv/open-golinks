@@ -5,6 +5,7 @@ import { bodyLimit } from "hono/body-limit";
 import { requireAuth, type AuthEnv } from "../../middleware/auth";
 import { listProposals, inspectProposal } from "../../lib/proposals/read";
 import { submitProposal } from "../../lib/proposals/submit";
+import { submissionMetadata } from "../../lib/proposals/metadata";
 import { reviewProposal } from "../../lib/proposals/review";
 export const proposalsRoute = new Hono<AuthEnv>();
 const route = "/:slug/proposals";
@@ -35,5 +36,10 @@ proposalsRoute.onError((error, c) => {
 
 proposalsRoute.get(route, listProposals);
 proposalsRoute.post(route, submitProposal);
+// 只回显当前请求的身份，不读取其他访客信息，也不创建提议。
+proposalsRoute.get(`${route}/identity`, (c) => {
+  const user = c.get("user");
+  return c.json({ identity: user ? { accountId: user.id, email: user.email ?? null } : submissionMetadata(c) });
+});
 proposalsRoute.post(`${route}/:id/review`, requireAuth, reviewProposal);
 proposalsRoute.get(`${route}/:id/metadata`, requireAuth, inspectProposal);

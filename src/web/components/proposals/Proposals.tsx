@@ -1,28 +1,27 @@
 /** Edit 页真实提议入口；访客仅看到自己的提议，审核身份由 API 返回。 */
 import { useEffect, useState } from "react";
-import type { ProposalValues } from "../../../lib/proposals/types";
 import { authFetch, useAuth } from "../../hooks/useAuth";
 import { useProposalList } from "./useProposalList";
 import { MetadataDialog } from "./MetadataDialog";
 import { ProposalCard } from "./ProposalCard";
-import { ProposalComposer } from "./ProposalComposer";
+
 export function Proposals({
   slug,
-  active,
   revision,
   changed,
   reviewBlocked = false,
+  history = false,
+  showHeading = true,
 }: {
   slug: string;
-  active: ProposalValues;
   revision: number;
   reviewBlocked?: boolean;
+  history?: boolean;
+  showHeading?: boolean;
   changed: () => Promise<void>;
 }) {
   const { user } = useAuth();
   const endpoint = `/api/v1/links/${encodeURIComponent(slug)}/proposals`;
-  const [history, setHistory] = useState(false);
-  const [composing, setComposing] = useState(false);
   const [details, setDetails] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -78,30 +77,7 @@ export function Proposals({
   }
   return (
     <section className="proposals-section proposals-ui" data-testid="proposals">
-      <div className="section-heading">
-        <h2>{history ? "Proposal history" : "Proposed changes"}</h2>
-        {!composing ? (
-          <button className="btn btn--ghost" onClick={() => setComposing(true)}>
-            Propose a change
-          </button>
-        ) : null}
-      </div>
-      {composing ? (
-        <ProposalComposer
-          endpoint={endpoint}
-          active={active}
-          revision={revision}
-          close={() => setComposing(false)}
-          submitted={() => {
-            setComposing(false);
-            setHistory(false);
-            setRefresh((n) => n + 1);
-            setMessage(
-              "Proposal submitted. The link stays unchanged until approved.",
-            );
-          }}
-        />
-      ) : null}
+      {showHeading ? <div className="section-heading"><h2>Proposed changes</h2></div> : null}
       <p role="status" className="small">
         {message}
       </p>
@@ -159,9 +135,6 @@ export function Proposals({
           Load more
         </button>
       ) : null}
-      <button className="text-button" onClick={() => setHistory(!history)}>
-        {history ? "Back to pending proposals" : "View proposal history"}
-      </button>
       {details ? (
         <MetadataDialog
           endpoint={`${endpoint}/${details}/metadata`}

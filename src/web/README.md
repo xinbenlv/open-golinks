@@ -14,7 +14,7 @@ Vite + React 19，构建到 dist/web，生产由 Hono 托管。详细路由、SS
 
 ## 提议
 
-/edit/:slug 允许访客提议 URL/描述，当前 owner/admin 审核。UI 保留极简 inline diff，元数据通过 reviewer-only API 按需读取。owner 未保存编辑时不能审核；保存请求携带 baseRevision。
+/edit/:slug 允许访客提议 URL/描述，当前 owner/admin 审核。UI 保留极简 inline diff，元数据通过 reviewer-only API 按需读取。owner/admin 未保存编辑时不能审核；保存请求携带 baseRevision。统一编辑字段提交到保存或提议 API，辅助内容按四个 tab 展示。
 
 LinkStatsCard 在有数据时才加载图表。样式只在 main.tsx 导入，以便 SSR 导入组件树。
 

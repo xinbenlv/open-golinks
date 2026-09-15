@@ -19,8 +19,8 @@ describe.skipIf(!base)("proposal browser", () => {
       page.setDefaultTimeout(10000);
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(String(error)));
-      const destination = "[data-testid=proposal-composer] input";
-      const submit = "[data-testid=proposal-composer] .btn--primary";
+      const destination = "#edit-panel-details input[type=url]";
+      const submit = ".edit-save-bar button[type=submit]";
       const card = "[data-testid=proposal-card]";
       const screenshots = process.env.PROPOSAL_SCREENSHOTS;
       const capture = async (name: string) => {
@@ -31,16 +31,15 @@ describe.skipIf(!base)("proposal browser", () => {
           });
       };
       await page.goto(`${base}/edit/handbook`);
-      await page.waitForSelector("[data-testid=proposals]");
-      await page
-        .locator("[data-testid=proposals] > .section-heading button")
-        .click();
+      await page.waitForSelector(destination);
       await page.waitForSelector(destination);
       await page
         .locator(destination)
         .fill("https://example.test/handbook-2030");
       await capture("proposal-compose");
       await page.locator(submit).click();
+      await page.waitForSelector("dialog.proposal-confirmation[open]");
+      await page.locator("dialog.proposal-confirmation button[type=submit]").click();
       await page.waitForFunction(() =>
         document.body.textContent?.includes("Proposal submitted"),
       );
@@ -51,6 +50,8 @@ describe.skipIf(!base)("proposal browser", () => {
         ),
       ).toBe("https://example.test/handbook");
       await page.reload();
+      await page.waitForSelector("#edit-tab-proposals");
+      await page.locator("#edit-tab-proposals").click();
       await page.waitForSelector(card);
       expect(await page.$$(`${card} .text-button`)).toHaveLength(0);
       await page.goto(`${base}/__test/login/owner`);
@@ -92,15 +93,14 @@ describe.skipIf(!base)("proposal browser", () => {
         document.body.textContent?.includes("Proposal rejected."),
       );
       await page.goto(`${base}/__test/login/member`);
-      await page.waitForSelector("[data-testid=proposals]");
-      await page
-        .locator("[data-testid=proposals] > .section-heading button")
-        .click();
+      await page.waitForSelector(destination);
       await page.waitForSelector(destination);
       await page
         .locator(destination)
         .fill("https://example.test/handbook-2031");
       await page.locator(submit).click();
+      await page.waitForSelector("dialog.proposal-confirmation[open]");
+      await page.locator("dialog.proposal-confirmation button[type=submit]").click();
       await page.waitForFunction(() =>
         document.body.textContent?.includes("Proposal submitted"),
       );
@@ -111,10 +111,10 @@ describe.skipIf(!base)("proposal browser", () => {
         document.body.textContent?.includes("Approved. The link is updated."),
       );
       await page
-        .locator("[data-testid=proposals] > button.text-button")
+        .locator("#edit-tab-history")
         .click();
       await page.waitForFunction(() =>
-        document.body.textContent?.includes("Proposal history"),
+        document.querySelector("#edit-tab-history")?.getAttribute("aria-selected") === "true",
       );
       await page.setViewport({ width: 390, height: 844 });
       await capture("proposal-mobile-history");
@@ -123,7 +123,7 @@ describe.skipIf(!base)("proposal browser", () => {
           () => document.documentElement.scrollWidth > innerWidth,
         ),
       ).toBe(false);
-      expect(await page.$$(`${card}`)).toHaveLength(3);
+      expect(await page.$(".audit-event")).toHaveLength(3);
       expect(errors).toEqual([]);
     } finally {
       await browser.close();

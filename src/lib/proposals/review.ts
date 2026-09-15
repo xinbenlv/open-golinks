@@ -45,6 +45,8 @@ export async function reviewProposal(c: Context<AuthEnv>) {
           url: link.url,
           changedAt: now.toISOString(),
           changedBy: user.id,
+          changedByLabel: user.email ?? user.id,
+          proposedByLabel: proposal.proposer,
           proposalId: proposal.id,
           proposedBy: proposal.proposerId,
         });
@@ -52,9 +54,11 @@ export async function reviewProposal(c: Context<AuthEnv>) {
         .update(schema.linksTable)
         .set({
           url: proposal.after.url,
+          ...(proposal.after.isPublic !== undefined ? { isPublic: proposal.after.isPublic } : {}),
           metadata: {
             ...normalizeMetadata(link.metadata),
             description: proposal.after.description,
+            ...(proposal.after.tags !== undefined ? { tags: proposal.after.tags } : {}),
           },
           urlHistory: history,
           updatedAt: now,

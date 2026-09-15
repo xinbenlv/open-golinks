@@ -34,7 +34,9 @@ export function ProposalCard({
     >
       <div className="section-heading">
         <div className="proposer-line">
-          <strong>{p.proposer}</strong>
+          {canReview && p.anonymousDetails ? <button type="button" className="proposal-identity" onClick={() => inspect(p.id)}
+            title={[p.anonymousDetails.location?.label ?? "Location unknown", p.anonymousDetails.browser, p.anonymousDetails.os, p.anonymousDetails.device].join(" · ")}
+            aria-label={"Anonymous IP " + p.anonymousDetails.ip + ": view submission details"}>{p.anonymousDetails.ip}</button> : <strong>{p.proposer}</strong>}
           <span className="status-pill">
             {p.stale ? "Needs a new proposal" : p.status}
           </span>

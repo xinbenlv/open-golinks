@@ -290,3 +290,20 @@
 }
 
 .proposals-ui .metadata-grid dd, .proposals-ui .proposal-note, .proposals-ui .proposer-line { overflow-wrap: anywhere; min-width: 0; }
+
+.proposals-ui .proposal-identity { border: 0; background: transparent; color: var(--text); font: inherit; font-weight: 600; padding: 8px 0; min-height: 44px; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; overflow-wrap: anywhere; }
+
+.proposal-confirmation form { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.proposal-confirmation h2, .proposal-confirmation p { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .proposal-confirmation.proposals-ui { margin: auto 0 0; width: 100%; max-width: none; max-height: 90dvh; padding-bottom: max(24px, env(safe-area-inset-bottom)); border-end-start-radius: 0; border-end-end-radius: 0; }
+  .proposal-confirmation .proposal-actions { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+.confirmation-identity { display: grid; gap: 12px; }
+.confirmation-identity dl { display: grid; gap: 8px; margin: 0; }
+.confirmation-identity dl > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 12px; }
+.confirmation-identity dt { color: var(--text-muted); }
+.confirmation-identity dd { margin: 0; overflow-wrap: anywhere; }
+.confirmation-identity summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.confirmation-identity code { display: block; white-space: normal; overflow-wrap: anywhere; }

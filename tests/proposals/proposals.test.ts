@@ -11,6 +11,92 @@ describe.skipIf(!process.env.PROPOSAL_TEST_DATABASE_URL)(
     afterAll(async () => {
       await h?.close();
     });
+    test("confirmation identity matches saved anonymous IP and browser", async () => {
+      const slug = await h.seed();
+      const options = { ip: "198.51.100.8", headers: { "user-agent": "Mozilla/5.0 (Macintosh) Chrome/140.0.0.0 Safari/537.36" } };
+      const response = await h.request(slug + "/proposals/identity", options);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("cache-control")).toBe("private, no-store");
+      const { identity } = await response.json();
+      expect(identity.ip).toBe(options.ip);
+      expect(identity.browser).toBe("Chrome");
+      expect(identity.os).toBe("macOS");
+      const { proposal } = await (await h.submit(slug, options)).json();
+      const details = await (await h.request(slug + "/proposals/" + proposal.id + "/metadata", { role: "owner" })).json();
+      expect(details.metadata.ip).toBe(identity.ip);
+      expect(details.metadata.ua).toBe(identity.ua);
+      const signed = await (await h.request(slug + "/proposals/identity", { role: "member" })).json();
+      expect(signed.identity).toEqual({ accountId: h.ids.member, email: "member@example.test" });
+    });
+    test("publish can be proposed on and off, only approval changes visibility", async () => {
+      const slug = await h.seed();
+      for (const isPublic of [true, false]) {
+        const link = (await (await h.request(slug)).json()).link;
+        const before = { url: link.url, description: link.metadata.description, tags: link.metadata.tags, isPublic: link.isPublic };
+        const response = await h.submit(slug, { role: "member", body: { baseRevision: link.revision, before, after: { ...before, isPublic } } });
+        expect(response.status).toBe(201);
+        const { proposal } = await response.json();
+        expect((await (await h.request(slug)).json()).link.isPublic).toBe(!isPublic);
+        expect((await h.request(slug + "/proposals/" + proposal.id + "/review", { role: "owner", method: "POST", body: { decision: "approve" } })).status).toBe(200);
+        const saved = (await (await h.request(slug)).json()).link;
+        expect(saved.isPublic).toBe(isPublic);
+        expect(saved.metadata.tags).toEqual(["team"]);
+      }
+    });
+    test("tag-only proposals add and remove tags without altering other metadata", async () => {
+      const slug = await h.seed();
+      const res = await h.submit(slug, { body: { baseRevision: 0,
+        before: { url: "https://example.test/handbook", description: "Team handbook", tags: ["team"] },
+        after: { url: "https://example.test/handbook", description: "Team handbook", tags: ["docs", "new"] } } });
+      expect(res.status).toBe(201);
+      const { proposal } = await res.json();
+      const review = await h.request(slug + "/proposals/" + proposal.id + "/review", { role: "admin", method: "POST", body: { decision: "approve" } });
+      expect(review.status).toBe(200);
+      const link = (await (await h.request(slug)).json()).link;
+      expect(link.metadata.tags).toEqual(["docs", "new"]);
+      expect(link.metadata.show_warning).toBe(true);
+      expect(link.urlHistory).toEqual([]);
+      const ownerList = await (await h.request(slug + "/proposals?status=history", { role: "owner" })).json();
+      expect(ownerList.proposals[0].anonymousDetails.ip).toBe("192.0.2.1");
+      const historyResponse = await h.app.request("http://localhost/api/v1/audit/" + slug, { headers: { authorization: "Bearer " + h.tokens.admin } });
+      expect(historyResponse.status).toBe(200);
+      const history = await historyResponse.json();
+      const approval = history.logs.find((log: { action: string }) => log.action === "APPROVE_PROPOSAL");
+      expect(approval.actorEmail).toBe("admin@example.test");
+      expect(approval.proposer).toBe("Anonymous visitor");
+      expect(approval.anonymousDetails.ip).toBe("192.0.2.1");
+      expect((await h.app.request("http://localhost/api/v1/audit/" + slug, { headers: { authorization: "Bearer " + h.tokens.member } })).status).toBe(403);
+      const cookie = res.headers.get("set-cookie")!.split(";")[0]!;
+      const anonList = await (await h.request(slug + "/proposals?status=history", { cookie })).json();
+      expect(anonList.proposals[0].anonymousDetails).toBeUndefined();
+    });
+    test("signed-in proposal details use account identity instead of browser metadata", async () => {
+      const slug = await h.seed();
+      const res = await h.submit(slug, { role: "member" });
+      expect(res.status).toBe(201);
+      const { proposal } = await res.json();
+      const details = await (await h.request(slug + "/proposals/" + proposal.id + "/metadata", { role: "owner" })).json();
+      expect(details.metadata).toEqual({ accountId: h.ids.member, email: "member@example.test" });
+      const [stored] = await h.sql`select request_metadata, ip_hash from link_proposals where id=${proposal.id}`;
+      expect(stored!.request_metadata.ip).toBeUndefined();
+      expect(stored!.request_metadata.ua).toBeUndefined();
+      expect(stored!.ip_hash).toHaveLength(64);
+    });
+    test("direct save permits database admin and owner, rejects visitors and forged admin claims", async () => {
+      const slug = await h.seed();
+      for (const role of [undefined, "member", "outsider"]) {
+        const res = await h.request(slug, { role, method: "PATCH", body: { url: "https://example.test/blocked" } });
+        expect(res.status).toBe(role ? 403 : 401);
+      }
+      const initial = (await (await h.request(slug)).json()).link;
+      const saved = await h.request(slug, { role: "admin", method: "PATCH", body: { url: "https://example.test/admin-save", baseRevision: initial.revision } });
+      expect(saved.status).toBe(200);
+      expect((await saved.json()).link.url).toBe("https://example.test/admin-save");
+      expect((await h.request(slug, { role: "owner", method: "PATCH", body: { url: "https://example.test/stale", baseRevision: initial.revision } })).status).toBe(409);
+      await h.sql`update users set role='user' where id=${h.ids.admin}`;
+      expect((await h.request(slug, { role: "admin", method: "PATCH", body: { url: "https://example.test/revoked" } })).status).toBe(403);
+      await h.sql`update users set role='admin' where id=${h.ids.admin}`;
+    });
     test("anonymous submission stays pending; cookie owns status, metadata stays private; owner approves atomically", async () => {
       const slug = await h.seed();
       const res = await h.submit(slug);

@@ -60,7 +60,10 @@ export async function listProposals(c: Context<AuthEnv>) {
     const last = page.at(-1);
     return c.json({
       canReview: reviewer,
-      proposals: page.map((p) => dto(p, link.revision)),
+      proposals: page.map((p) => ({ ...dto(p, link.revision),
+        ...(reviewer && !p.proposerId && p.requestMetadata && "ip" in p.requestMetadata && p.submittedAt.getTime() >= Date.now() - 30 * 86400000
+          ? { anonymousDetails: p.requestMetadata } : {}),
+      })),
       nextCursor:
         rows.length > 20 && last
           ? Buffer.from(

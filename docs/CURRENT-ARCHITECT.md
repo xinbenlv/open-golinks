@@ -327,3 +327,17 @@ flowchart TB
 静态压缩使用异步 node:zlib gzip/deflate，不依赖生产 Bun 未提供的 CompressionStream；见 middleware/static-compression.ts 与压缩回归测试。
 
 二维码外围总留白缩为原来的约 1/3，保持画布尺寸并扩大码体；预览与导出一致。
+
+编辑页改为 Details / History / Stats / QR Code tabs；所有访客可编辑 URL/描述后提议，owner/admin 可直接保存。PATCH 锁定链接并从数据库核对角色；移动端复用同一表单状态。
+
+提交前显示身份关联提示。新登录提议保存邮箱/account ID 私有详情；匿名提议保留原 IP/浏览器详情。限流 IP 哈希不变，旧详情仍按 30 天过期。
+
+提议支持 tags；普通访客使用独立 Proposals tab。owner/admin History 显示操作者、提议者和未过期匿名 IP/位置/浏览器/OS；普通访客仍只能查看自己的提议状态。
+
+Publish（Public listing）支持提议开启或关闭，仅审批后更新 isPublic；旧提议未含此字段时保持现有设置。
+
+基本信息为连续表单；提议先通过 ProposalConfirmation 确认差异与身份关联，再发 POST。取消不会丢失草稿。
+
+History 合并为一份变更记录，避免提议历史/URL 历史/审计重复展示同一次修改。
+
+提议确认弹窗读取当前请求的身份预览 API，展示实际 IP、浏览器/OS 及可展开 User-Agent；登录时改为账号身份。

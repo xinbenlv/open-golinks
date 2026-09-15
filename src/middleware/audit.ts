@@ -1,3 +1,4 @@
+/** 写入操作审计；可沿用调用方事务，避免外键检查等待自己持有的锁。 */
 import { createHash } from "node:crypto";
 import type { Context } from "hono";
 import { db, schema } from "../db/db.ts";
@@ -33,10 +34,11 @@ export async function writeAudit(
   diff?: JsonObject,
   metadata: JsonObject = {},
   actorFingerprint?: string | null,
+  executor: Pick<typeof db, "insert"> = db,
 ) {
   const user = c.get("user");
   const userAgent = c.req.header("user-agent") ?? null;
-  await db.insert(schema.auditLogsTable).values({
+  await executor.insert(schema.auditLogsTable).values({
     linkSlug: slug,
     actorId: user?.id ?? null,
     actorFingerprint: actorFingerprint ?? null,
@@ -45,7 +47,7 @@ export async function writeAudit(
     diff: diff ?? null,
     metadata: {
       ...metadata,
-      user_agent: userAgent,
+      ...(user ? {} : { user_agent: userAgent }),
     },
   });
 }

@@ -1,3 +1,5 @@
+/** 短链 CRUD；直接保存由数据库中的 owner/admin 权限控制。 */
+import { canReview } from "../../lib/proposals/store";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -498,7 +500,7 @@ linksRoute.post("/:slug/transfer", requireAuth, async (c) => {
   return c.json({ link: sanitizeLinkRecord(row) });
 });
 
-// PATCH /api/v1/links/:slug - owner-only URL update.
+// PATCH /api/v1/links/:slug - owner/admin update with a locked permission check.
 linksRoute.patch("/:slug", requireAuth, async (c) => {
   const slug = c.req.param("slug");
   const body = await c.req.json().catch(() => null);
@@ -508,71 +510,71 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
   }
 
   const user = c.get("user")!;
-  const existing = await findLink(slug);
-  const ownershipError = ensureOwner(existing, user);
-  if (ownershipError === "NOT_FOUND") return c.json({ error: "NOT_FOUND" }, 404);
-  if (ownershipError === "FORBIDDEN") return c.json({ error: "FORBIDDEN" }, 403);
-  if (!existing) return c.json({ error: "NOT_FOUND" }, 404);
+  return db.transaction(async (tx) => {
+    const [existing] = await tx.select().from(schema.linksTable).where(eq(schema.linksTable.slug, slug)).for("update");
+    if (!existing || existing.deletedAt) return c.json({ error: "NOT_FOUND" }, 404);
+    if (!(await canReview(tx, existing.ownerId, user.id))) return c.json({ error: "FORBIDDEN" }, 403);
 
-  if (parsed.data.baseRevision !== undefined && parsed.data.baseRevision !== existing.revision) return c.json({ error: "STALE_LINK" }, 409);
+    if (parsed.data.baseRevision !== undefined && parsed.data.baseRevision !== existing.revision) return c.json({ error: "STALE_LINK" }, 409);
 
-  const nextUrl = parsed.data.url ?? existing.url;
-  const nextIsPublic = parsed.data.isPublic ?? existing.isPublic;
-  const urlHistory = parsed.data.url && parsed.data.url !== existing.url
-    ? [
-        ...normalizeUrlHistory(existing.urlHistory),
-        { url: existing.url, changedAt: new Date().toISOString(), changedBy: user.id },
-      ]
-    : normalizeUrlHistory(existing.urlHistory);
-  const metadata = mergeMetadata(existing.metadata, parsed.data.metadata);
-  const diff: Record<string, unknown> = {};
-  if (parsed.data.url) {
-    diff.before = { ...(diff.before as object | undefined), url: existing.url };
-    diff.after = { ...(diff.after as object | undefined), url: nextUrl };
-  }
-  if (parsed.data.isPublic !== undefined) {
-    diff.before = { ...(diff.before as object | undefined), isPublic: existing.isPublic };
-    diff.after = { ...(diff.after as object | undefined), isPublic: nextIsPublic };
-  }
-  if (parsed.data.metadata) {
-    diff.before = {
-      ...(diff.before as object | undefined),
-      metadata: {
-        description: description(existing.metadata),
-        tags: tags(existing.metadata),
-        show_warning: showWarning(existing.metadata),
-        addLogo: addLogo(existing.metadata),
-        caption: caption(existing.metadata),
-      },
-    };
-    diff.after = {
-      ...(diff.after as object | undefined),
-      metadata: {
-        description: description(metadata),
-        tags: tags(metadata),
-        show_warning: showWarning(metadata),
-        addLogo: addLogo(metadata),
-        caption: caption(metadata),
-      },
-    };
-  }
+    const nextUrl = parsed.data.url ?? existing.url;
+    const nextIsPublic = parsed.data.isPublic ?? existing.isPublic;
+    const urlHistory = parsed.data.url && parsed.data.url !== existing.url
+      ? [
+          ...normalizeUrlHistory(existing.urlHistory),
+          { url: existing.url, changedAt: new Date().toISOString(), changedBy: user.id, changedByLabel: user.email ?? user.id },
+        ]
+      : normalizeUrlHistory(existing.urlHistory);
+    const metadata = mergeMetadata(existing.metadata, parsed.data.metadata);
+    const diff: Record<string, unknown> = {};
+    if (parsed.data.url) {
+      diff.before = { ...(diff.before as object | undefined), url: existing.url };
+      diff.after = { ...(diff.after as object | undefined), url: nextUrl };
+    }
+    if (parsed.data.isPublic !== undefined) {
+      diff.before = { ...(diff.before as object | undefined), isPublic: existing.isPublic };
+      diff.after = { ...(diff.after as object | undefined), isPublic: nextIsPublic };
+    }
+    if (parsed.data.metadata) {
+      diff.before = {
+        ...(diff.before as object | undefined),
+        metadata: {
+          description: description(existing.metadata),
+          tags: tags(existing.metadata),
+          show_warning: showWarning(existing.metadata),
+          addLogo: addLogo(existing.metadata),
+          caption: caption(existing.metadata),
+        },
+      };
+      diff.after = {
+        ...(diff.after as object | undefined),
+        metadata: {
+          description: description(metadata),
+          tags: tags(metadata),
+          show_warning: showWarning(metadata),
+          addLogo: addLogo(metadata),
+          caption: caption(metadata),
+        },
+      };
+    }
 
-  const [updated] = await db
-    .update(schema.linksTable)
-    .set({
-      url: nextUrl,
-      isPublic: nextIsPublic,
-      urlHistory,
-      metadata,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(schema.linksTable.slug, slug), eq(schema.linksTable.revision, existing.revision), eq(schema.linksTable.ownerId, user.id), isNull(schema.linksTable.deletedAt)))
-    .returning();
-  if (!updated) return c.json({ error: "STALE_LINK" }, 409);
-  const row = expectReturned(updated);
+    const [updated] = await tx
+      .update(schema.linksTable)
+      .set({
+        url: nextUrl,
+        isPublic: nextIsPublic,
+        urlHistory,
+        metadata,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(schema.linksTable.slug, slug), eq(schema.linksTable.revision, existing.revision), isNull(schema.linksTable.deletedAt)))
+      .returning();
+    if (!updated) return c.json({ error: "STALE_LINK" }, 409);
+    const row = expectReturned(updated);
 
-  await writeAudit(c, "UPDATE", slug, diff);
-  return c.json({ link: sanitizeLinkRecord(row) });
+    await writeAudit(c, "UPDATE", slug, diff, {}, undefined, tx);
+    return c.json({ link: sanitizeLinkRecord(row) });
+  });
 });
 
 // DELETE /api/v1/links/:slug - owner-only soft delete.

@@ -35,10 +35,22 @@ pages/
 - [`../README.md`](../README.md)
 - [`../../../docs/CURRENT-ARCHITECT.md`](../../../docs/CURRENT-ARCHITECT.md)
 
-`/edit/:slug` 沿用项目原有主题与字体。短链标题旁放置 Copy 和 Go；目标地址、描述、标签与访问开关直接可见，二维码、下载和自定义作为紧凑侧栏，手机上顺序排列。保存按钮在修改后出现。统计直接展示，只有历史、转移和删除收在 Manage link。
+`/edit/:slug` 沿用项目原有主题与字体。短链标题旁放置 Copy 和 Go；基本信息直接可编辑，History、Stats、QR Code 分 tab 按需展示。操作按钮在修改后出现；转移和删除收在 Manage link。
 
 Edit 页包含真实 Proposed changes，保存请求携带 baseRevision，避免旧表单覆盖刚审核的更新。
 
 编辑页移除重复的操作解释；提议区直接展示标题、操作和内容。
 
 Landing footer 使用既有 text-muted token，满足 Lighthouse 对比度检查。
+
+编辑页使用 Details / History / Stats / QR Code tabs；目标地址和描述直接编辑，owner/admin 保存，其他访客提交提议。表单状态跨 tab 保留。
+
+修改后、提交前显示身份关联提示；匿名可登录改用邮箱/account ID，登录用户显示邮箱，account ID 可通过提示查看。
+
+访客在基本信息编辑 URL、描述和 tags；待审提议进入独立 Proposals tab，History 保留已审核提议。owner/admin 的待审区仍在基本信息下。
+
+Publish（Public listing）支持提议开启或关闭，仅审批后更新 isPublic；旧提议未含此字段时保持现有设置。
+
+基本信息使用无卡片连续表单。点击 Propose change 后打开确认 dialog，diff 与身份提示只在 dialog 显示；取消保留草稿。
+
+History 不再叠加三个历史区：owner/admin 只有一条变更时间线，其他访客只看自己已审核提议；Proposals 只放待处理提议。

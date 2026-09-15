@@ -1,3 +1,5 @@
+/** owner/admin 历史包含修改者与提议者；匿名详情按原 30 天期限保留。 */
+import { canReview } from "../../lib/proposals/store";
 import { Hono } from "hono";
 import {
   and,
@@ -7,6 +9,7 @@ import {
   lt,
   ne,
   or,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { z } from "zod";
@@ -46,6 +49,8 @@ function decodeCursor(cursor: string) {
 }
 
 auditRoute.get("/:slug", requireAuth, async (c) => {
+  c.header("Cache-Control", "private, no-store");
+  c.header("Vary", "Authorization");
   const slug = c.req.param("slug");
   const slugParsed = slugSchema.safeParse(slug);
   if (!slugParsed.success) {
@@ -60,8 +65,9 @@ auditRoute.get("/:slug", requireAuth, async (c) => {
     return c.json({ error: "INVALID_INPUT", issues: parsed.error.issues }, 400);
   }
 
+  return db.transaction(async (tx) => {
   const user = c.get("user")!;
-  const [link] = await db
+  const [link] = await tx
     .select({
       slug: schema.linksTable.slug,
       ownerId: schema.linksTable.ownerId,
@@ -76,7 +82,7 @@ auditRoute.get("/:slug", requireAuth, async (c) => {
     .limit(1);
 
   if (!link) return c.json({ error: "NOT_FOUND" }, 404);
-  if (link.ownerId !== user.id) return c.json({ error: "FORBIDDEN" }, 403);
+  if (!(await canReview(tx, link.ownerId, user.id))) return c.json({ error: "FORBIDDEN" }, 403);
 
   const conditions: SQL[] = [
     eq(schema.auditLogsTable.linkSlug, slugParsed.data),
@@ -106,9 +112,14 @@ auditRoute.get("/:slug", requireAuth, async (c) => {
       timestamp: schema.auditLogsTable.timestamp,
       diff: schema.auditLogsTable.diff,
       metadata: schema.auditLogsTable.metadata,
+      proposer: schema.linkProposalsTable.proposer,
+      proposerId: schema.linkProposalsTable.proposerId,
+      submittedAt: schema.linkProposalsTable.submittedAt,
+      requestMetadata: schema.linkProposalsTable.requestMetadata,
     })
     .from(schema.auditLogsTable)
     .leftJoin(schema.usersTable, eq(schema.auditLogsTable.actorId, schema.usersTable.id))
+    .leftJoin(schema.linkProposalsTable, sql`${schema.linkProposalsTable.id}::text = ${schema.auditLogsTable.metadata}->>'proposalId'`)
     .where(and(...conditions))
     .orderBy(desc(schema.auditLogsTable.timestamp), desc(schema.auditLogsTable.id))
     .limit(parsed.data.limit + 1);
@@ -122,7 +133,10 @@ auditRoute.get("/:slug", requireAuth, async (c) => {
     logs: page.map((row) => ({
       ...row,
       timestamp: row.timestamp.toISOString(),
+      requestMetadata: undefined,
+      anonymousDetails: !row.proposerId && row.requestMetadata && "ip" in row.requestMetadata && row.submittedAt && row.submittedAt.getTime() >= Date.now() - 30 * 86400000 ? row.requestMetadata : undefined,
     })),
     nextCursor,
+  });
   });
 });

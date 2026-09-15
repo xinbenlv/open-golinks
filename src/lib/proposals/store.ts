@@ -22,6 +22,8 @@ export function values(
   const metadata = normalizeMetadata(link.metadata);
   return {
     url: link.url,
+    isPublic: link.isPublic,
+    tags: Array.isArray(metadata.tags) ? metadata.tags.filter((tag): tag is string => typeof tag === "string") : [],
     description:
       typeof metadata.description === "string" ? metadata.description : "",
   };

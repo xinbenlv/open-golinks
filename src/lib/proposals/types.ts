@@ -1,7 +1,9 @@
 /** 提议 API 的共享数据契约；私有提交详情不混入列表。 */
-export type ProposalValues = { url: string; description: string };
+export type ProposalValues = { url: string; description: string; tags?: string[]; isPublic?: boolean };
 export type ProposalStatus = "pending" | "approved" | "rejected";
-export type SubmissionMetadata = {
+export type AccountSubmissionMetadata = { accountId: string; email: string | null };
+export type SubmissionMetadata = AccountSubmissionMetadata | BrowserSubmissionMetadata;
+export type BrowserSubmissionMetadata = {
   ip: string;
   ua: string;
   locale: string;
@@ -21,6 +23,7 @@ export type ProposalDTO = {
   after: ProposalValues;
   note: string;
   proposer: string;
+  anonymousDetails?: BrowserSubmissionMetadata;
   status: ProposalStatus;
   submittedAt: string;
   reviewedAt: string | null;

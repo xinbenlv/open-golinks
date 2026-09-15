@@ -2,7 +2,7 @@
 import { z } from "zod";
 export const cookieName = "ogl-proposer";
 const valueSchema = z
-  .object({ url: z.string().max(8192), description: z.string().max(280) })
+  .object({ url: z.string().max(8192), description: z.string().max(280), isPublic: z.boolean().optional(), tags: z.array(z.string().trim().min(1).max(20)).max(10).optional() })
   .strict();
 export const inputSchema = z
   .object({

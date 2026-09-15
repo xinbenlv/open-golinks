@@ -1,3 +1,6 @@
+/** 审计按事件显示操作者与提议者；匿名 IP 可悬停或点击查看私有详情。 */
+import { MetadataDialog } from "./proposals/MetadataDialog";
+import type { BrowserSubmissionMetadata } from "../../lib/proposals/types";
 import { Diff } from "./proposals/Diff";
 import type { ProposalValues } from "../../lib/proposals/types";
 import { useEffect, useState } from "react";
@@ -11,6 +14,10 @@ type AuditLog = {
   actorFingerprint: string | null;
   timestamp: string;
   diff: unknown;
+  proposer?: string | null;
+  submittedAt?: string | null;
+  metadata?: { proposalId?: string };
+  anonymousDetails?: BrowserSubmissionMetadata;
 };
 
 type AuditResponse = {
@@ -41,6 +48,7 @@ function prettyJson(value: unknown) {
 
 export function AuditTimeline({ slug }: { slug: string }) {
   const api = useApi();
+  const [details, setDetails] = useState<string>();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -89,14 +97,9 @@ export function AuditTimeline({ slug }: { slug: string }) {
     }
   }
 
+  const changes = logs.filter((log) => log.action !== "PROPOSE");
   return (
     <section className="audit-timeline proposals-ui" aria-busy={loading}>
-      <div className="audit-timeline__header">
-        <div>
-          <p className="dashboard-kicker">History</p>
-          <h2>Audit log</h2>
-        </div>
-      </div>
       {error ? (
         <p className="auth-message auth-message--error" role="alert">
           History unavailable
@@ -104,9 +107,9 @@ export function AuditTimeline({ slug }: { slug: string }) {
       ) : null}
       {loading ? (
         <div className="dashboard-empty">Loading history...</div>
-      ) : logs.length ? (
+      ) : changes.length ? (
         <div className="audit-timeline__list">
-          {logs.map((log) => {
+          {changes.map((log) => {
             const diff = prettyJson(log.diff);
             const canExpand = Boolean(diff);
             const isExpanded = expanded[log.id] === true;
@@ -116,6 +119,10 @@ export function AuditTimeline({ slug }: { slug: string }) {
                   <time dateTime={log.timestamp}>{formatDate(log.timestamp)}</time>
                   <strong>{({ PROPOSE: "Proposed change", APPROVE_PROPOSAL: "Approved proposal", REJECT_PROPOSAL: "Rejected proposal" } as Record<string,string>)[log.action] ?? log.action}</strong>
                   <span>by {actorLabel(log)}</span>
+                  {log.proposer && log.action !== "PROPOSE" ? <span>Proposed by {log.proposer}{log.submittedAt ? " · " + formatDate(log.submittedAt) : ""}</span> : null}
+                  {log.anonymousDetails && log.metadata?.proposalId ? <button type="button" className="proposal-identity"
+                    title={[log.anonymousDetails.location?.label ?? "Location unknown", log.anonymousDetails.browser, log.anonymousDetails.os, log.anonymousDetails.device].join(" · ")}
+                    onClick={() => setDetails(log.metadata!.proposalId)}>{log.anonymousDetails.ip}</button> : null}
                   {canExpand ? (
                     <button
                       className="btn btn--ghost btn--sm"
@@ -153,6 +160,7 @@ export function AuditTimeline({ slug }: { slug: string }) {
           {loadingMore ? "Loading..." : "Load more"}
         </button>
       ) : null}
+      {details ? <MetadataDialog endpoint={`/api/v1/links/${encodeURIComponent(slug)}/proposals/${details}/metadata`} close={() => setDetails(undefined)} /> : null}
     </section>
   );
 }

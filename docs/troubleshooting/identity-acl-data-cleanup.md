@@ -47,3 +47,7 @@ active unowned_with_legacy_email=0
 
 - `src/db/schema.ts:52-80`
 - `scripts/lib/identity-acl.ts:368-438`
+
+## 锁定链接后写审计
+
+PATCH 锁定链接后，通过另一连接写 audit 会因 link_slug 外键校验等待本事务，导致请求超时。writeAudit 必须使用同一个 tx；权限、更新和审计一起提交或回滚。相关代码：src/routes/api/links.ts、src/middleware/audit.ts。

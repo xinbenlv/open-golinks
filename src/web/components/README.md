@@ -24,3 +24,7 @@
 - LinkStatsCard.tsx：Edit 统计卡片，按需加载图表。
 
 二维码外围总留白缩为原来的约 1/3，保持画布尺寸并扩大码体；预览与导出一致。
+
+UrlHistory 显示修改者和提议者；AuditTimeline 显示审核操作者、原提议者和受权限保护的匿名详情。
+
+Edit History 只使用 AuditTimeline，不再重复 URL 历史和提议卡片；时间线合并显示修改者与原提议者/时间。

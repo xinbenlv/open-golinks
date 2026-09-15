@@ -70,6 +70,11 @@ export function MetadataDialog({
         <p role="status">Loading details…</p>
       ) : metadata === null ? (
         <p>Submission details have expired.</p>
+      ) : "accountId" in metadata ? (
+        <dl className="metadata-grid">
+          <div><dt>Email</dt><dd>{metadata.email ?? "Unavailable"}</dd></div>
+          <div><dt>Account ID</dt><dd>{metadata.accountId}</dd></div>
+        </dl>
       ) : (
         <>
           <div className="approx-map">

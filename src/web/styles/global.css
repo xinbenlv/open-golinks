@@ -1913,3 +1913,26 @@ svg {
     gap: 8px;
   }
 }
+
+/* 编辑页 tabs 共用表单状态，窄屏保持触摸尺寸与完整标签。 */
+.edit-page [hidden] { display: none !important; }
+.edit-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 4px; margin-block: 12px 24px; }
+.edit-tabs [role="tab"] { min-width: 0; min-height: 44px; padding: 8px 4px; border: 0; border-block-end: 2px solid transparent; background: transparent; color: var(--text-muted); font: inherit; font-size: 14px; cursor: pointer; }
+.edit-tabs [aria-selected="true"] { color: var(--text); border-block-end-color: var(--brand); }
+.edit-tabs [role="tab"]:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.edit-tab-content, .edit-tab-content > *, .edit-submit-preview { min-width: 0; }
+.edit-page .edit-save-bar { flex-wrap: wrap; }
+.edit-submit-preview { flex-basis: 100%; overflow-wrap: anywhere; }
+.edit-submit-preview summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.edit-page #edit-panel-qr { max-width: 560px; margin-inline: auto; width: 100%; }
+.edit-page #edit-panel-qr .qr-preview-wrap { width: min(240px, 100%); }
+@media (max-width: 480px) {
+  .edit-tabs { gap: 0; }
+  .edit-page .edit-save-bar > button { width: 100%; min-height: 44px; }
+}
+
+.edit-submit-identity { flex-basis: 100%; margin: 0; color: var(--text-muted); overflow-wrap: anywhere; }
+
+/* 基本信息是一份连续表单，不单独给部分字段套卡片。 */
+.edit-page .edit-fields { background: transparent; border-radius: 0; padding: 0; }
+.edit-page .edit-save-bar { width: 100%; padding-block-end: 0; }

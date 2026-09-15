@@ -1,7 +1,9 @@
+/** URL 历史显示变更时间、修改者与提议者；未知旧记录不猜测身份。 */
 type UrlHistoryEntry = {
   url: string;
   changedAt: string | null;
   changedBy: string | null;
+  proposedBy: string | null;
 };
 
 function asString(value: unknown) {
@@ -19,7 +21,8 @@ export function normalizeUrlHistoryEntries(value: unknown): UrlHistoryEntry[] {
       {
         url,
         changedAt: asString(record.changedAt) ?? asString(record.changed_at),
-        changedBy: asString(record.changedBy) ?? asString(record.changed_by),
+        changedBy: asString(record.changedByLabel) ?? asString(record.changedBy) ?? asString(record.changed_by),
+        proposedBy: asString(record.proposedByLabel) ?? asString(record.proposedBy),
       },
     ];
   });
@@ -74,6 +77,8 @@ export function UrlHistory({
               <a href={entry.url} target="_blank" rel="noreferrer">
                 {entry.url}
               </a>
+              {entry.changedBy ? <small>Changed by {entry.changedBy}</small> : null}
+              {entry.proposedBy ? <small>Proposed by {entry.proposedBy}</small> : null}
               {index === timeline.length - 1 ? <span>original</span> : null}
             </article>
           ))}
