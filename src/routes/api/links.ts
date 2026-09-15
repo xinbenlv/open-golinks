@@ -1,4 +1,5 @@
 /** 短链 CRUD；直接保存由数据库中的 owner/admin 权限控制。 */
+import { linkWithOwner } from "../../lib/link-owner";
 import { canReview } from "../../lib/proposals/store";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -288,7 +289,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
     await writeAudit(c, "CREATE", row.slug, {
       after: { url: row.url, ownerId: row.ownerId },
     }, {}, user ? null : fingerprint);
-    return c.json({ link: sanitizeLinkRecord(row) }, 201);
+    return c.json({ link: await linkWithOwner(row) }, 201);
   } catch (err: unknown) {
     // Drizzle 把底层 postgres 错误包成 DrizzleQueryError, 真正的 code 在 .cause 上.
     if (pgCode(err) === "23505") {
@@ -312,7 +313,7 @@ linksRoute.post("/", optionalAuth, anonymousWriteRateLimit, async (c) => {
           before: { deletedAt: existing.deletedAt, url: existing.url },
           after: { url: restored.url, ownerId: restored.ownerId },
         });
-        return c.json({ link: sanitizeLinkRecord(restored) }, 201);
+        return c.json({ link: await linkWithOwner(restored) }, 201);
       }
       return c.json({ error: "SLUG_TAKEN" }, 409);
     }
@@ -384,7 +385,7 @@ linksRoute.get("/:slug", async (c) => {
     )
     .limit(1);
   if (!row) return c.json({ error: "NOT_FOUND" }, 404);
-  return c.json({ link: sanitizeLinkRecord(row) });
+  return c.json({ link: await linkWithOwner(row) });
 });
 
 // 无主链接认领：只信任认证 middleware 验证后的邮箱，原子更新并在同一事务写审计。
@@ -410,7 +411,7 @@ linksRoute.post("/:slug/claim", requireAuth, async (c) => {
     await writeAudit(c, "CLAIM", slug,
       { before: { ownerId: null }, after: { ownerId: user.id } },
       { claim_method: "domain" }, undefined, tx);
-    return c.json({ link: sanitizeLinkRecord(row) });
+    return c.json({ link: await linkWithOwner(row, tx) });
   });
 });
 
@@ -469,7 +470,7 @@ linksRoute.post("/:slug/transfer", requireAuth, async (c) => {
       to_email: recipient.email,
     },
   );
-  return c.json({ link: sanitizeLinkRecord(row) });
+  return c.json({ link: await linkWithOwner(row) });
 });
 
 // PATCH /api/v1/links/:slug - owner/admin update with a locked permission check.
@@ -545,7 +546,7 @@ linksRoute.patch("/:slug", requireAuth, async (c) => {
     const row = expectReturned(updated);
 
     await writeAudit(c, "UPDATE", slug, diff, {}, undefined, tx);
-    return c.json({ link: sanitizeLinkRecord(row) });
+    return c.json({ link: await linkWithOwner(row, tx) });
   });
 });
 

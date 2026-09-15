@@ -23,7 +23,7 @@ Railway 在新版启动前运行 `bun run db:migrate`（`railway.json`），复�
               │   ├─ /api/v1/health  → JSON                  │
               │   ├─ /healthz        → JSON (uptime monitor)  │
               │   ├─ /api/v1/audit   → owner audit timeline   │
-              │   ├─ /api/v1/links   → CRUD + claim + proposals  │
+              │   ├─ /api/v1/links   → CRUD + claim + proposals + avatar  │
               │   ├─ /api/v1/me      → JWT 当前用户           │
               │   ├─ /api/v1/stats   → owner summary + public GA4/trending │
               │   └─ /*              → 静态 SPA (dist/web)   │
@@ -112,14 +112,14 @@ flowchart TB
 - `GET /healthz` (`src/server.ts`) - legacy 兼容的 uptime 监控端点 (UptimeRobot 等); 返回 200 JSON 含 version/sha/builtAt, 对应 `https://zgzg.li/healthz`、`https://zgzg.link/healthz`
 - **`src/routes/api/audit.ts`** (`GET /api/v1/audit/:slug`) - requireAuth + owner-only; 返回当前链接 CREATE/UPDATE/DELETE/CLAIM/TRANSFER 审计日志, 支持 `limit` + `(timestamp,id)` cursor 分页, `VISIT` 不返回.
 - **`src/routes/api/links.ts`** (`/api/v1/links`)
-  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:187-254`)
-  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id` 且默认 private; 匿名时走 IP+UA 限流、保存 `X-Fingerprint`, 并强制 `is_public=true` + `metadata.show_warning=true`; 可写 `metadata.description/tags/show_warning` 但匿名 show_warning 会被覆盖为 true; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:257-321`)
-  - `GET /claimable` - requireAuth + 精确 `@zgzg.io` 域；fingerprint 或 canonical legacy email 只用于发现未归属链接 (`src/routes/api/links.ts:323-362`)
+  - `GET /` - require JWT, 只列出当前用户链接; `owner` 只能省略或为 `me`, 支持 cursor/q/limit/tag; F12 已 drop 公开列表, `owner=public` 返回 `INVALID_INPUT`; 返回 DTO 会脱敏内部 legacy owner metadata (`src/routes/api/links.ts:188-255`)
+  - `POST /` - 创建链接; 有 Bearer JWT 时写 `owner_id` 且默认 private; 匿名时走 IP+UA 限流、保存 `X-Fingerprint`, 并强制 `is_public=true` + `metadata.show_warning=true`; 可写 `metadata.description/tags/show_warning` 但匿名 show_warning 会被覆盖为 true; 写 CREATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:258-322`)
+  - `GET /claimable` - requireAuth + 精确 `@zgzg.io` 域；fingerprint 或 canonical legacy email 只用于发现未归属链接 (`src/routes/api/links.ts:324-363`)
   - `GET /:slug/available` - public availability check, 返回 `{ available: boolean }`; F13 `/api/v2/available/:slug` shim 复用同一语义
-  - `GET /:slug` - 获取单链接, 公开返回中不包含 `metadata.legacy_author_email` (`src/routes/api/links.ts:374-388`)
-  - `POST /:slug/claim` - 可信 JWT authenticated 非匿名身份、精确 `@zgzg.io` 邮箱；原子 UPDATE 限定 owner/deleted 为 NULL，事务内写 CLAIM audit；已有 owner 返回 409 (`src/routes/api/links.ts:390-417`)
-  - `POST /:slug/transfer` - owner-only; recipient email 先 canonicalize 再查找已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER` (`src/routes/api/links.ts:418-473`)
-  - `PATCH /:slug` - 数据库 owner/admin 更新 URL、`isPublic` 和 metadata, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 匿名链接必须先 claim 成 owner 后才能关闭 public/warning; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:476-550`)
+  - `GET /:slug` - 获取单链接, 公开返回中不包含 `metadata.legacy_author_email` (`src/routes/api/links.ts:375-389`)
+  - `POST /:slug/claim` - 可信 JWT authenticated 非匿名身份、精确 `@zgzg.io` 邮箱；原子 UPDATE 限定 owner/deleted 为 NULL，事务内写 CLAIM audit；已有 owner 返回 409 (`src/routes/api/links.ts:391-418`)
+  - `POST /:slug/transfer` - owner-only; recipient email 先 canonicalize 再查找已注册用户, 写 TRANSFER audit; 未注册 `USER_NOT_FOUND`, 自转 `SELF_TRANSFER` (`src/routes/api/links.ts:419-474`)
+  - `PATCH /:slug` - 数据库 owner/admin 更新 URL、`isPublic` 和 metadata, 旧 URL 进入 `url_history`; strict metadata whitelist 允许 `description<=280`, `tags<=10` 且单 tag `<=20`, `show_warning`; 匿名链接必须先 claim 成 owner 后才能关闭 public/warning; 写 UPDATE audit; 返回 DTO 脱敏 (`src/routes/api/links.ts:477-551`)
   - `DELETE /:slug` - owner-only 软删, 写 DELETE audit
 - **`src/routes/api/me.ts`** (`GET /api/v1/me`) - 通过 Supabase JWT 返回当前用户 `{ id, email, role }`
 - **`src/routes/api/qr.ts`** (`GET /api/v1/qr/:slug`) - 公开 QR PNG endpoint; `format=png`, `caption<=100`, `logo=true`; 不存在/软删返回 404.
@@ -362,3 +362,16 @@ flowchart LR
   JWT --> CAS[Owner NULL update + audit transaction]
   SlugIcon[Slug / Copy icon] --> Clipboard[Canonical URL + live feedback]
 ```
+
+## 邮箱生成的主人头像
+
+```text
+links.owner_id -> users.email -> HMAC(owner-avatar:v1) -> owner.avatarSeed
+Edit -> OwnerAvatar -> Jazzicon DOM/SVG（不请求外部头像）
+```
+
+- `src/lib/link-owner.ts:1-17`：规范化邮箱与现有 IP_HASH_SALT 生成稳定的 HMAC seed；公开 DTO 只增加 owner.avatarSeed，无主 owner=null。更换 salt 会改变头像。
+- `src/web/components/OwnerAvatar.tsx:1-31`：按需加载固定 `@metamask/jazzicon@2.0.0`，32px 头像、44px 触控区域，通用 Link owner 提示；不要求姓名或图片。
+- `src/web/pages/Edit.tsx:285-303`：根据 ownerId 切换认领/头像；认领保留草稿和 revision +1。单链接写入响应共用 owner 投影，保存后不会丢失头像。
+
+不新增 schema、认证流程或第三方服务；资料仅用于展示，权限仍按 ownerId/数据库角色判断。

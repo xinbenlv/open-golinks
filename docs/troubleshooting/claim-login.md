@@ -29,3 +29,11 @@ Lighthouse 的入口是 `cli/index.js`，`cli/bin.js` 只导出 begin，不会�
 ## ZGID 邮箱域更正
 
 用户明确更正账号域为 `zgzg.io`。前后端统一判断精确 `@zgzg.io`，登录占位与错误提示同步；`@zg.io`、子域和后缀伪装均被测试覆盖为拒绝。已先用更正后的测试复现旧判断拒绝合法账号，再验证修复。相关：`src/lib/identity.ts`、`tests/proposals/auth-return.test.ts`、`tests/proposals/claim-cases.ts`。
+
+## 自动头像与预览回归
+
+- 问题：短链账号通常不会填写姓名/图片。原因：先前方案依赖个人资料。解决：用户指定邮箱派生 Jazzicon，复用 users.email，无 schema 迁移；不将邮箱传给外部服务。相关：src/lib/link-owner.ts、src/web/components/OwnerAvatar.tsx。
+- 问题：头像测试反复聚焦后提示没有出现。原因：Escape 关闭提示后，focus 已在同一按钮，不会再次触发 focus。解决：先移到 slug 再回到头像，模拟真实键盘导航；匿名测试登录仍固定回到 handbook，再显式导航测试链接。相关：tests/proposals/owner-avatar.browser.spec.ts。
+- 问题：Drizzle generate 将 meta/README.md 当作 JSON。原因：本地版本扫描整个 meta 目录。解决：生成时临时移开 README 再恢复。本次最终无 schema 变更，无迁移文件。
+
+- 问题：本机负载使 Lighthouse CPU benchmark 从约 4375 降至 1261，重复测量波动。解决：关闭本任务闲置浏览器、独立测量；头像库同时改为按需加载，避免进入编辑页首屏包。相关：src/web/components/OwnerAvatar.tsx。

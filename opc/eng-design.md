@@ -22,3 +22,18 @@ ShortLinkActions -> canonical VITE_BASE_URL + slug -> Clipboard + live feedback
 ## 验证
 
 真实隔离 PostgreSQL/JWKS 测试域授权、并发与审计回滚；Chrome 检查登录回跳、claim→Save、复制、提案回归与窄屏。生产构建和 type-check；Lighthouse 检查首页与 edit 页。使用独立 55449/3198 端口，截图为本地虚构 fixture。
+
+## 链接主人头像
+
+用户确认直接按邮箱自动生成几何头像，无需填写用户名或图片。复用现有 users.email，不增加资料表、迁移或第三方服务。
+
+```text
+links.owner_id -> users.email -> canonical email + HMAC -> owner.avatarSeed
+Edit -> OwnerAvatar -> @metamask/jazzicon 2.0.0（本地 DOM/SVG）
+```
+
+服务端使用现有 IP_HASH_SALT，加独立 owner-avatar 域前缀计算 HMAC；浏览器只收到截短 seed，不收到邮箱或普通 email hash。相同邮箱产生固定头像（轮换服务端 salt 后会变化），同一 owner 跨链接保持一致。公开 tooltip 为 Link owner。
+
+详情、认领、保存和转移响应返回相同 owner 形状。无主仍显示 ZGID 认领入口；认领后保留草稿与 revision +1 规则。权限判定不变。
+
+验证：真实 DB/JWT 检查正确 owner、相同邮箱一致、邮箱不泄漏及无主分支；浏览器检查匿名/登录查看一致、认领后立即显示、保存后保留、键盘与 320px 布局。

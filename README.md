@@ -6,7 +6,7 @@
 
 ![Open GoLinks 产品导览](./docs/assets/readme-tour.gif)
 
-> 上面的动图由浏览器 e2e 截图流程生成：`CAPTURE_README_TOUR=1 bun test tests/browser/readme-tour.spec.ts`。截图用例本地构建前端并启动 Vite preview, mock 所有 API/SSR 数据，并把 demo origin 固定为 `zgzg.li`。
+> 动图生成：`CAPTURE_README_TOUR=1 bun test tests/browser/readme-tour.spec.ts`，使用本地虚构数据与 `zgzg.li` demo origin。
 
 ## 这个项目做什么
 
@@ -102,3 +102,5 @@ Railway 发布前自动执行数据库迁移，成功后才启动新版。
 迁移后必须保持 **slug URL 兼容**：既有 `/{slug}` 短链继续可访问。内部 API schema、Dashboard UI 和 auth session 不承诺向前兼容，但 `/api/v2` shim 会覆盖当前 Chrome extension 仍依赖的 legacy 行为。
 
 编辑页沿用原主题；Details、History、Stats、QR Code 分 tab 展示并适配手机。所有访客可直接编辑 URL/描述后提议，owner/admin 可保存。
+
+已有主人的链接在编辑页显示根据邮箱自动生成的 Jazzicon，无需设置个人资料。

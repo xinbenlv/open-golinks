@@ -28,3 +28,5 @@
 - [`railway-static-compression.md`](./railway-static-compression.md)：Railway Bun 缺少 CompressionStream 导致页面 500。
 
 - [`claim-login.md`](./claim-login.md)：认领 revision、旧邮件回跳、隔离测试和剪贴板权限。
+
+claim-login.md 同时记录邮箱自动头像的产品约束和键盘/匿名 fixture 测试陷阱。

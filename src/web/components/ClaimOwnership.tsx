@@ -3,10 +3,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { canClaimOwnership } from "../../lib/identity";
 import { authFetch, useAuth } from "../hooks/useAuth";
+import type { LinkOwner } from "./OwnerAvatar";
 
 export function ClaimOwnership({ slug, onClaim }: {
   slug: string;
-  onClaim: (ownerId: string) => void;
+  onClaim: (ownerId: string, owner: LinkOwner | null) => void;
 }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export function ClaimOwnership({ slug, onClaim }: {
       const res = await authFetch(`/api/v1/links/${encodeURIComponent(slug)}/claim`, { method: "POST" });
       const body = await res.json();
       if (!res.ok) throw new Error(res.status === 409 ? "This link has already been claimed. Reload to see its owner." : res.status === 403 ? "Sign in with an @zgzg.io account to claim ownership." : res.status === 401 ? "Your session expired. Sign in again." : "Could not claim this link. Try again.");
-      onClaim(body.link.ownerId);
+      onClaim(body.link.ownerId, body.link.owner);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not claim this link.");
     } finally { setBusy(false); }

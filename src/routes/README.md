@@ -5,3 +5,5 @@
 提议 API 先于 links CRUD 注册，权限与事务实现在 `../lib/proposals/`。
 
 links 的认领只接受可信 `@zgzg.io` 身份；不会修改通用登录、直接编辑和提议规则。
+
+单链接读取和写入响应包含 `owner.avatarSeed`，供编辑页显示自动头像。
