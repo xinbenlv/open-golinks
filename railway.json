@@ -4,6 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
+    "preDeployCommand": "bun run db:migrate",
     "startCommand": "bun src/server.ts",
     "healthcheckPath": "/api/v1/health",
     "healthcheckTimeout": 30,

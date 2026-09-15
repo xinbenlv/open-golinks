@@ -83,6 +83,8 @@ bun run build
 
 ## 部署
 
+Railway 发布前自动执行数据库迁移，成功后才启动新版。
+
 生产部署在 Railway，详见 [`DEPLOYMENT.md`](./DEPLOYMENT.md)。最小必需环境变量包括 `DATABASE_URL`、`PUBLIC_BASE_URL`、`VITE_BASE_URL`、Supabase Auth/JWT 配置，以及 GA4 配置。自定义域名切换时，`PUBLIC_BASE_URL` 和 `VITE_BASE_URL` 必须一起更新并重新部署。
 
 ## 开发者文档

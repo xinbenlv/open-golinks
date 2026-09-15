@@ -2,6 +2,8 @@
 
 ## Railway
 
+`railway.json` 的 pre-deploy 阶段执行 `bun run db:migrate`，使用服务已有的 `DATABASE_URL`。迁移失败时不启动新版；成功后通过健康检查才切换流量。迁移记录由 Drizzle 管理，重复发布不会重复应用 SQL。
+
 生产服务:
 
 - Project: `open-golinks-v2`

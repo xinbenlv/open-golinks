@@ -4,6 +4,8 @@
 
 ## System Overview
 
+Railway 在新版启动前运行 `bun run db:migrate`（`railway.json`），复用服务环境中的数据库连接；迁移失败阻止发布。
+
 ### ASCII 简图
 
 ```
