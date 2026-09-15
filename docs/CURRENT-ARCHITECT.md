@@ -371,7 +371,7 @@ Edit -> OwnerAvatar -> Jazzicon DOM/SVG（不请求外部头像）
 ```
 
 - `src/lib/link-owner.ts:1-17`：规范化邮箱与现有 IP_HASH_SALT 生成稳定的 HMAC seed；公开 DTO 只增加 owner.avatarSeed，无主 owner=null。更换 salt 会改变头像。
-- `src/web/components/OwnerAvatar.tsx:1-27`：固定 `@metamask/jazzicon@2.0.0`，32px 头像、44px 触控区域，通用 Link owner 提示；不要求姓名或图片。
+- `src/web/components/OwnerAvatar.tsx:1-31`：按需加载固定 `@metamask/jazzicon@2.0.0`，32px 头像、44px 触控区域，通用 Link owner 提示；不要求姓名或图片。
 - `src/web/pages/Edit.tsx:285-303`：根据 ownerId 切换认领/头像；认领保留草稿和 revision +1。单链接写入响应共用 owner 投影，保存后不会丢失头像。
 
 不新增 schema、认证流程或第三方服务；资料仅用于展示，权限仍按 ownerId/数据库角色判断。
