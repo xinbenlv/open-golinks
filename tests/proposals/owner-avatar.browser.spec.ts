@@ -45,6 +45,7 @@ describe.skipIf(!base)("owner avatar browser", () => {
       await page.waitForSelector("[data-testid=claim-ownership] button");
       const url = "#edit-panel-details input[type=url]";
       await page.locator(url).fill("https://example.test/avatar-draft");
+      await page.locator("[data-testid=unowned-avatar] summary").click();
       await page.locator("[data-testid=claim-ownership] button").click();
       await page.waitForSelector(rendered);
       const claimedImage = await image();

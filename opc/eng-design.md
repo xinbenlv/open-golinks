@@ -37,3 +37,11 @@ Edit -> OwnerAvatar -> @metamask/jazzicon 2.0.0（本地 DOM/SVG）
 详情、认领、保存和转移响应返回相同 owner 形状。无主仍显示 ZGID 认领入口；认领后保留草稿与 revision +1 规则。权限判定不变。
 
 验证：真实 DB/JWT 检查正确 owner、相同邮箱一致、邮箱不泄漏及无主分支；浏览器检查匿名/登录查看一致、认领后立即显示、保存后保留、键盘与 320px 布局。
+
+## 无主头像入口
+
+用户要求无主也保留头像：使用灰色空缺头像，点击才展开 ZGID 登录认领入口。新增 UnownedAvatar 组合现有 ClaimOwnership，不改认证、域名判断或 claim API；独立 /claim 页面仍直接显示认领操作。
+
+使用原生 details/summary 提供键盘打开，面板内复用现有登录/认领/错误状态；Escape 关闭并回焦，点击外部关闭。32px 空缺图案、44px 点击区，与 owner Jazzicon 同位置同尺寸。认领完成仍由 Edit 保留草稿并更新头像。
+
+浏览器验证：初始只显示空缺头像，点击/Enter/Space 展开，登录回跳、切换账号、冲突提示、claim→Jazzicon→Save，320/390/1280px 不溢出。

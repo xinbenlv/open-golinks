@@ -36,3 +36,5 @@ docs/
 无主链接认领与登录回跳设计见 `../opc/eng-design.md`；旧邮件模板限制和测试陷阱见 `troubleshooting/claim-login.md`。
 
 链接主人头像使用邮箱生成的 Jazzicon；实现摘要见 CURRENT-ARCHITECT.md。
+
+无主链接的头像认领入口见 CURRENT-ARCHITECT.md，虚构数据截图在 assets/unowned-avatar/。

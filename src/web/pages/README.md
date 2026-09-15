@@ -56,3 +56,5 @@ Publish（Public listing）支持提议开启或关闭，仅审批后更新 isPu
 History 不再叠加三个历史区：owner/admin 只有一条变更时间线，其他访客只看自己已审核提议；Proposals 只放待处理提议。
 
 Edit 标题下的认领入口在已有主人时替换为自动 Jazzicon；认领立即显示头像，保存响应保持同一 owner 资料。
+
+无主链接使用 UnownedAvatar 保留头像位置；登录 ZGID 认领文字只在点击空缺头像后显示。

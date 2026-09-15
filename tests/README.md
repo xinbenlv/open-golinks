@@ -29,3 +29,5 @@
 F5-claim 入口复用隔离提议/认领套件，不再创建真实 Supabase 测试账号。claim-cases 覆盖域资格、抢占、并发和审计回滚；auth-return 覆盖安全回跳。
 
 owner-avatar-cases 与 owner-avatar.browser.spec 验证邮箱头像隐私、归属一致性和认领/保存后的头像。
+
+unowned-avatar.browser.spec 检查空缺头像默认收起、键盘展开、关闭和登录回跳；认领和 owner 头像回归已适配展开操作。

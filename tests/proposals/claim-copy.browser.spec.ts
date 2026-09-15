@@ -18,6 +18,10 @@ describe.skipIf(!base)("claim and copy browser", () => {
       const field = "#edit-panel-details input[type=url]";
       const claimButton = "[data-testid=claim-ownership] button";
       const login = "[data-testid=claim-ownership] a";
+      const openClaim = async (target: Page) => {
+        const selector = "[data-testid=unowned-avatar]";
+        if (!await target.$eval(selector, el => (el as HTMLDetailsElement).open)) await target.locator(selector + " summary").click();
+      };
       await page.goto(`${base}/edit/unowned`);
       await page.waitForSelector(login);
       expect(await page.$eval(login, el => el.textContent)).toBe("Login with your ZGID to claim and edit");
@@ -53,6 +57,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       await page.waitForFunction(() => document.querySelector("dialog")?.textContent?.includes("127.0.0.1"));
       await page.locator("dialog button[type=button].btn--ghost").click();
       expect(await page.$eval(field, el => (el as HTMLInputElement).value)).toBe("https://example.test/draft");
+      await openClaim(page);
       await page.locator(login).click();
       await page.waitForSelector("#login-email");
       expect(new URL(page.url()).searchParams.get("next")).toBe("/edit/unowned");
@@ -82,6 +87,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       await callback.waitForSelector(claimButton);
       expect(new URL(callback.url()).pathname).toBe("/edit/unowned");
       await callback.locator(field).fill("https://example.test/claimed-draft");
+      await openClaim(callback);
       await callback.locator(claimButton).click();
       await callback.waitForFunction(() => document.body.textContent?.includes("Ownership claimed."));
       expect(await callback.evaluate(() => document.activeElement?.getAttribute("data-testid"))).toBe("copy-slug");
@@ -100,6 +106,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       await page.waitForSelector(claimButton);
       const competitor = await fetch(`${base}/__test/session/competitor`).then(r => r.json());
       expect((await fetch(`${base}/api/v1/links/claim-race/claim`, {method:"POST",headers:{Authorization:`Bearer ${competitor.access_token}`}})).status).toBe(200);
+      await openClaim(page);
       await page.locator(claimButton).click();
       await page.waitForFunction(() => document.querySelector('[data-testid=claim-ownership] [role=alert]')?.textContent?.includes("already been claimed"));
       await page.goto(`${base}/__test/login/member`);
@@ -109,6 +116,7 @@ describe.skipIf(!base)("claim and copy browser", () => {
       await page.goto(`${base}/edit/this-is-a-long-short-link-slug-for-mobile-layout`);
       await page.waitForSelector(claimButton);
       expect(await page.$eval(claimButton, el => el.textContent)).toBe("Login with your ZGID to claim and edit");
+      await openClaim(page);
       await page.locator(claimButton).click();
       await page.waitForSelector("#login-email");
       expect(new URL(page.url()).searchParams.get("claim")).toBe("1");

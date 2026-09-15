@@ -5,3 +5,5 @@
 本次增加无主链接 `@zgzg.io` 认领及 slug/icon 复制；范围与验证见 eng-design.md。
 
 邮箱 Jazzicon 的数据流和隐私边界记录在 eng-design.md。
+
+空缺头像展开认领的范围和键盘行为见 eng-design.md。
